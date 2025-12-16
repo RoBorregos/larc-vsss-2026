@@ -9,12 +9,19 @@
 
 namespace preprocessing {
     [[maybe_unused]] void saturation(cv::Mat &image, float alpha);
-
     [[maybe_unused]] void brightness(cv::Mat &image, int beta);
+    [[maybe_unused]] void contrast(cv::Mat &image, float alpha, int beta = 0);
+	[[maybe_unused]] void gamma_correction(cv::Mat &image, float gamma);
 
-    [[maybe_unused]] void contrast(cv::Mat &image, float alpha, int beta);
-
-    [[maybe_unused]] void gamma_correction(cv::Mat &image, float gamma);
+	[[maybe_unused]] void hsv_red_boost(cv::Mat &image, float alpha);
+	[[maybe_unused]] void hsv_blue_boost(cv::Mat &image, float alpha);
+	[[maybe_unused]] void hsv_green_boost(cv::Mat &image, float alpha);
+	[[maybe_unused]] void hsv_saturation(cv::Mat &image, float alpha);
+	[[maybe_unused]] void hsv_brightness(cv::Mat &image, int beta);
+	[[maybe_unused]] void hsv_contrast(cv::Mat &image, float alpha, int beta = 0);
+	[[maybe_unused]] void hsv_gamma_correction(cv::Mat &image, float gamma_v, float gamma_s = 1.0f);
+	[[maybe_unused]] void hsv_clahe(cv::Mat &image, double clip_limit);
+	[[maybe_unused]] void hsv_bilateral(cv::Mat &image, int sigma);
 
     [[maybe_unused]] void white_balance(cv::Mat &image, float temperature, float tint);
 

@@ -1,7 +1,3 @@
-//
-// Created by kali on 3/24/24.
-//
-
 #include "blob_detection.h"
 
 #include <utility>
@@ -13,7 +9,7 @@ BlobDetection::BlobDetection() = default;
     this->upper_bound = std::move(upperBound);
 }
 
-[[maybe_unused]] void BlobDetection::set_area(int minArea, int maxArea) {
+[[maybe_unused]] void BlobDetection::set_area(const int minArea, const int maxArea) {
     this->min_area = minArea;
     this->max_area = maxArea;
 }

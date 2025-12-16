@@ -1,7 +1,3 @@
-//
-// Created by kali on 3/24/24.
-//
-
 #ifndef OPENCV_BLOB_DETECTION_H
 #define OPENCV_BLOB_DETECTION_H
 
@@ -17,18 +13,15 @@ public:
     struct Blob {
         cv::Point x;
         cv::Point y;
-        [[maybe_unused]] int w;
-        [[maybe_unused]] int h;
+        int w;
+        int h;
     };
 
     BlobDetection();
 
     [[maybe_unused]] std::vector<Blob> detect(cv::Mat &frame);
-
     [[maybe_unused]] static void plot_blobs(cv::Mat &frame, std::vector<Blob> &blobs);
-
     [[maybe_unused]] void set_area(int minArea, int maxArea);
-
     [[maybe_unused]] void set_color_range(cv::Scalar lowerBound, cv::Scalar upperBound);
 };
 
