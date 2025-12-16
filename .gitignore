@@ -1,2 +1,8 @@
-cmake-build-debug/
+vision/cmake-build-debug/
+vision/build/
+vision/.idea
+
+.idea
 build/
+cmake-build-debug/
+*.user
