@@ -4,6 +4,16 @@
 
 #include "image_preprocessing.h"
 
+[[maybe_unused]] void preprocessing::apply_preprogrammed_filters(cv::Mat &image, AppData &app_data) {
+	hsv_red_boost(image, app_data.params.red_boost);
+	hsv_green_boost(image, app_data.params.green_boost);
+	hsv_blue_boost(image, app_data.params.blue_boost);
+	hsv_saturation(image, app_data.params.saturation);
+	hsv_clahe(image, app_data.params.clahe_clip_limit);
+	hsv_bilateral(image, app_data.params.bilateral_sigma);
+	hsv_gamma_correction(image, app_data.params.gamma_correction);
+}
+
 [[maybe_unused]] void preprocessing::saturation(cv::Mat &image, float alpha) {
     cv::Mat hsv;
     cv::cvtColor(image, hsv, cv::COLOR_BGR2HSV);
@@ -140,7 +150,7 @@ cv::Mat get_gamma_lut(float gamma) {
 	cv::cvtColor(lab, image, cv::COLOR_BGR2HSV);
 }
 
-[[maybe_unused]] void preprocessing::hsv_bilateral(cv::Mat &image, int sigma_color) {
+[[maybe_unused]] void preprocessing::hsv_bilateral(cv::Mat &image, float sigma_color) {
 	int sigma_space = 3;
 
 	cv::Mat temp;

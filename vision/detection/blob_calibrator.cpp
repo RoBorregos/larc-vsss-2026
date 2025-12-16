@@ -26,35 +26,37 @@ void BlobCalibrator::reset_points() {
 
 void BlobCalibrator::print_calibrations(const MatchCalibration &calibration) {
 	std::cout << std::fixed << std::setprecision(2);
-    auto print_channel = [](const std::string& name, const CalibrationResult& res) {
-       if (!res.valid) {
-          std::cout << ">>> " << name << ": [NO CALIBRADO]" << std::endl;
-          return;
-       }
+    auto print_channel = [](const std::string& name, const std::vector<CalibrationResult>& calibration_vector) {
+	    if (calibration_vector.empty()) {
+	    	std::cout << ">>> " << name << ": [NO CALIBRADO]" << std::endl;
+	    	return;
+	    }
 
-       std::cout << ">>> " << name << ":" << std::endl;
+    	for (const auto & res : calibration_vector) {
+    		std::cout << ">>> " << name << ":" << std::endl;
 
-       std::cout << "    Avg HSV: ["
-               << res.avg_hsv[0] << ", "
-               << res.avg_hsv[1] << ", "
-               << res.avg_hsv[2] << "]" << std::endl;
+    		std::cout << "    Avg HSV: ["
+					<< res.avg_hsv[0] << ", "
+					<< res.avg_hsv[1] << ", "
+					<< res.avg_hsv[2] << "]" << std::endl;
 
-       std::cout << "    Std Dev: ["
-               << res.std_dev_hsv[0] << ", "
-               << res.std_dev_hsv[1] << ", "
-               << res.std_dev_hsv[2] << "]" << std::endl;
+    		std::cout << "    Std Dev: ["
+					<< res.std_dev_hsv[0] << ", "
+					<< res.std_dev_hsv[1] << ", "
+					<< res.std_dev_hsv[2] << "]" << std::endl;
 
-       std::cout << "    Min HSV: ["
-               << res.min_hsv[0] << ", "
-               << res.min_hsv[1] << ", "
-               << res.min_hsv[2] << "]" << std::endl;
+    		std::cout << "    Min HSV: ["
+					<< res.min_hsv[0] << ", "
+					<< res.min_hsv[1] << ", "
+					<< res.min_hsv[2] << "]" << std::endl;
 
-       std::cout << "    Max HSV: ["
-               << res.max_hsv[0] << ", "
-               << res.max_hsv[1] << ", "
-               << res.max_hsv[2] << "]" << std::endl;
+    		std::cout << "    Max HSV: ["
+					<< res.max_hsv[0] << ", "
+					<< res.max_hsv[1] << ", "
+					<< res.max_hsv[2] << "]" << std::endl;
 
-       std::cout << "------------------------------------------------" << std::endl;
+    		std::cout << "------------------------------------------------" << std::endl;
+    	};
     };
 
     std::cout << "\n========== TABLA DE CALIBRACION ACTUAL ==========" << std::endl;

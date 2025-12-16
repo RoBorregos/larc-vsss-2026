@@ -6,8 +6,11 @@
 #define OPENCV_IMAGE_PREPROCESSING_H
 
 #include <opencv4/opencv2/opencv.hpp>
+#include "app_settings.h"
 
 namespace preprocessing {
+	[[maybe_unused]] void apply_preprogrammed_filters(cv::Mat& image, AppData& app_data);
+
     [[maybe_unused]] void saturation(cv::Mat &image, float alpha);
     [[maybe_unused]] void brightness(cv::Mat &image, int beta);
     [[maybe_unused]] void contrast(cv::Mat &image, float alpha, int beta = 0);
@@ -21,7 +24,7 @@ namespace preprocessing {
 	[[maybe_unused]] void hsv_contrast(cv::Mat &image, float alpha, int beta = 0);
 	[[maybe_unused]] void hsv_gamma_correction(cv::Mat &image, float gamma_v, float gamma_s = 1.0f);
 	[[maybe_unused]] void hsv_clahe(cv::Mat &image, double clip_limit);
-	[[maybe_unused]] void hsv_bilateral(cv::Mat &image, int sigma);
+	[[maybe_unused]] void hsv_bilateral(cv::Mat &image, float sigma);
 
     [[maybe_unused]] void white_balance(cv::Mat &image, float temperature, float tint);
 

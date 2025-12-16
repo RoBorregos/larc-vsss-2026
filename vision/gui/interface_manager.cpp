@@ -11,12 +11,15 @@ void InterfaceManager::init_widgets() {
     }));
     main_menu_widgets.push_back(std::make_unique<Button>(drawer, 4, "MODO: BLOB CALIBRATION", [this](){
         app_data->current_state = AppState::BLOB_CALIBRATION_MENU;
+    	app_data->paused = true;
     }));
 	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 5, "MODO: COLOR CALIBRATION", [this](){
 		app_data->current_state = AppState::COLOR_CALIBRATING;
+    	app_data->paused = true;
 	}));
 	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 6, "MODO: ROI CALIBRATION", [this](){
 		app_data->current_state = AppState::ROI_CALIBRATIING;
+    	app_data->paused = true;
 	}));
 	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 9, "SALIR", [this](){
 		std::exit(0);
@@ -99,18 +102,34 @@ void InterfaceManager::save_current_blob_calibration() {
 
 	const std::string color = app_data->current_color;
 	const CalibrationResult res = last_calculated_result.value();
+	unsigned long size = 0;
 
-	if (color == "BLUE") match_calibration.blue = res;
-	else if (color == "YELLOW") match_calibration.yellow = res;
-	else if (color == "RED") match_calibration.red = res;
-	else if (color == "GREEN") match_calibration.green = res;
-	else if (color == "CYAN") match_calibration.cyan = res;
-	else if (color == "MAGENTA") match_calibration.magenta = res;
-	else if (color == "ORANGE") match_calibration.orange = res;
+	if (color == "BLUE") {
+		match_calibration.blue.push_back(res);
+		size = match_calibration.blue.size();
+	} else if (color == "YELLOW") {
+		match_calibration.yellow.push_back(res);
+		size = match_calibration.yellow.size();
+	} else if (color == "RED") {
+		match_calibration.red.push_back(res);
+		size = match_calibration.red.size();
+	} else if (color == "GREEN") {
+		match_calibration.green.push_back(res);
+		size = match_calibration.green.size();
+	} else if (color == "CYAN") {
+		match_calibration.cyan.push_back(res);
+		size = match_calibration.cyan.size();
+	} else if (color == "MAGENTA") {
+		match_calibration.magenta.push_back(res);
+		size = match_calibration.magenta.size();
+	} else if (color == "ORANGE") {
+		match_calibration.orange.push_back(res);
+		size = match_calibration.orange.size();
+	}
 
 	if (color_buttons.count(color)) {
 		const std::string& current_label = color;
-		color_buttons[color]->set_label(current_label + " - OK");
+		color_buttons[color]->set_label(current_label + " - OK (" + std::to_string(size) + ")");
 	}
 
 	std::cout << "--> Guardado: " << color << " con parametros propios." << std::endl;

@@ -4,15 +4,17 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <gui.h>
+#include "app_settings.h"
 
 class ColorCalibrator {
 private:
 	std::vector<cv::Point> roi_points;
 	GUI* drawer;
+	AppData* app_data;
 
 	void handle_click(int x, int y);
 public:
-	explicit ColorCalibrator(GUI* drawer);
+	ColorCalibrator(GUI* drawer, AppData* app_data);
 	static void on_mouse(int event, int x, int y, int flags, void* userdata);
 
 	void calibrate_roi();

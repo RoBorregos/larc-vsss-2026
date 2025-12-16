@@ -9,14 +9,14 @@
 int main() {
     std::cout << "USING OPENCV VERSION: " << CV_VERSION << std::endl;
 
-    const std::string path = "/home/iker/Documents/RoboticProjects/VSSS/vision/media/robot_display.mp4";
+    const std::string path = "/home/iker/Documents/RoboticProjects/VSSS/vision/media/simulation.mp4";
     const std::string window_name = "VSSS";
     cv::namedWindow(window_name);
 
     AppData app_data;
     GUI drawer(&app_data, window_name);
     BlobCalibrator blob_calibrator(&drawer);
-    ColorCalibrator color_calibrator(&drawer);
+    ColorCalibrator color_calibrator(&drawer, &app_data);
 
     InterfaceManager interface_manager(&drawer, &blob_calibrator, &color_calibrator, &app_data);
 

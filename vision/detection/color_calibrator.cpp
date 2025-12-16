@@ -1,6 +1,7 @@
 #include "color_calibrator.h"
 
-ColorCalibrator::ColorCalibrator(GUI *drawer) {
+ColorCalibrator::ColorCalibrator(GUI *drawer, AppData* app_data) {
+	this->app_data = app_data;
 	this->drawer = drawer;
 }
 

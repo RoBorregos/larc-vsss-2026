@@ -5,7 +5,6 @@
 #include <vector>
 #include <optional>
 #include <gui.h>
-#include <image_preprocessing.h>
 
 struct CalibrationResult {
 	std::vector<cv::Point> points;
@@ -19,13 +18,13 @@ struct CalibrationResult {
 };
 
 struct MatchCalibration {
-	CalibrationResult yellow;
-	CalibrationResult blue;
-	CalibrationResult magenta;
-	CalibrationResult red;
-	CalibrationResult cyan;
-	CalibrationResult green;
-	CalibrationResult orange;
+	std::vector<CalibrationResult> yellow;
+	std::vector<CalibrationResult> blue;
+	std::vector<CalibrationResult> magenta;
+	std::vector<CalibrationResult> red;
+	std::vector<CalibrationResult> cyan;
+	std::vector<CalibrationResult> green;
+	std::vector<CalibrationResult> orange;
 };
 
 class BlobCalibrator {
