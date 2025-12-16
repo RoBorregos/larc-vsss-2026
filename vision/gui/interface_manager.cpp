@@ -1,7 +1,7 @@
 #include "interface_manager.h"
 
-InterfaceManager::InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, AppData* app_data)
-    : drawer(drawer), blob_calibrator(blob_calibrator), color_calibrator(color_calibrator), app_data(app_data) {
+InterfaceManager::InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, AppData* app_data, Detector* detector)
+    : drawer(drawer), blob_calibrator(blob_calibrator), color_calibrator(color_calibrator), app_data(app_data), detector(detector) {
     init_widgets();
 }
 
@@ -9,6 +9,9 @@ void InterfaceManager::init_widgets() {
     main_menu_widgets.push_back(std::make_unique<Button>(drawer, 2, "MODO: DETECTION", [this](){
         app_data->current_state = AppState::DETECTION;
     }));
+	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 3, "DEBUG: DETECTOR INFO", [this]() {
+		detector->display_debug_info();
+	}));
     main_menu_widgets.push_back(std::make_unique<Button>(drawer, 4, "MODO: BLOB CALIBRATION", [this](){
         app_data->current_state = AppState::BLOB_CALIBRATION_MENU;
     	app_data->paused = true;
@@ -195,6 +198,16 @@ void InterfaceManager::handle_input(int event, int x, int y) {
 	if (event == cv::EVENT_MBUTTONDOWN) {
 		drawer->reset_zoom();
 		drawer->display_frame();
+	}
+
+	if (event == cv::EVENT_LBUTTONDBLCLK) {
+		cv::Point real_coords = drawer->screen_to_world(cv::Point(x, y));
+		std::cout << "Clicked at (" << x << ", " << y << ")" << " real: [" << x << ", " << y << "]" << std::endl;
+		cv::Mat img = drawer->get_image(cv::COLOR_BGR2HSV);
+		cv::Vec3b hsv_pixel = img.at<cv::Vec3b>(real_coords.y, real_coords.x);
+		std::cout << "HSV Value: [" << static_cast<int>(hsv_pixel[0]) << ", "
+				  << static_cast<int>(hsv_pixel[1]) << ", "
+				  << static_cast<int>(hsv_pixel[2]) << "]" << std::endl;
 	}
 
     switch (app_data->current_state) {

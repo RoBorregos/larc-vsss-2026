@@ -109,13 +109,27 @@ cv::Mat& GUI::get_frame() {
 	return frame;
 }
 
-cv::Mat GUI::get_image(const int conversion_code) {
-	if (conversion_code == -1) {
+cv::Mat GUI::get_image(const int conversion_code, bool apply_preprocessing) const {
+	if (conversion_code == -1 && !apply_preprocessing) {
 		return image;
 	}
+	cv::Mat output = image.clone();
 
-	cv::Mat output;
-	cv::cvtColor(image, output, conversion_code);
+	if (apply_preprocessing) {
+		inverse_closed_polyline(app_data->roi_points, output, {0, 0, 0});
+		cv::cvtColor(output, output, cv::COLOR_BGR2HSV);
+
+		if (conversion_code == cv::COLOR_BGR2HSV) {
+			preprocessing::apply_preprogrammed_filters(output, *app_data);
+			return output;
+		}
+
+		cv::cvtColor(output, output, cv::COLOR_HSV2BGR);
+	}
+
+	if (conversion_code != -1) {
+		cv::cvtColor(image, output, conversion_code);
+	}
 
 	return output;
 }
@@ -203,10 +217,6 @@ void GUI::text(const std::string &text, const int rowspace, float font_scale, bo
 	cv::putText(frame, text, text_org, font_face, font_scale, cv::Scalar(255, 255, 255), thickness);
 }
 
-void GUI::$display_processing_frame() const {
-	cv::imshow("Processing Frame", image);
-}
-
 void GUI::display_frame() const {
 	if (frame.empty()) return;
 
@@ -216,15 +226,7 @@ void GUI::display_frame() const {
 	cv::resize(image_view, image_view, cv::Size(image_width, total_height), 0, 0, cv::INTER_LINEAR);
 
 	cv::cvtColor(image_view, image_view, cv::COLOR_BGR2HSV);
-	preprocessing::hsv_green_boost(image_view, green_boost);
-	preprocessing::hsv_blue_boost(image_view, blue_boost_factor);
-	preprocessing::hsv_red_boost(image_view, red_boost);
-	preprocessing::hsv_brightness(image_view, brightness);
-	preprocessing::hsv_contrast(image_view, contrast);
-	preprocessing::hsv_saturation(image_view, saturation);
-	preprocessing::hsv_gamma_correction(image_view, gamma_correction);
-	preprocessing::hsv_clahe(image_view, clahe_clip_limit);
-	preprocessing::hsv_bilateral(image_view, bilateral_sigma);
+	preprocessing::apply_preprogrammed_filters(image_view, *app_data);
 	cv::cvtColor(image_view, image_view, cv::COLOR_HSV2BGR);
 
 	image_view.copyTo(display_buffer(cv::Rect(0, 0, image_width, total_height)));
@@ -235,7 +237,7 @@ void GUI::display_frame() const {
 	sidebar.copyTo(display_buffer(sidebar_rect));
 
 	if (app_data->roi_points.size() > 1) {
-		inverse_closed_polyline(app_data->roi_points, display_buffer);
+		inverse_closed_polyline(app_data->roi_points, display_buffer, {0, 0, 0});
 	}
 
 	cv::imshow(window_name, display_buffer);
@@ -298,8 +300,6 @@ void GUI::inverse_closed_polyline(const std::vector<cv::Point> &points, cv::Mat&
 
 	if (input_mat.cols < image.cols) return;
 	if (input_mat.rows < image.rows) return;
-
-	std::cout << "image cols: " << image.cols << ", rows: " << image.rows << std::endl;
 
 	cv::Rect safe_viewport = cv::Rect(0, 0, image.cols, image.rows);
 	if (safe_viewport.empty()) return;

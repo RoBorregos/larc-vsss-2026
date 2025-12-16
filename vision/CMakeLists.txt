@@ -26,11 +26,11 @@ add_executable(opencv main.cpp
 		# Módulo de Campo de Juego
 		field/kinematics.cpp                field/kinematics.h
 		field/field_object.cpp              field/field_object.h
-		field/ball.cpp                      field/ball.h
+#		field/ball.cpp.bak                  field/ball.h.bak
 		field/robot.cpp                     field/robot.h
 
 		# Clases de detección
-		detection/detection_method.cpp      detection/detection_method.h
+		detection/detector.cpp              detection/detector.h
 		detection/blob_calibrator.cpp       detection/blob_calibrator.h
 		detection/color_calibrator.cpp      detection/color_calibrator.h
 

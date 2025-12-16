@@ -1,24 +1,11 @@
 #ifndef KINEMATICS_H
 #define KINEMATICS_H
 
-#include <iostream>
 #include <deque>
-#include <cmath>
-#include <algorithm>
+#include <detector.h>
 
-// Avoid dividing by 0
 const double EPSILON = 1e-9;
 
-struct State {
-	double x;
-	double y;
-	double facing;
-};
-
-struct Snapshot {
-	double timestamp;
-	State state;
-};
 
 class Kinematics {
 private:

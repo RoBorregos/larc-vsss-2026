@@ -41,7 +41,7 @@ public:
 	[[nodiscard]] std::string get_window_name() const;
 	[[nodiscard]] cv::Mat& get_frame();
 	[[nodiscard]] cv::Rect rowspace_roi(int rowspace) const;
-	[[nodiscard]] cv::Mat get_image(int conversion_code = -1);
+	[[nodiscard]] cv::Mat get_image(int conversion_code = -1, bool apply_preprocessing = true) const;
 
 	void set_display_brightness(int brightness);
 	void set_display_contrast(float contrast);
@@ -55,7 +55,7 @@ public:
 
 	void upload_frame(cv::Mat& input_frame);
 	void display_frame() const;
-	void $display_processing_frame() const;
+	// void $display_processing_frame() const;
 	void zoom(int mouse_x, int mouse_y, int scroll_amount);
 	void reset_zoom();
 

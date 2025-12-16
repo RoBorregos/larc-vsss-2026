@@ -1,6 +1,8 @@
 #include "blob_calibrator.h"
 
-BlobCalibrator::BlobCalibrator(GUI* drawer) {
+#include "image_preprocessing.h"
+
+BlobCalibrator::BlobCalibrator(GUI* drawer, AppData* app_data) : app_data(app_data) {
 	this->drawer = drawer;
 }
 
@@ -101,7 +103,7 @@ std::optional<CalibrationResult> BlobCalibrator::calibrate_individual() {
 		computation_mask = mask;
 	}
 
-	const cv::Mat cropped_hsv = hsv_image(roi_rect);
+	cv::Mat cropped_hsv = hsv_image(roi_rect);
 
 	cv::Scalar avg_hsv, std_dev_hsv;
 	cv::meanStdDev(cropped_hsv, avg_hsv, std_dev_hsv, computation_mask);

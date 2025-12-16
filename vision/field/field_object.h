@@ -2,20 +2,22 @@
 #define FIELD_OBJECT_H
 
 #include <optional>
-#include <detection_method.h>
+#include <detector.h>
 #include <kinematics.h>
 
 class FieldObject {
 protected:
 	int id;
 	std::optional<Kinematics> kinematics;
-	DetectionMethod detection_method;
+	Detector* detector;
+	AppData* app_data;
+	GUI* gui;
 
 public:
-	FieldObject();
+	FieldObject(GUI* gui, AppData* app_data, Detector* detector);
 	virtual ~FieldObject() = default;
 
-	void update(const cv::Mat& frame, double timestamp);
+	virtual void update() = 0;
 
 	[[nodiscard]] int get_id() const;
 	[[nodiscard]] std::optional<State> get_position() const;

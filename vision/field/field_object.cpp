@@ -1,15 +1,7 @@
 #include "field_object.h"
 
-FieldObject::FieldObject() : id(-1) {
-	kinematics = Kinematics();
-}
-
-void FieldObject::update(const cv::Mat& frame, double timestamp) {
-	std::optional<State> detected_state = detection_method.detect(frame);
-
-	if (detected_state.has_value() && kinematics.has_value()) {
-		kinematics->update(detected_state->x, detected_state->y, detected_state->facing, timestamp);
-	}
+FieldObject::FieldObject(GUI* gui, AppData* app_data, Detector* detector) : id(-1), app_data(app_data), gui(gui), detector(detector) {
+	kinematics = std::nullopt;
 }
 
 std::optional<State> FieldObject::get_position() const {
@@ -17,4 +9,8 @@ std::optional<State> FieldObject::get_position() const {
 		return kinematics->get_current_position();
 	}
 	return std::nullopt;
+}
+
+int FieldObject::get_id() const {
+	return id;
 }

@@ -5,6 +5,7 @@
 #include <vector>
 #include <optional>
 #include <gui.h>
+#include "app_settings.h"
 
 struct CalibrationResult {
 	std::vector<cv::Point> points;
@@ -31,10 +32,11 @@ class BlobCalibrator {
 private:
 	std::vector<cv::Point> points;
 	GUI* drawer;
+	AppData* app_data;
 
 	void handle_click(int x, int y);
 public:
-	explicit BlobCalibrator(GUI* drawer);
+	BlobCalibrator(GUI* drawer, AppData* app_data);
 
 	static void on_mouse(int event, int x, int y, int flags, void* userdata);
 

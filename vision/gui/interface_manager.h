@@ -13,6 +13,7 @@
 #include "blob_calibrator.h"
 #include "app_settings.h"
 #include "color_calibrator.h"
+#include "detector.h"
 
 class InterfaceManager {
 private:
@@ -20,6 +21,7 @@ private:
 	BlobCalibrator* blob_calibrator;
 	ColorCalibrator* color_calibrator;
 	AppData* app_data;
+	Detector* detector;
 
 	Button* pause_button = nullptr;
 	std::vector<std::unique_ptr<Widget>> main_menu_widgets;
@@ -35,7 +37,7 @@ private:
 	void init_widgets();
 	void save_current_blob_calibration();
 public:
-	InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, AppData* app_data);
+	InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, AppData* app_data, Detector* detector);
 	~InterfaceManager() = default;
 
 	void draw_interface();

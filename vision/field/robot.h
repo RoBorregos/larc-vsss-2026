@@ -10,19 +10,13 @@ private:
 	std::vector<PatchColor> color_pattern;
 
 public:
-	Robot(int robot_id, TeamColor team_color, const std::vector<PatchColor>& pattern) {
-		this->id = robot_id;
-		this->team = team_color;
-		this->color_pattern = pattern;
+	Robot(GUI* gui, AppData* app_data, Detector* detector);
+	void initialize(int robot_id, TeamColor team_color, const std::vector<PatchColor>& pattern);
 
-		this->detection_method.setup_as_robot(team, pattern);
-	}
+	void update() override;
 
-	TeamColor getTeam() const { return team; }
-
-	bool isAlly(TeamColor my_team) const {
-		return team == my_team;
-	}
+	[[nodiscard]] TeamColor get_team() const;
+	[[nodiscard]] bool is_ally(TeamColor my_team) const;
 };
 
 #endif // ROBOT_H
