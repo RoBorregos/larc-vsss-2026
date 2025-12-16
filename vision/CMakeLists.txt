@@ -10,12 +10,15 @@ find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(include)
 include_directories(lib)
-include_directories(classes)
+include_directories(detection)
 include_directories(gui)
 include_directories(field)
 
 # --- EJECUTABLE ---
 add_executable(opencv main.cpp
+		# Archivos base
+											include/app_settings.h
+
 		# Módulo de Procesamiento de Imagen
 		lib/image_preprocessing.cpp         include/image_preprocessing.h
 		lib/blob_detection.cpp              include/blob_detection.h
@@ -26,13 +29,13 @@ add_executable(opencv main.cpp
 		field/ball.cpp                      field/ball.h
 		field/robot.cpp                     field/robot.h
 
-		# Clases base
-											include/app_settings.h
-		classes/detection_method.cpp        classes/detection_method.h
-		classes/calibrator.cpp              classes/calibrator.h
+		# Clases de detección
+		detection/detection_method.cpp      detection/detection_method.h
+		detection/blob_calibrator.cpp       detection/blob_calibrator.h
+		detection/color_calibrator.cpp      detection/color_calibrator.h
 
 		# Interfaz Gráfica (GUI)
-		gui/gui.cpp gui/gui.h
+		gui/gui.cpp                         gui/gui.h
 		gui/widget.cpp                      gui/widget.h
 		gui/button.cpp                      gui/button.h
 		gui/slider.cpp                      gui/slider.h

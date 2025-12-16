@@ -1,14 +1,11 @@
-#include "calibrator.h"
+#include "blob_calibrator.h"
 
-#include <image_preprocessing.h>
-
-Calibrator::Calibrator(GUI* drawer) {
+BlobCalibrator::BlobCalibrator(GUI* drawer) {
 	this->drawer = drawer;
 }
 
-void Calibrator::on_mouse(const int event, const int x, const int y, int flags, void* userdata) {
-	auto* self = static_cast<Calibrator*>(userdata);
-
+void BlobCalibrator::on_mouse(const int event, const int x, const int y, int flags, void* userdata) {
+	auto* self = static_cast<BlobCalibrator*>(userdata);
 	if (x < 0 || y < 0 || x >= self->drawer->get_image().cols || y >= self->drawer->get_image().rows)
 		return;
 
@@ -18,16 +15,16 @@ void Calibrator::on_mouse(const int event, const int x, const int y, int flags, 
 	}
 }
 
-void Calibrator::handle_click(int x, int y) {
+void BlobCalibrator::handle_click(int x, int y) {
     if (points.size() >= 4) return;
     points.emplace_back(x, y);
 }
 
-void Calibrator::reset_points() {
+void BlobCalibrator::reset_points() {
 	points.clear();
 }
 
-void Calibrator::print_calibrations(const MatchCalibration &calibration) {
+void BlobCalibrator::print_calibrations(const MatchCalibration &calibration) {
 	std::cout << std::fixed << std::setprecision(2);
     auto print_channel = [](const std::string& name, const CalibrationResult& res) {
        if (!res.valid) {
@@ -57,17 +54,6 @@ void Calibrator::print_calibrations(const MatchCalibration &calibration) {
                << res.max_hsv[1] << ", "
                << res.max_hsv[2] << "]" << std::endl;
 
-       std::cout << "    Filtros: "
-               << "Sat: " << res.params.saturation << " | "
-               << "Gamma: " << res.params.gamma_correction << " | "
-               << "Clip: " << res.params.clahe_clip_limit << " | "
-               << "BiLat: " << res.params.bilateral_sigma << std::endl;
-
-       std::cout << "    Boost RGB: "
-               << "R:" << res.params.red_boost << " "
-               << "G:" << res.params.green_boost << " "
-               << "B:" << res.params.blue_boost << std::endl;
-
        std::cout << "------------------------------------------------" << std::endl;
     };
 
@@ -84,7 +70,7 @@ void Calibrator::print_calibrations(const MatchCalibration &calibration) {
 }
 
 
-std::optional<CalibrationResult> Calibrator::calibrate_individual(const VisionParams& params) {
+std::optional<CalibrationResult> BlobCalibrator::calibrate_individual() {
 	for (const auto point : points) drawer->plot(point);
 	if (points.size() == 4)	drawer->closed_polyline(points);
 	else if (points.size() > 1)	drawer->polyline(points);
@@ -135,7 +121,6 @@ std::optional<CalibrationResult> Calibrator::calibrate_individual(const VisionPa
 	result.max_hsv = cv::Scalar(max_h, max_s, max_v);
 	result.avg_hsv = avg_hsv;
 	result.std_dev_hsv = std_dev_hsv;
-	result.params = params;
 
 	return result;
 }

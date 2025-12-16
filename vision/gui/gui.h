@@ -2,9 +2,12 @@
 #define DRAWER_H
 #include <string>
 #include <opencv4/opencv2/opencv.hpp>
+#include "app_settings.h"
 
 class GUI {
 private:
+	AppData* app_data;
+
 	std::string window_name{};
 	cv::Mat frame;
 	cv::Mat image;
@@ -29,8 +32,8 @@ private:
 
 	static inline cv::Scalar default_color{255, 255, 255};
 public:
-	GUI();
-	explicit GUI(const std::string& window_name);
+	explicit GUI(AppData* app_data);
+	GUI(AppData* app_data, const std::string& window_name);
 
 	void set_window_name(const std::string& window_name);
 	void free_rowspace(int rowspace);
@@ -52,6 +55,7 @@ public:
 
 	void upload_frame(cv::Mat& input_frame);
 	void display_frame() const;
+	void $display_processing_frame() const;
 	void zoom(int mouse_x, int mouse_y, int scroll_amount);
 	void reset_zoom();
 
@@ -66,6 +70,8 @@ public:
 	void line(const cv::Point& point1, const cv::Point& point2, int thickness = 1, const cv::Scalar& color = default_color);
 	void polyline(const std::vector<cv::Point>& points, int thickness = 1, const cv::Scalar& color = default_color);
 	void closed_polyline(const std::vector<cv::Point>& points, int thickness = 1, const cv::Scalar& color = default_color);
+	void inverse_closed_polyline(const std::vector<cv::Point>& points, const cv::Scalar& color = default_color);
+	void inverse_closed_polyline(const std::vector<cv::Point>& points, cv::Mat& input_mat, const cv::Scalar& color = default_color) const;
 };
 
 #endif //DRAWER_H

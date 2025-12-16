@@ -1,32 +1,36 @@
 #include <opencv2/opencv.hpp>
 #include "gui.h"
-#include "calibrator.h"
+#include "blob_calibrator.h"
 #include "interface_manager.h"
 #include "app_settings.h"
 
 #define KEY_ESC 27
 
 int main() {
-    const std::string path = "/home/iker/Documents/RoboticProjects/VSSS/Vision/media/robot_display.mp4";
+    std::cout << "USING OPENCV VERSION: " << CV_VERSION << std::endl;
+
+    const std::string path = "/home/iker/Documents/RoboticProjects/VSSS/vision/media/robot_display.mp4";
     const std::string window_name = "VSSS";
     cv::namedWindow(window_name);
 
-    GUI drawer(window_name);
-    Calibrator calibrator(&drawer);
     AppData app_data;
+    GUI drawer(&app_data, window_name);
+    BlobCalibrator blob_calibrator(&drawer);
+    ColorCalibrator color_calibrator(&drawer);
 
-    InterfaceManager interface_manager(&drawer, &calibrator, &app_data);
+    InterfaceManager interface_manager(&drawer, &blob_calibrator, &color_calibrator, &app_data);
 
     cv::VideoCapture cap(path);
     if (!cap.isOpened()) return -1;
+    double fps = cap.get(cv::CAP_PROP_FPS);
+    int delay = (fps > 0) ? static_cast<int>(1000 / fps) : 30;
 
     cv::setMouseCallback(window_name, InterfaceManager::on_mouse, &interface_manager);
 
     cv::Mat image;
 
     while (true) {
-        if (app_data.current_state == AppState::MAIN_MENU ||
-            app_data.current_state == AppState::DETECTION) {
+        if (!app_data.paused) {
             cv::Mat temp;
             cap >> temp;
             if (!temp.empty()) image = temp;
@@ -50,7 +54,7 @@ int main() {
 
         drawer.display_frame();
 
-        if (cv::waitKey(1) == KEY_ESC) break;
+        if (cv::waitKey(delay) == KEY_ESC) break;
     }
 
     return 0;

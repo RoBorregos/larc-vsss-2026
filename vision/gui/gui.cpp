@@ -1,11 +1,11 @@
 #include "gui.h"
 #include <image_preprocessing.h>
 
-GUI::GUI() {
+GUI::GUI(AppData* app_data): app_data(app_data) {
 	this->window_name = "default";
 }
 
-GUI::GUI(const std::string& window_name) {
+GUI::GUI(AppData* app_data, const std::string& window_name): app_data(app_data) {
 	this->window_name = window_name;
 }
 
@@ -203,6 +203,10 @@ void GUI::text(const std::string &text, const int rowspace, float font_scale, bo
 	cv::putText(frame, text, text_org, font_face, font_scale, cv::Scalar(255, 255, 255), thickness);
 }
 
+void GUI::$display_processing_frame() const {
+	cv::imshow("Processing Frame", image);
+}
+
 void GUI::display_frame() const {
 	if (frame.empty()) return;
 
@@ -229,6 +233,10 @@ void GUI::display_frame() const {
 	cv::Mat sidebar = frame(sidebar_rect);
 
 	sidebar.copyTo(display_buffer(sidebar_rect));
+
+	if (app_data->roi_points.size() > 1) {
+		inverse_closed_polyline(app_data->roi_points, display_buffer);
+	}
 
 	cv::imshow(window_name, display_buffer);
 }
@@ -274,6 +282,35 @@ void GUI::closed_polyline(const std::vector<cv::Point>& points, const int thickn
 	cv::polylines(frame, contours, true, color, thickness);
 }
 
+void GUI::inverse_closed_polyline(const std::vector<cv::Point> &points, const cv::Scalar &color) {
+	if (points.size() <= 1) return;
+	if (!valid_coordinate(points)) return;
+
+	std::vector<std::vector<cv::Point>> contours = { points };
+	cv::Mat mask(frame.size(), CV_8UC1, cv::Scalar(255));
+	cv::fillPoly(mask, contours, cv::Scalar(0));
+	frame.setTo(color, mask);
+}
+
+void GUI::inverse_closed_polyline(const std::vector<cv::Point> &points, cv::Mat& input_mat, const cv::Scalar &color) const {
+	if (points.size() <= 1) return;
+	if (input_mat.empty()) return;
+
+	if (input_mat.cols < image.cols) return;
+	if (input_mat.rows < image.rows) return;
+
+	std::cout << "image cols: " << image.cols << ", rows: " << image.rows << std::endl;
+
+	cv::Rect safe_viewport = cv::Rect(0, 0, image.cols, image.rows);
+	if (safe_viewport.empty()) return;
+
+	std::vector<std::vector<cv::Point>> contours = { points };
+	cv::Mat mask = cv::Mat::zeros(input_mat.size(), CV_8UC1);
+	cv::rectangle(mask, safe_viewport, cv::Scalar(255), -1);
+
+	cv::fillPoly(mask, contours, cv::Scalar(0));
+	input_mat.setTo(color, mask);
+}
 
 
 

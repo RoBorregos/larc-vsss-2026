@@ -5,8 +5,10 @@
 
 enum class AppState {
 	MAIN_MENU,
-	CALIBRATION_MENU,
-	CALIBRATING,
+	BLOB_CALIBRATION_MENU,
+	BLOB_CALIBRATING,
+	COLOR_CALIBRATING,
+	ROI_CALIBRATIING,
 	DETECTION
 };
 
@@ -22,8 +24,10 @@ struct VisionParams {
 
 struct AppData {
 	AppState current_state = AppState::MAIN_MENU;
-	VisionParams params;
 	std::string current_color = "None";
+	VisionParams params;
+	std::vector<cv::Point> roi_points;
+	bool paused = false;
 };
 
 #endif // APP_SETTINGS_H

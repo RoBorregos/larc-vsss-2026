@@ -18,4 +18,7 @@ void Widget::set_label(const std::string &new_label) {
 	this->label = new_label;
 }
 
+void Widget::set_rowspace(int new_rowspace) {
+	this->rowspace = new_rowspace;
+}
 

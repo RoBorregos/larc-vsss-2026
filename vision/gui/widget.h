@@ -18,6 +18,7 @@ public:
 	virtual void draw() = 0;
 	virtual bool handle_input(int mouse_x, int mouse_y, int event);
 	void set_label(const std::string& new_label);
+	void set_rowspace(int new_rowspace);
 };
 
 #endif //WIDGET_H
