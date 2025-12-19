@@ -1,17 +1,24 @@
-//
-// Created by kali on 3/24/24.
-//
 
 #include "image_preprocessing.h"
 
-[[maybe_unused]] void preprocessing::apply_preprogrammed_filters(cv::Mat &image, AppData &app_data) {
-	hsv_red_boost(image, app_data.params.red_boost);
-	hsv_green_boost(image, app_data.params.green_boost);
-	hsv_blue_boost(image, app_data.params.blue_boost);
-	hsv_saturation(image, app_data.params.saturation);
-	hsv_clahe(image, app_data.params.clahe_clip_limit);
-	hsv_bilateral(image, app_data.params.bilateral_sigma);
-	hsv_gamma_correction(image, app_data.params.gamma_correction);
+[[maybe_unused]] void preprocessing::apply_preprogrammed_filters(cv::Mat &image, const VisionParams& params) {
+	hsv_red_boost(image, params.red_boost);
+	hsv_green_boost(image, params.green_boost);
+	hsv_blue_boost(image, params.blue_boost);
+	hsv_saturation(image, params.saturation);
+	hsv_clahe(image, params.clahe_clip_limit);
+	hsv_bilateral(image, params.bilateral_sigma);
+	hsv_gamma_correction(image, params.gamma_correction);
+}
+
+[[maybe_unused]] void preprocessing::apply_preprogrammed_filters(cv::Mat &image, const ObjectVisionParams& params) {
+	hsv_red_boost(image, params.red_boost);
+	hsv_green_boost(image, params.green_boost);
+	hsv_blue_boost(image, params.blue_boost);
+	hsv_saturation(image, params.saturation);
+	hsv_clahe(image, params.clahe_clip_limit);
+	hsv_bilateral(image, params.bilateral_sigma);
+	hsv_gamma_correction(image, params.gamma_correction);
 }
 
 [[maybe_unused]] void preprocessing::saturation(cv::Mat &image, float alpha) {

@@ -1,5 +1,6 @@
 #include "detector.h"
 
+
 Detector::Detector(GUI *gui, AppData *app_data): gui(gui), app_data(app_data) {
 
 }
@@ -31,7 +32,11 @@ void Detector::find_objects() {
 	std::vector<std::vector<cv::Point>> objects;
 	for (const auto& cnt : temp_objects) {
 		double area = cv::contourArea(cnt);
-		if (area > 200 && area < 10000) {
+		cv::Rect box = cv::boundingRect(cnt);
+
+		double aspect_ratio = (double)box.width / box.height;
+
+		if (area > 200 && area < 10000 && aspect_ratio > 0.5 && aspect_ratio < 2.0) {
 
 			std::vector<cv::Point> approx;
 			double epsilon = 0.03 * cv::arcLength(cnt, true);
@@ -232,19 +237,25 @@ std::optional<State> Detector::robot(TeamColor team, const std::vector<PatchColo
 	return std::nullopt;
 };
 
+void Detector::destroy_debug_windows() {
+	for (const auto& name : window_names) {
+		cv::destroyWindow(name);
+	}
+	window_names.clear();
+}
+
+
 void Detector::display_debug_info() {
     if (found_objects.empty() || found_objects.size() != categorized_objects.size()) {
+    	destroy_debug_windows();
         return;
     }
 
     cv::Mat full_image = gui->get_image();
-
-    std::cout << "\n--- DEBUG INFO (Frame Display) ---" << std::endl;
+	std::set<std::string> current_window_names;
 
     for (size_t i = 0; i < found_objects.size(); ++i) {
-
         cv::Rect rect = cv::boundingRect(found_objects[i]);
-
         rect = rect & cv::Rect(0, 0, full_image.cols, full_image.rows);
 
         if (rect.area() == 0) continue;
@@ -254,10 +265,7 @@ void Detector::display_debug_info() {
         double zoom = 5.0;
 
         cv::resize(robot_roi, zoomed_view, cv::Size(), zoom, zoom, cv::INTER_NEAREST);
-
         const std::vector<DetectedPatch>& patches = categorized_objects[i];
-
-        std::cout << "ROBOT " << i << " (" << patches.size() << " patches detected):" << std::endl;
 
         for (size_t j = 0; j < patches.size(); ++j) {
             const DetectedPatch& p = patches[j];
@@ -270,17 +278,29 @@ void Detector::display_debug_info() {
 
         	if (!scaled_contour.empty()) {
                 std::vector<std::vector<cv::Point>> to_draw = {scaled_contour};
-                cv::drawContours(zoomed_view, to_draw, -1, cv::Scalar(255, 255, 255), 4);
+                // cv::drawContours(zoomed_view, to_draw, -1, cv::Scalar(255, 255, 255), 4);
             }
-
-            std::cout << "  > Patch " << j
-                      << " | Area: " << p.pixel_count
-                      << " | Avg HSV: [" << (int)p.avg_hsv[0] << ", "
-                      << (int)p.avg_hsv[1] << ", " << (int)p.avg_hsv[2] << "]"
-                      << " | StdDev H: " << p.std_dev_hsv[0] << std::endl;
         }
 
         std::string win_name = "Debug Robot " + std::to_string(i);
+    	current_window_names.insert(win_name);
+
+    	cv::cvtColor(zoomed_view, zoomed_view, cv::COLOR_BGR2HSV);
+    	preprocessing::apply_preprogrammed_filters(zoomed_view, app_data->color_params);
+    	preprocessing::apply_preprogrammed_filters(zoomed_view, app_data->object_params);
+    	cv::cvtColor(zoomed_view, zoomed_view, cv::COLOR_HSV2BGR);
         cv::imshow(win_name, zoomed_view);
     }
+
+	auto it = window_names.begin();
+	while (it != window_names.end()) {
+		if (current_window_names.find(*it) == current_window_names.end()) {
+			cv::destroyWindow(*it);
+			it = window_names.erase(it);
+		} else {
+			++it;
+		}
+	}
+
+	window_names.insert(current_window_names.begin(), current_window_names.end());
 }

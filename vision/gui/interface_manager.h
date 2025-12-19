@@ -28,6 +28,7 @@ private:
 	std::vector<std::unique_ptr<Widget>> blob_calibration_menu_widgets;
 	std::vector<std::unique_ptr<Widget>> blob_calibration_tool_widgets;
 	std::vector<std::unique_ptr<Widget>> color_calibration_tool_widgets;
+	std::vector<std::unique_ptr<Widget>> robot_calibration_tool_widgets;
 	std::vector<std::unique_ptr<Widget>> roi_calibration_tool_widgets;
 
 	MatchCalibration match_calibration;

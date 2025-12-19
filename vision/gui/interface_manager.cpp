@@ -9,9 +9,6 @@ void InterfaceManager::init_widgets() {
     main_menu_widgets.push_back(std::make_unique<Button>(drawer, 2, "MODO: DETECTION", [this](){
         app_data->current_state = AppState::DETECTION;
     }));
-	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 3, "DEBUG: DETECTOR INFO", [this]() {
-		detector->display_debug_info();
-	}));
     main_menu_widgets.push_back(std::make_unique<Button>(drawer, 4, "MODO: BLOB CALIBRATION", [this](){
         app_data->current_state = AppState::BLOB_CALIBRATION_MENU;
     	app_data->paused = true;
@@ -20,7 +17,11 @@ void InterfaceManager::init_widgets() {
 		app_data->current_state = AppState::COLOR_CALIBRATING;
     	app_data->paused = true;
 	}));
-	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 6, "MODO: ROI CALIBRATION", [this](){
+	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 6, "MODO: ROBOT CALIBRATION", [this](){
+		app_data->current_state = AppState::ROBOT_CALIBRATING;
+		app_data->paused = true;
+	}));
+	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 7, "MODO: ROI CALIBRATION", [this](){
 		app_data->current_state = AppState::ROI_CALIBRATIING;
     	app_data->paused = true;
 	}));
@@ -70,20 +71,37 @@ void InterfaceManager::init_widgets() {
     }));
 
 
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 0, "Saturacion", &app_data->params.saturation, 0.0f, 15.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 1, "Gamma", &app_data->params.gamma_correction, 0.0f, 5.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 2, "CLAHE Clip", &app_data->params.clahe_clip_limit, 0.1f, 5.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 3, "Bilateral", &app_data->params.bilateral_sigma, 0.0f, 100.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 4, "Green Boost", &app_data->params.green_boost, 0.2f, 2.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 5, "Blue Boost", &app_data->params.blue_boost, 0.2f, 2.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 6, "Red Boost", &app_data->params.red_boost, 0.2f, 2.0f));
-
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 0, "Saturacion", &app_data->color_params.saturation, 0.0f, 15.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 1, "Gamma", &app_data->color_params.gamma_correction, 0.0f, 5.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 2, "CLAHE Clip", &app_data->color_params.clahe_clip_limit, 0.1f, 5.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 3, "Bilateral", &app_data->color_params.bilateral_sigma, 0.0f, 100.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 4, "Green Boost", &app_data->color_params.green_boost, 0.2f, 2.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 5, "Blue Boost", &app_data->color_params.blue_boost, 0.2f, 2.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 6, "Red Boost", &app_data->color_params.red_boost, 0.2f, 2.0f));
 	color_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 7, "Reset Filter", [this](){
-		app_data->params = VisionParams();
+		app_data->color_params = VisionParams();
 	}));
 	color_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
 		app_data->current_state = AppState::MAIN_MENU;
 	}));
+
+
+
+	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 0, "Saturacion", &app_data->object_params.saturation, 0.0f, 15.0f));
+	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 1, "Gamma", &app_data->object_params.gamma_correction, 0.0f, 5.0f));
+	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 2, "CLAHE Clip", &app_data->object_params.clahe_clip_limit, 0.1f, 5.0f));
+	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 3, "Bilateral", &app_data->object_params.bilateral_sigma, 0.0f, 100.0f));
+	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 4, "Green Boost", &app_data->object_params.green_boost, 0.2f, 2.0f));
+	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 5, "Blue Boost", &app_data->object_params.blue_boost, 0.2f, 2.0f));
+	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 6, "Red Boost", &app_data->object_params.red_boost, 0.2f, 2.0f));
+	robot_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 7, "Reset Filter", [this](){
+		app_data->object_params = ObjectVisionParams();
+	}));
+	robot_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
+		app_data->current_state = AppState::MAIN_MENU;
+	}));
+
+
 
 	roi_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 7, "Remove Last Point", [this](){
 		color_calibrator->remove_last_point();
@@ -166,6 +184,10 @@ void InterfaceManager::draw_interface() {
     		drawer->text("MODO COLOR CALIBRATION", 0, 0.8, true);
     		current_widgets = &color_calibration_tool_widgets;
     		break;
+    	case AppState::ROBOT_CALIBRATING:
+    		drawer->text("MODO ROBOT CALIBRATION", 0, 0.8, true);
+			current_widgets = &robot_calibration_tool_widgets;
+			break;
     	case AppState::ROI_CALIBRATIING:
     		drawer->text("MODO ROI CALIBRATION", 0, 0.8, true);
 			current_widgets = &roi_calibration_tool_widgets;
@@ -175,6 +197,7 @@ void InterfaceManager::draw_interface() {
             drawer->text("MODO DETECTION (ESC para salir)", 1, 0.6, false);
             break;
     }
+	detector->display_debug_info();
 
     if (current_widgets) {
         for (const auto& widget : *current_widgets) {
@@ -215,6 +238,7 @@ void InterfaceManager::handle_input(int event, int x, int y) {
         case AppState::BLOB_CALIBRATION_MENU: current_widgets = &blob_calibration_menu_widgets; break;
         case AppState::BLOB_CALIBRATING: current_widgets = &blob_calibration_tool_widgets; break;
     	case AppState::COLOR_CALIBRATING: current_widgets = &color_calibration_tool_widgets; break;
+    	case AppState::ROBOT_CALIBRATING: current_widgets = &robot_calibration_tool_widgets; break;
     	case AppState::ROI_CALIBRATIING: current_widgets = &roi_calibration_tool_widgets; break;
         default: break;
     }

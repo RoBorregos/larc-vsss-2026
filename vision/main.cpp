@@ -25,8 +25,6 @@ int main() {
     Robot robot_1(&drawer, &app_data, &detector);
     robot_1.initialize(1, TeamColor::BLUE, {PatchColor::CYAN, PatchColor::GREEN});
 
-
-
     cv::VideoCapture cap(path);
     if (!cap.isOpened()) return -1;
     double fps = cap.get(cv::CAP_PROP_FPS);
@@ -55,13 +53,13 @@ int main() {
 
         interface_manager.draw_interface();
 
-        drawer.set_clahe_clip_limit(app_data.params.clahe_clip_limit);
-        drawer.set_display_saturation(app_data.params.saturation);
-        drawer.set_display_gamma_correction(app_data.params.gamma_correction);
-        drawer.set_bilateral_sigma(static_cast<int>(app_data.params.bilateral_sigma));
-        drawer.set_green_boost(app_data.params.green_boost);
-        drawer.set_blue_boost(app_data.params.blue_boost);
-        drawer.set_red_boost(app_data.params.red_boost);
+        drawer.set_clahe_clip_limit(app_data.color_params.clahe_clip_limit);
+        drawer.set_display_saturation(app_data.color_params.saturation);
+        drawer.set_display_gamma_correction(app_data.color_params.gamma_correction);
+        drawer.set_bilateral_sigma(static_cast<int>(app_data.color_params.bilateral_sigma));
+        drawer.set_green_boost(app_data.color_params.green_boost);
+        drawer.set_blue_boost(app_data.color_params.blue_boost);
+        drawer.set_red_boost(app_data.color_params.red_boost);
 
         drawer.display_frame();
 

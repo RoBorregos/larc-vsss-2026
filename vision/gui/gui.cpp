@@ -120,7 +120,7 @@ cv::Mat GUI::get_image(const int conversion_code, bool apply_preprocessing) cons
 		cv::cvtColor(output, output, cv::COLOR_BGR2HSV);
 
 		if (conversion_code == cv::COLOR_BGR2HSV) {
-			preprocessing::apply_preprogrammed_filters(output, *app_data);
+			preprocessing::apply_preprogrammed_filters(output, app_data->color_params);
 			return output;
 		}
 
@@ -226,7 +226,7 @@ void GUI::display_frame() const {
 	cv::resize(image_view, image_view, cv::Size(image_width, total_height), 0, 0, cv::INTER_LINEAR);
 
 	cv::cvtColor(image_view, image_view, cv::COLOR_BGR2HSV);
-	preprocessing::apply_preprogrammed_filters(image_view, *app_data);
+	preprocessing::apply_preprogrammed_filters(image_view, app_data->color_params);
 	cv::cvtColor(image_view, image_view, cv::COLOR_HSV2BGR);
 
 	image_view.copyTo(display_buffer(cv::Rect(0, 0, image_width, total_height)));
