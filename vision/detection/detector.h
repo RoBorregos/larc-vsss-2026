@@ -40,8 +40,14 @@ private:
 
 	cv::Mat hsv_mat;
 
+	std::vector<std::vector<DetectedPatch>> square_patches;
 	std::vector<std::vector<DetectedPatch>> categorized_objects;
 	std::vector<std::vector<cv::Point>> found_objects;
+
+	bool valid_square(const std::vector<cv::Point>& contour, std::vector<cv::Point>& dst);
+	static double angle_cosine(cv::Point pt1, cv::Point pt2, cv::Point pt0);
+
+	void filter_patches();
 	void categorize_objects();
 	void find_objects();
 public:
