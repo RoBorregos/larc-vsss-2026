@@ -158,43 +158,51 @@ std::vector<std::vector<int> > BlobCalibrator::points_to_json(const std::vector<
 }
 
 void BlobCalibrator::save_calibration(const std::string& filename) {
-	json root;
+    json root;
 
-	auto serialize_list = [&](const std::vector<CalibrationResult>& list) {
-		json j_array = json::array();
-		for (const auto& item : list) {
-			json j_item;
-			j_item["valid"]       = item.valid;
-			j_item["pixel_count"] = item.pixel_count;
+    std::ifstream infile(filename);
+    if (infile.is_open() && infile.peek() != std::ifstream::traits_type::eof()) {
+        try {
+            infile >> root;
+        } catch (json::parse_error& e) {
+            std::cerr << "[WARN] JSON corrupto al guardar, se sobrescribirá: " << e.what() << std::endl;
+            root = json::object();
+        }
+    }
+    infile.close();
 
-			j_item["min_hsv"]     = scalar_to_json(item.min_hsv);
-			j_item["max_hsv"]     = scalar_to_json(item.max_hsv);
-			j_item["avg_hsv"]     = scalar_to_json(item.avg_hsv);
-			j_item["std_dev_hsv"] = scalar_to_json(item.std_dev_hsv);
+    auto serialize_list = [&](const std::vector<CalibrationResult>& list) {
+       json j_array = json::array();
+       for (const auto& item : list) {
+          json j_item;
+          j_item["valid"]       = item.valid;
+          j_item["pixel_count"] = item.pixel_count;
+          j_item["min_hsv"]     = scalar_to_json(item.min_hsv);
+          j_item["max_hsv"]     = scalar_to_json(item.max_hsv);
+          j_item["avg_hsv"]     = scalar_to_json(item.avg_hsv);
+          j_item["std_dev_hsv"] = scalar_to_json(item.std_dev_hsv);
+          j_array.push_back(j_item);
+       }
+       return j_array;
+    };
 
-			j_array.push_back(j_item);
-		}
-		return j_array;
-	};
+    root["yellow"]  = serialize_list(app_data->match_calibration.yellow);
+    root["blue"]    = serialize_list(app_data->match_calibration.blue);
+    root["magenta"] = serialize_list(app_data->match_calibration.magenta);
+    root["red"]     = serialize_list(app_data->match_calibration.red);
+    root["cyan"]    = serialize_list(app_data->match_calibration.cyan);
+    root["green"]   = serialize_list(app_data->match_calibration.green);
+    root["orange"]  = serialize_list(app_data->match_calibration.orange);
 
-	root["yellow"]  = serialize_list(app_data->match_calibration.yellow);
-	root["blue"]    = serialize_list(app_data->match_calibration.blue);
-	root["magenta"] = serialize_list(app_data->match_calibration.magenta);
-	root["red"]     = serialize_list(app_data->match_calibration.red);
-	root["cyan"]    = serialize_list(app_data->match_calibration.cyan);
-	root["green"]   = serialize_list(app_data->match_calibration.green);
-	root["orange"]  = serialize_list(app_data->match_calibration.orange);
-
-	std::ofstream file(filename);
-	if (file.is_open()) {
-		file << root.dump(4);
-		file.close();
-		std::cout << "[INFO] Calibración completa guardada en: " << filename << std::endl;
-	} else {
-		std::cerr << "[ERROR] No se pudo crear el archivo: " << filename << std::endl;
-	}
+    std::ofstream outfile(filename);
+    if (outfile.is_open()) {
+       outfile << root.dump(4);
+       outfile.close();
+       std::cout << "[INFO] BlobCalibrator guardado en: " << filename << std::endl;
+    } else {
+       std::cerr << "[ERROR] No se pudo crear el archivo: " << filename << std::endl;
+    }
 }
-
 void BlobCalibrator::load_calibration(const std::string &filename) {
 	std::cout << "[DEBUG] Abriendo archivo: "
 			  << filename << std::endl;

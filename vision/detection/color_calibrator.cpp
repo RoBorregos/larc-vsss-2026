@@ -72,6 +72,17 @@ std::vector<std::vector<int> > ColorCalibrator::points_to_json(const std::vector
 void ColorCalibrator::save_calibration(const std::string &filename) {
 	json root;
 
+	std::ifstream infile(filename);
+	if (infile.is_open() && infile.peek() != std::ifstream::traits_type::eof()) {
+		try {
+			infile >> root;
+		} catch (json::parse_error& e) {
+			std::cerr << "[WARN] JSON corrupto al guardar, se sobrescribirá: " << e.what() << std::endl;
+			root = json::object();
+		}
+	}
+	infile.close();
+
 	root["color_calibration"] = {
 		{"saturation",          app_data->color_params.saturation},
 		{"gamma_correction",    app_data->color_params.gamma_correction},
@@ -83,11 +94,12 @@ void ColorCalibrator::save_calibration(const std::string &filename) {
 	};
 
 	root["roi_points"] = points_to_json(roi_points);
-	std::ofstream file(filename);
-	if (file.is_open()) {
-		file << root.dump(4);
-		file.close();
-		std::cout << "[INFO] Calibración completa guardada en: " << filename << std::endl;
+
+	std::ofstream outfile(filename);
+	if (outfile.is_open()) {
+		outfile << root.dump(4);
+		outfile.close();
+		std::cout << "[INFO] ColorCalibrator guardado en: " << filename << std::endl;
 	} else {
 		std::cerr << "[ERROR] No se pudo crear el archivo: " << filename << std::endl;
 	}
