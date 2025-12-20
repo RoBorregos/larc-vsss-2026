@@ -31,7 +31,6 @@ private:
 	std::vector<std::unique_ptr<Widget>> robot_calibration_tool_widgets;
 	std::vector<std::unique_ptr<Widget>> roi_calibration_tool_widgets;
 
-	MatchCalibration match_calibration;
 	std::map<std::string, Button*> color_buttons;
 	std::optional<CalibrationResult> last_calculated_result;
 
@@ -44,8 +43,6 @@ public:
 	void draw_interface();
 	static void on_mouse(int event, int x, int y, int flags, void* userdata);
 	void handle_input(int event, int x, int y);
-
-	[[nodiscard]] MatchCalibration get_calibration() const { return match_calibration; }
 };
 
 #endif // INTERFACE_MANAGER_H

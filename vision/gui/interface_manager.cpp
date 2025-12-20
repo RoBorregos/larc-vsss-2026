@@ -60,7 +60,7 @@ void InterfaceManager::init_widgets() {
         app_data->current_state = AppState::MAIN_MENU;
     }));
 	blob_calibration_menu_widgets.push_back(std::make_unique<Button>(drawer, 9, "IMPRIMIR CALIBRACIONES", [this](){
-		BlobCalibrator::print_calibrations(match_calibration);
+		BlobCalibrator::print_calibrations(app_data->match_calibration);
 	}));
 
     blob_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 8, "Reset Points", [this](){
@@ -83,6 +83,7 @@ void InterfaceManager::init_widgets() {
 	}));
 	color_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
 		app_data->current_state = AppState::MAIN_MENU;
+		color_calibrator->save_calibration(app_data->calibration_filename);
 	}));
 
 
@@ -112,6 +113,7 @@ void InterfaceManager::init_widgets() {
 	roi_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
 		app_data->current_state = AppState::MAIN_MENU;
 		app_data->roi_points = color_calibrator->get_roi();
+		color_calibrator->save_calibration(app_data->calibration_filename);
 	}));
 }
 
@@ -126,26 +128,26 @@ void InterfaceManager::save_current_blob_calibration() {
 	unsigned long size = 0;
 
 	if (color == "BLUE") {
-		match_calibration.blue.push_back(res);
-		size = match_calibration.blue.size();
+		app_data->match_calibration.blue.push_back(res);
+		size = app_data->match_calibration.blue.size();
 	} else if (color == "YELLOW") {
-		match_calibration.yellow.push_back(res);
-		size = match_calibration.yellow.size();
+		app_data->match_calibration.yellow.push_back(res);
+		size = app_data->match_calibration.yellow.size();
 	} else if (color == "RED") {
-		match_calibration.red.push_back(res);
-		size = match_calibration.red.size();
+		app_data->match_calibration.red.push_back(res);
+		size = app_data->match_calibration.red.size();
 	} else if (color == "GREEN") {
-		match_calibration.green.push_back(res);
-		size = match_calibration.green.size();
+		app_data->match_calibration.green.push_back(res);
+		size = app_data->match_calibration.green.size();
 	} else if (color == "CYAN") {
-		match_calibration.cyan.push_back(res);
-		size = match_calibration.cyan.size();
+		app_data->match_calibration.cyan.push_back(res);
+		size = app_data->match_calibration.cyan.size();
 	} else if (color == "MAGENTA") {
-		match_calibration.magenta.push_back(res);
-		size = match_calibration.magenta.size();
+		app_data->match_calibration.magenta.push_back(res);
+		size = app_data->match_calibration.magenta.size();
 	} else if (color == "ORANGE") {
-		match_calibration.orange.push_back(res);
-		size = match_calibration.orange.size();
+		app_data->match_calibration.orange.push_back(res);
+		size = app_data->match_calibration.orange.size();
 	}
 
 	if (color_buttons.count(color)) {
@@ -155,6 +157,7 @@ void InterfaceManager::save_current_blob_calibration() {
 
 	std::cout << "--> Guardado: " << color << " con parametros propios." << std::endl;
 	app_data->current_state = AppState::BLOB_CALIBRATION_MENU;
+	blob_calibrator->save_calibration(app_data->calibration_filename);
 }
 
 

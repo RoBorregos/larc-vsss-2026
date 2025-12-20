@@ -18,6 +18,7 @@ include_directories(field)
 add_executable(opencv main.cpp
 		# Archivos base
 											include/app_settings.h
+										    include/json.hpp
 
 		# Módulo de Procesamiento de Imagen
 		lib/image_preprocessing.cpp         include/image_preprocessing.h

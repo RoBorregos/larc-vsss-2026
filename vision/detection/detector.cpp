@@ -1,9 +1,27 @@
 #include "detector.h"
 
 
-Detector::Detector(GUI *gui, AppData *app_data): gui(gui), app_data(app_data) {
+Detector::Detector(GUI *gui, AppData *app_data, BlobCalibrator* blob_calibrator): gui(gui), app_data(app_data), blob_calibrator(blob_calibrator) {
 
 }
+
+void Detector::on_debug_mouse(int event, int x, int y, int flags, void* userdata) {
+	if (event != cv::EVENT_LBUTTONDOWN) return;
+
+	auto* data = static_cast<DebugWindowData*>(userdata);
+
+	int local_x = static_cast<int>(x / data->zoom_factor);
+	int local_y = static_cast<int>(y / data->zoom_factor);
+
+	int global_x = local_x + data->roi_offset.x;
+	int global_y = local_y + data->roi_offset.y;
+
+	std::cout << "[Debug Click] Local: " << x << "," << y
+			  << " -> Global: " << global_x << "," << global_y << std::endl;
+
+	data->calibrator->handle_click(global_x, global_y);
+}
+
 
 void Detector::find_objects() {
 	cv::Mat white_mask;
@@ -254,6 +272,11 @@ void Detector::display_debug_info() {
     cv::Mat full_image = gui->get_image();
 	std::set<std::string> current_window_names;
 
+	debug_window_contexts.clear();
+	debug_window_contexts.reserve(found_objects.size());
+
+	std::vector<cv::Point> global_points = blob_calibrator->get_points();
+
     for (size_t i = 0; i < found_objects.size(); ++i) {
         cv::Rect rect = cv::boundingRect(found_objects[i]);
         rect = rect & cv::Rect(0, 0, full_image.cols, full_image.rows);
@@ -265,31 +288,42 @@ void Detector::display_debug_info() {
         double zoom = 5.0;
 
         cv::resize(robot_roi, zoomed_view, cv::Size(), zoom, zoom, cv::INTER_NEAREST);
-        const std::vector<DetectedPatch>& patches = categorized_objects[i];
 
-        for (size_t j = 0; j < patches.size(); ++j) {
-            const DetectedPatch& p = patches[j];
+    	if (!global_points.empty()) {
+    		std::vector<cv::Point> local_points;
 
-            std::vector<cv::Point> scaled_contour = p.contour;
-            for (auto& pt : scaled_contour) {
-                pt.x = (int)(pt.x * zoom);
-                pt.y = (int)(pt.y * zoom);
-            }
+    		for (const auto& gp : global_points) {
+    			int lx = static_cast<int>((gp.x - rect.x) * zoom);
+    			int ly = static_cast<int>((gp.y - rect.y) * zoom);
+    			local_points.emplace_back(lx, ly);
+    		}
 
-        	if (!scaled_contour.empty()) {
-                std::vector<std::vector<cv::Point>> to_draw = {scaled_contour};
-                // cv::drawContours(zoomed_view, to_draw, -1, cv::Scalar(255, 255, 255), 4);
-            }
-        }
+    		if (local_points.size() > 1) {
+    			bool is_closed = (local_points.size() >= 4);
+    			std::vector<std::vector<cv::Point>> contours_to_draw = { local_points };
+
+    			cv::polylines(zoomed_view, contours_to_draw, is_closed, cv::Scalar(255, 255, 255), 2);
+    		}
+
+    		for (const auto& lp : local_points) {
+    			cv::circle(zoomed_view, lp, 3, cv::Scalar(0, 0, 255), -1); // Punto rojo
+    		}
+    	}
 
         std::string win_name = "Debug Robot " + std::to_string(i);
     	current_window_names.insert(win_name);
 
     	cv::cvtColor(zoomed_view, zoomed_view, cv::COLOR_BGR2HSV);
     	preprocessing::apply_preprogrammed_filters(zoomed_view, app_data->color_params);
-    	preprocessing::apply_preprogrammed_filters(zoomed_view, app_data->object_params);
     	cv::cvtColor(zoomed_view, zoomed_view, cv::COLOR_HSV2BGR);
         cv::imshow(win_name, zoomed_view);
+
+    	DebugWindowData context;
+    	context.calibrator = this->blob_calibrator;
+    	context.roi_offset = rect;
+    	context.zoom_factor = zoom;
+    	debug_window_contexts.push_back(context);
+    	cv::setMouseCallback(win_name, Detector::on_debug_mouse, &debug_window_contexts.back());
     }
 
 	auto it = window_names.begin();

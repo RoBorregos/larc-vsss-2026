@@ -1,32 +1,14 @@
 #ifndef CALIBRATOR_H
 #define CALIBRATOR_H
 
+#include <fstream>
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <optional>
 #include <gui.h>
 #include "app_settings.h"
-
-struct CalibrationResult {
-	std::vector<cv::Point> points;
-	unsigned long frame_id;
-	unsigned long pixel_count;
-	cv::Scalar min_hsv;
-	cv::Scalar max_hsv;
-	cv::Scalar avg_hsv;
-	cv::Scalar std_dev_hsv;
-	bool valid = false;
-};
-
-struct MatchCalibration {
-	std::vector<CalibrationResult> yellow;
-	std::vector<CalibrationResult> blue;
-	std::vector<CalibrationResult> magenta;
-	std::vector<CalibrationResult> red;
-	std::vector<CalibrationResult> cyan;
-	std::vector<CalibrationResult> green;
-	std::vector<CalibrationResult> orange;
-};
+#include "json.hpp"
+using json = nlohmann::json;
 
 class BlobCalibrator {
 private:
@@ -34,15 +16,24 @@ private:
 	GUI* drawer;
 	AppData* app_data;
 
-	void handle_click(int x, int y);
+	static std::vector<double> scalar_to_json(const cv::Scalar& s);
+	static cv::Scalar json_to_scalar(const std::vector<double>& v);
+	static std::vector<std::vector<int>> points_to_json(const std::vector<cv::Point>& pts);
+	static std::vector<cv::Point> json_to_points(const std::vector<std::vector<int>>& v);
+
 public:
 	BlobCalibrator(GUI* drawer, AppData* app_data);
 
+	void handle_click(int x, int y);
 	static void on_mouse(int event, int x, int y, int flags, void* userdata);
 
 	void reset_points();
 	static void print_calibrations(const MatchCalibration& calibration);
 	[[nodiscard]] std::optional<CalibrationResult> calibrate_individual();
+	[[nodiscard]] std::vector<cv::Point> get_points() const { return points; }
+
+	void save_calibration(const std::string& filename);
+	void load_calibration(const std::string& filename);
 };
 
 #endif //CALIBRATOR_H
