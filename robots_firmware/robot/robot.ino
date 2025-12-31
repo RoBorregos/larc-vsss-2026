@@ -31,11 +31,6 @@ const int localPort = 8081;
 #define motorCPWM 11
 #define motorCENC 12
 
-// PWM Properties
-const int PWM_FREQUENCY = 5000; // 5 kHz
-const int PWM_RESOLUTION = 8; // 8-bit resolution (0-255)
-const int MAX_PWM_VALUE = 255;
-
 // Begin pulses counters
 volatile unsigned long frontPulses = 0;
 volatile unsigned long rightPulses = 0;
@@ -63,22 +58,20 @@ void IRAM_ATTR timerInterruption() {
   executeControl = true;
 }
 
+struct Motors {
+  MotorController front {motorA1, motorA2, motorAPWM};
+  MotorController right {motorB1, motorB2, motorBPWM};;
+  MotorController left {motorC1, motorC2, motorCPWM};;
+};
+
+Motors motors;
+
 void setup() {
   Serial.begin(115200);
   //Set motors
-  pinMode(motorA1, OUTPUT);
-  pinMode(motorA2, OUTPUT);
-
-  pinMode(motorB1, OUTPUT);
-  pinMode(motorB2, OUTPUT);
-
-  pinMode(motorC1, OUPUT);
-  pinMode(motorC2, OUTPUT);
-
-  // Set motors PWM
-  ledcAttach(motorAPWM, PWM_FREQUENCY, PWM_RESOLUTION);
-  ledcAttach(motorBPWM, PWM_FREQUENCY, PWM_RESOLUTION);
-  ledcAttach(motorCPWM, PWM_FREQUENCY, PWM_RESOLUTION);
+  motors.front.setMotor();
+  motors.right.setMotor();
+  motors.left.setMotor();
   
   // Set encoders
   pinMode(motorAENC, INPUT_PULLUP);
@@ -93,8 +86,54 @@ void setup() {
   // Set timer
   timer = timerBegin(1000000);
   timerAttachInterrupt(timer, &timerInterruption);
-  timerAlarm(timer, 5000, true, 0);
 
+  // Connect to WiFi
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi connected");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  // Start UDP server
+  udp.begin(localPort);
+  Serial.print("UDP server started on port ");
+  Serial.println(localPort);
+
+  timerAlarm(timer, 5000, true, 0);
+}
+
+void drive(int frontSpeed, int rightSpeed, int leftSpeed) {
+  motors.front.move(frontSpeed);
+  motors.right.move(rightSpeed);
+  motors.left.move(leftSpeed);
+}
+
+void udp_receive_RPM() {
+  int expectedSize = 3 * sizeof(float);
+  int packetSize = udp.parsePacket();
+  if (packetSize == expectedSize) { // Expecting exactly 12 bytes (3 floats)
+    byte buffer[expectedSize];
+    udp.read(buffer, expectedSize);
+
+    // Extract the two floats from the UDP packet
+    memcpy(&motors.front.velSP, &buffer[0], 4);
+    memcpy(&motors.right.velSP, &buffer[4], 4);
+    memcpy(&motors.left.velSP, &buffer[8], 4);
+
+    Serial.print("Velocity set points: \nFront Motor: ")
+
+  } else if (packetSize > 0) {
+    // Discard unexpected packet sizes
+    Serial.print("Received unexpected UDP packet size: ");
+    Serial.println(packetSize);
+    udp.flush(); // Clear the packet
+  }
 }
 
 void loop() {
