@@ -21,7 +21,7 @@ private:
   const float kp = 1;
   const float ki = 1;
   const float kd = 0;
-  const float dt = 0.005;
+  float dt;
 
   //PID errors
   float lastError = 0;
@@ -30,11 +30,14 @@ private:
 public:
 
   float velSP = 0;
-  
-  MotorController(uint8_t pin1, uint8_t pin2, uint8_t pinEnable){
+  float velReal = 0;
+  int PWMReal = 0;
+
+  MotorController(uint8_t pin1, uint8_t pin2, uint8_t pinEnable, float samplingTime){
     pinA = pin1;
     pinB = pin2;
     pinPWM = pinEnable;
+    dt = samplingTime;
   }
 
   void setMotor() {
@@ -45,6 +48,7 @@ public:
 
   void move(int PWM) {
     PWM = constrain(PWM, -MAX_PWM_VALUE, MAX_PWM_VALUE);
+    PWMReal = PWM;
 
     if (PWM > 0) {
       digitalWrite(pinA, HIGH);
@@ -52,16 +56,21 @@ public:
     } else if (PWM < 0) {
       digitalWrite(pinA, LOW);
       digitalWrite(pinB, HIGH);
+    } else {
+      digitalWrite(pinA, LOW);
+      digitalWrite(pinB, LOW);
     }
 
     ledcWrite(pinPWM, abs(PWM));
   }
     
-  float PID(int error) {
-    differentialError = error - lastError;
-    integralError += error;
+  float PID() {
+    float error = velSP - velReal;
 
-    float correction = kp * error + ki * integralError * dt + kd * differentialError / dt;
+    differentialError = (error - lastError) / dt;
+    integralError += error * dt; 
+
+    float correction = kp * error + ki * integralError + kd * differentialError;
 
     lastError = error;
 

@@ -31,10 +31,14 @@ const int localPort = 8081;
 #define motorCPWM 11
 #define motorCENC 12
 
+#define noTicks 350.0
+#define dt 0.005
+
 // Begin pulses counters
 volatile unsigned long frontPulses = 0;
 volatile unsigned long rightPulses = 0;
 volatile unsigned long leftPulses = 0;
+
 
 // Update pulses
 void IRAM_ATTR updateFrontPulses() {
@@ -59,9 +63,9 @@ void IRAM_ATTR timerInterruption() {
 }
 
 struct Motors {
-  MotorController front {motorA1, motorA2, motorAPWM};
-  MotorController right {motorB1, motorB2, motorBPWM};;
-  MotorController left {motorC1, motorC2, motorCPWM};;
+  MotorController front {motorA1, motorA2, motorAPWM, dt};
+  MotorController right {motorB1, motorB2, motorBPWM, dt};
+  MotorController left {motorC1, motorC2, motorCPWM, dt};
 };
 
 Motors motors;
@@ -105,7 +109,7 @@ void setup() {
   Serial.print("UDP server started on port ");
   Serial.println(localPort);
 
-  timerAlarm(timer, 5000, true, 0);
+  timerAlarm(timer, dt * 1000000, true, 0);
 }
 
 void drive(int frontSpeed, int rightSpeed, int leftSpeed) {
@@ -126,7 +130,12 @@ void udp_receive_RPM() {
     memcpy(&motors.right.velSP, &buffer[4], 4);
     memcpy(&motors.left.velSP, &buffer[8], 4);
 
-    Serial.print("Velocity set points: \nFront Motor: ")
+    Serial.print("Velocity set points: \nFront Motor: ");
+    Serial.println(motors.front.velSP);
+    Serial.print("Right Motor: ");
+    Serial.println(motors.right.velSP);
+    Serial.print("Left Motor: ");
+    Serial.println(motors.left.velSP);
 
   } else if (packetSize > 0) {
     // Discard unexpected packet sizes
@@ -136,6 +145,39 @@ void udp_receive_RPM() {
   }
 }
 
-void loop() {
+void readEncoders() {
 
+  noInterrupts();
+  long fPulses = frontPulses; frontPulses = 0;
+  long rPulses = rightPulses; rightPulses = 0;
+  long lPulses = leftPulses; leftPulses = 0;
+  interrupts();
+
+
+  motors.front.velReal = fPulses * 60 / (noTicks * dt);
+  motors.right.velReal = rPulses * 60 / (noTicks * dt);
+  motors.left.velReal = lPulses * 60 / (noTicks * dt);
+
+  motors.front.velReal *= signbit(motors.front.velSP) ? -1 : 1;
+  motors.right.velReal *= signbit(motors.right.velSP) ? -1 : 1;
+  motors.left.velReal *= signbit(motors.left.velSP) ? -1 : 1;
+}
+
+void control() {
+  readEncoders();
+
+  int frontVel = motors.front.PID();
+  int rightVel = motors.right.PID();
+  int leftVel = motors.left.PID();
+
+  drive(frontVel, rightVel, leftVel);
+}
+
+void loop() {
+  udp_receive_RPM();
+
+  if (executeControl) {
+    executeControl = false;
+    control();
+  }
 }
