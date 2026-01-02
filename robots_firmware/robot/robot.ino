@@ -14,23 +14,24 @@ const int localPort = 8081;
 // TODO: set pins to actual values
 
 // define front motor pins
-#define motorA1 1
-#define motorA2 2
-#define motorAPWM 3
-#define motorAENC 4
+#define motorA1 20
+#define motorA2 22
+#define motorAPWM 21
+#define motorAENC 23
 
 // define right motor pins
-#define motorB1 5
-#define motorB2 6
-#define motorBPWM 7
-#define motorBENC 8
+#define motorB1 24
+#define motorB2 25
+#define motorBPWM 26
+#define motorBENC 27
 
 // define left motor pins
-#define motorC1 9
-#define motorC2 10
-#define motorCPWM 11
-#define motorCENC 12
+#define motorC1 28
+#define motorC2 29
+#define motorCPWM 30
+#define motorCENC 31
 
+// define encoders resolution and sampling time
 #define noTicks 350.0
 #define dt 0.005
 
@@ -56,22 +57,91 @@ void IRAM_ATTR updateLeftPulses() {
 // Timer pointer
 hw_timer_t *timer = NULL;
 
-// Turns true at sampling time
-volatile bool executeControl = false;
+// Semaphore that allows control task to work
+SemaphoreHandle_t executeControl;
+
+// avoids issues when handling velSP
+SemaphoreHandle_t mutex;
+
+// Begins control
 void IRAM_ATTR timerInterruption() {
-  executeControl = true;
+  xSemaphoreGiveFromISR(executeControl, NULL);
 }
 
+// motors struct for three wheeled base
 struct Motors {
   MotorController front {motorA1, motorA2, motorAPWM, dt};
   MotorController right {motorB1, motorB2, motorBPWM, dt};
   MotorController left {motorC1, motorC2, motorCPWM, dt};
 };
 
+// motors initialization
 Motors motors;
+
+// Task that manages control
+void taskControl(void *parameter) {
+  for (;;) {
+    if (xSemaphoreTake(executeControl, portMAX_DELAY) == pdTRUE) {
+
+      readEncoders();
+
+      // if the variable velSP is being written, do not read it
+      if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
+        int frontVel = motors.front.PID();
+        int rightVel = motors.right.PID();
+        int leftVel = motors.left.PID();
+
+        drive(frontVel, rightVel, leftVel);
+
+        xSemaphoreGive(mutex);
+      }
+    }
+  }
+}
+
+void taskCommunication(void *parameter) {
+  for (;;) {
+    int expectedSize = 3 * sizeof(float);
+    int packetSize = udp.parsePacket();
+    if (packetSize == expectedSize) { // Expecting exactly 12 bytes (3 floats)
+      byte buffer[expectedSize];
+      udp.read(buffer, expectedSize);
+
+      // if the variable velSP is being read, do not write on it
+      if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
+        // Extract the two floats from the UDP packet
+        memcpy(&motors.front.velSP, &buffer[0], 4);
+        memcpy(&motors.right.velSP, &buffer[4], 4);
+        memcpy(&motors.left.velSP, &buffer[8], 4);
+        xSemaphoreGive(mutex);
+      }
+
+      Serial.print("Velocity set points: \nFront Motor: ");
+      Serial.println(motors.front.velSP);
+      Serial.print("Right Motor: ");
+      Serial.println(motors.right.velSP);
+      Serial.print("Left Motor: ");
+      Serial.println(motors.left.velSP);
+
+    } else if (packetSize > 0) {
+      // Discard unexpected packet sizes
+      Serial.print("Received unexpected UDP packet size: ");
+      Serial.println(packetSize);
+      udp.flush(); // Clear the packet
+    }
+  }
+}
 
 void setup() {
   Serial.begin(115200);
+
+    // Set timer
+  timer = timerBegin(1000000);
+  timerAttachInterrupt(timer, &timerInterruption);
+
+  executeControl = xSemaphoreCreateBinary();
+  mutex = xSemaphoreCreateMutex();
+
   //Set motors
   motors.front.setMotor();
   motors.right.setMotor();
@@ -86,10 +156,6 @@ void setup() {
 
   pinMode(motorCENC, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(motorCENC), updateLeftPulses, RISING);
-
-  // Set timer
-  timer = timerBegin(1000000);
-  timerAttachInterrupt(timer, &timerInterruption);
 
   // Connect to WiFi
   Serial.println();
@@ -110,39 +176,31 @@ void setup() {
   Serial.println(localPort);
 
   timerAlarm(timer, dt * 1000000, true, 0);
+
+  // tasks definition
+  xTaskCreatePinnedToCore(taskCommunication,
+                          "Communication",
+                          4096,
+                          NULL,
+                          1,
+                          NULL,
+                          0
+  );
+
+  xTaskCreatePinnedToCore(taskControl,
+                          "control",
+                          4096,
+                          NULL,
+                          5,
+                          NULL,
+                          1
+  );
 }
 
 void drive(int frontSpeed, int rightSpeed, int leftSpeed) {
   motors.front.move(frontSpeed);
   motors.right.move(rightSpeed);
   motors.left.move(leftSpeed);
-}
-
-void udp_receive_RPM() {
-  int expectedSize = 3 * sizeof(float);
-  int packetSize = udp.parsePacket();
-  if (packetSize == expectedSize) { // Expecting exactly 12 bytes (3 floats)
-    byte buffer[expectedSize];
-    udp.read(buffer, expectedSize);
-
-    // Extract the two floats from the UDP packet
-    memcpy(&motors.front.velSP, &buffer[0], 4);
-    memcpy(&motors.right.velSP, &buffer[4], 4);
-    memcpy(&motors.left.velSP, &buffer[8], 4);
-
-    Serial.print("Velocity set points: \nFront Motor: ");
-    Serial.println(motors.front.velSP);
-    Serial.print("Right Motor: ");
-    Serial.println(motors.right.velSP);
-    Serial.print("Left Motor: ");
-    Serial.println(motors.left.velSP);
-
-  } else if (packetSize > 0) {
-    // Discard unexpected packet sizes
-    Serial.print("Received unexpected UDP packet size: ");
-    Serial.println(packetSize);
-    udp.flush(); // Clear the packet
-  }
 }
 
 void readEncoders() {
@@ -153,31 +211,16 @@ void readEncoders() {
   long lPulses = leftPulses; leftPulses = 0;
   interrupts();
 
-
   motors.front.velReal = fPulses * 60 / (noTicks * dt);
   motors.right.velReal = rPulses * 60 / (noTicks * dt);
   motors.left.velReal = lPulses * 60 / (noTicks * dt);
 
-  motors.front.velReal *= signbit(motors.front.velSP) ? -1 : 1;
-  motors.right.velReal *= signbit(motors.right.velSP) ? -1 : 1;
-  motors.left.velReal *= signbit(motors.left.velSP) ? -1 : 1;
+  motors.front.velReal *= motors.front.PWMReal < 0 ? -1 : 1;
+  motors.right.velReal *= motors.right.PWMReal < 0 ? -1 : 1;
+  motors.left.velReal *= motors.left.PWMReal < 0 ? -1 : 1;
 }
 
-void control() {
-  readEncoders();
-
-  int frontVel = motors.front.PID();
-  int rightVel = motors.right.PID();
-  int leftVel = motors.left.PID();
-
-  drive(frontVel, rightVel, leftVel);
-}
 
 void loop() {
-  udp_receive_RPM();
-
-  if (executeControl) {
-    executeControl = false;
-    control();
-  }
+  
 }

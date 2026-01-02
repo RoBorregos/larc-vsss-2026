@@ -27,6 +27,8 @@ private:
   float lastError = 0;
   float integralError = 0;
   float differentialError = 0;
+
+  const int maxIntegralError = 100;
 public:
 
   float velSP = 0;
@@ -68,7 +70,9 @@ public:
     float error = velSP - velReal;
 
     differentialError = (error - lastError) / dt;
+
     integralError += error * dt; 
+    integralError = constrain(integralError, -maxIntegralError, maxIntegralError);
 
     float correction = kp * error + ki * integralError + kd * differentialError;
 
