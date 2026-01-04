@@ -33,7 +33,7 @@ public:
 
   float velSP = 0;
   float velReal = 0;
-  int PWMReal = 0;
+  float PWMReal = 0;
 
   MotorController(uint8_t pin1, uint8_t pin2, uint8_t pinEnable, float samplingTime){
     pinA = pin1;
@@ -49,8 +49,8 @@ public:
   }
 
   void move(int PWM) {
+
     PWM = constrain(PWM, -MAX_PWM_VALUE, MAX_PWM_VALUE);
-    PWMReal = PWM;
 
     if (PWM > 0) {
       digitalWrite(pinA, HIGH);
@@ -77,8 +77,10 @@ public:
     float correction = kp * error + ki * integralError + kd * differentialError;
 
     lastError = error;
+    
+    PWMReal = PWMReal + correction;
 
-    return correction;
+    return PWMReal;
   }
 };
 

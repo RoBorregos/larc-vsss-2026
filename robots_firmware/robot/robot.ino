@@ -40,18 +40,26 @@ volatile unsigned long frontPulses = 0;
 volatile unsigned long rightPulses = 0;
 volatile unsigned long leftPulses = 0;
 
+portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 // Update pulses
 void IRAM_ATTR updateFrontPulses() {
-  frontPulses += 1;
+  portENTER_CRITICAL_ISR(&spinlock);
+  frontPulses++;
+  portEXIT_CRITICAL_ISR(&spinlock);
 }
 
 void IRAM_ATTR updateRightPulses() {
-  rightPulses += 1;
+  portENTER_CRITICAL_ISR(&spinlock);
+  rightPulses++;
+  portEXIT_CRITICAL_ISR(&spinlock);
+
 }
 
 void IRAM_ATTR updateLeftPulses() {
-  leftPulses += 1;
+  portENTER_CRITICAL_ISR(&spinlock);
+  leftPulses++;
+  portEXIT_CRITICAL_ISR(&spinlock);
 }
 
 // Timer pointer
@@ -78,27 +86,34 @@ struct Motors {
 // motors initialization
 Motors motors;
 
+// the pwm signal each motor will receive
+int frontVel = 0;
+int rightVel = 0;
+int leftVel = 0;
+
 // Task that manages control
 void taskControl(void *parameter) {
   for (;;) {
+    // check if the task can do the control
     if (xSemaphoreTake(executeControl, portMAX_DELAY) == pdTRUE) {
 
       readEncoders();
 
       // if the variable velSP is being written, do not read it
       if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
-        int frontVel = motors.front.PID();
-        int rightVel = motors.right.PID();
-        int leftVel = motors.left.PID();
-
-        drive(frontVel, rightVel, leftVel);
+        // compute the pwm signal of each motor
+        frontVel = motors.front.PID();
+        rightVel = motors.right.PID();
+        leftVel = motors.left.PID();
 
         xSemaphoreGive(mutex);
       }
+      drive(frontVel, rightVel, leftVel);
     }
   }
 }
 
+// task that receives the velocity of each wheel
 void taskCommunication(void *parameter) {
   for (;;) {
     int expectedSize = 3 * sizeof(float);
@@ -139,7 +154,9 @@ void setup() {
   timer = timerBegin(1000000);
   timerAttachInterrupt(timer, &timerInterruption);
 
+  // semaphore that executes contorl every 5ms
   executeControl = xSemaphoreCreateBinary();
+
   mutex = xSemaphoreCreateMutex();
 
   //Set motors
@@ -205,11 +222,11 @@ void drive(int frontSpeed, int rightSpeed, int leftSpeed) {
 
 void readEncoders() {
 
-  noInterrupts();
-  long fPulses = frontPulses; frontPulses = 0;
-  long rPulses = rightPulses; rightPulses = 0;
-  long lPulses = leftPulses; leftPulses = 0;
-  interrupts();
+  portENTER_CRITICAL(&spinlock);
+  int fPulses = frontPulses; frontPulses = 0;
+  int rPulses = rightPulses; rightPulses = 0;
+  int lPulses = leftPulses; leftPulses = 0;
+  portEXIT_CRITICAL(&spinlock);
 
   motors.front.velReal = fPulses * 60 / (noTicks * dt);
   motors.right.velReal = rPulses * 60 / (noTicks * dt);
