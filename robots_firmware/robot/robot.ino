@@ -1,5 +1,7 @@
 #include <WiFi.h>
 #include <WiFiUdp.h>
+#include <Adafruit_BNO055.h>
+#include <Adafruit_Sensor.h>
 #include "MotorController.h"
 
 // Replace with your server/router ,etc 
@@ -10,26 +12,35 @@ const char* password = "vsss1234";
 WiFiUDP udp;
 const int localPort = 8081;
 
+struct __attribute__((packed)) Packet {
+  float vx;
+  float vy;
+  float phi;
+  float phiDot;
+};
 
 // TODO: set pins to actual values
 
 // define front motor pins
-#define motorA1 20
-#define motorA2 22
-#define motorAPWM 21
-#define motorAENC 23
+#define motorA1 1
+#define motorA2 2
+#define motorAPWM 3
+#define motorAENC1 4
+#define motorAENC2 GPIO_NUM_5
 
 // define right motor pins
-#define motorB1 24
-#define motorB2 25
-#define motorBPWM 26
-#define motorBENC 27
+#define motorB1 6
+#define motorB2 7
+#define motorBPWM 8
+#define motorBENC1 9
+#define motorBENC2 GPIO_NUM_10
 
 // define left motor pins
-#define motorC1 28
-#define motorC2 29
-#define motorCPWM 30
-#define motorCENC 31
+#define motorC1 11
+#define motorC2 12
+#define motorCPWM 13
+#define motorCENC1 14
+#define motorCENC2 GPIO_NUM_15
 
 // define encoders resolution and sampling time
 #define noTicks 350.0
@@ -45,28 +56,41 @@ portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 // Update pulses
 void IRAM_ATTR updateFrontPulses() {
   portENTER_CRITICAL_ISR(&spinlock);
-  frontPulses++;
+  if (gpio_get_level(motorAENC2)){
+    frontPulses++;
+  } else {
+    frontPulses--;
+  }
   portEXIT_CRITICAL_ISR(&spinlock);
 }
 
 void IRAM_ATTR updateRightPulses() {
   portENTER_CRITICAL_ISR(&spinlock);
-  rightPulses++;
+  if (gpio_get_level(motorBENC2)) {
+    rightPulses++;
+  } else {
+    rightPulses--;
+  }
   portEXIT_CRITICAL_ISR(&spinlock);
-
 }
 
 void IRAM_ATTR updateLeftPulses() {
   portENTER_CRITICAL_ISR(&spinlock);
-  leftPulses++;
+  if (gpio_get_level(motorCENC2)) {
+    leftPulses++;
+  } else {
+    leftPulses--;
+  }
   portEXIT_CRITICAL_ISR(&spinlock);
 }
 
 // Timer pointer
-hw_timer_t *timer = NULL;
+hw_timer_t *timerControl = NULL;
+hw_timer_t *timerGyro = NULL;
 
 // Semaphore that allows control task to work
 SemaphoreHandle_t executeControl;
+SemaphoreHandle_t readGyro;
 
 // avoids issues when handling velSP
 SemaphoreHandle_t mutex;
@@ -74,6 +98,10 @@ SemaphoreHandle_t mutex;
 // Begins control
 void IRAM_ATTR timerInterruption() {
   xSemaphoreGiveFromISR(executeControl, NULL);
+}
+
+void IRAM_ATTR timerInterruption2() {
+  xSemaphoreGiveFromISR(readGyro, NULL);
 }
 
 // motors struct for three wheeled base
@@ -90,6 +118,9 @@ Motors motors;
 int frontVel = 0;
 int rightVel = 0;
 int leftVel = 0;
+
+// Gyroscope definition
+Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28, &Wire);
 
 // Task that manages control
 void taskControl(void *parameter) {
@@ -147,15 +178,57 @@ void taskCommunication(void *parameter) {
   }
 }
 
+void taskReadGyro(void *parameter) {
+  float last_vx = 0;
+  float last_vy = 0;
+  for (;;) {
+    if (xSemaphoreTake(readGyro, portMAX_DELAY) == pdTRUE) {
+
+      // Read gyroscope
+      sensors_event_t orientationData, angVelocityData, linearAccelData;
+
+      bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+      bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
+      bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
+
+      Packet data;
+
+      float ax = linearAccelData.acceleration.x;
+      float ay = linearAccelData.acceleration.y;
+
+      float vx = last_vx + ax*0.001;
+      float vy = last_vy + ay*0.001;
+
+      last_vx = vx;
+      last_vy = vy;
+
+      data.vx = vx;
+      data.vy = vy;
+      data.phi = orientationData.gyro.z;
+      data.phiDot = angVelocityData.gyro.z;
+
+
+      udp.beginPacket(udp.remoteIP(), udp.remotePort());
+      udp.write((uint8_t*)&data, sizeof(data));
+      udp.endPacket();
+    }
+  }
+}
+
 void setup() {
   Serial.begin(115200);
 
-    // Set timer
-  timer = timerBegin(1000000);
-  timerAttachInterrupt(timer, &timerInterruption);
+  // Set timer
+  timerControl = timerBegin(1000000);
+  timerAttachInterrupt(timerControl, &timerInterruption);
 
   // semaphore that executes contorl every 5ms
   executeControl = xSemaphoreCreateBinary();
+
+  timerGyro = timerBegin(10000000);
+  timerAttachInterrupt(timerGyro, &timerInterruption2);
+
+  readGyro = xSemaphoreCreateBinary();
 
   mutex = xSemaphoreCreateMutex();
 
@@ -165,14 +238,17 @@ void setup() {
   motors.left.setMotor();
   
   // Set encoders
-  pinMode(motorAENC, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(motorAENC), updateFrontPulses, RISING);
+  pinMode(motorAENC1, INPUT_PULLUP);
+  pinMode(motorAENC2, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(motorAENC1), updateFrontPulses, RISING);
 
-  pinMode(motorBENC, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(motorBENC), updateRightPulses, RISING);
+  pinMode(motorBENC1, INPUT_PULLUP);
+  pinMode(motorBENC2, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(motorBENC1), updateRightPulses, RISING);
 
-  pinMode(motorCENC, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(motorCENC), updateLeftPulses, RISING);
+  pinMode(motorCENC1, INPUT_PULLUP);
+  pinMode(motorCENC2, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(motorCENC1), updateLeftPulses, RISING);
 
   // Connect to WiFi
   Serial.println();
@@ -192,7 +268,17 @@ void setup() {
   Serial.print("UDP server started on port ");
   Serial.println(localPort);
 
-  timerAlarm(timer, dt * 1000000, true, 0);
+
+  /* Initialise the sensor */
+  if (!bno.begin())
+  {
+    /* There was a problem detecting the BNO055 ... check your connections */
+    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+    while (1);
+  }
+
+  timerAlarm(timerControl, dt * 1000000, true, 0);
+  timerAlarm(timerGyro, 10000, true, 0);
 
   // tasks definition
   xTaskCreatePinnedToCore(taskCommunication,
@@ -206,6 +292,15 @@ void setup() {
 
   xTaskCreatePinnedToCore(taskControl,
                           "control",
+                          4096,
+                          NULL,
+                          5,
+                          NULL,
+                          1
+  );
+
+  xTaskCreatePinnedToCore(taskReadGyro,
+                          "Telemetry",
                           4096,
                           NULL,
                           5,
@@ -231,10 +326,6 @@ void readEncoders() {
   motors.front.velReal = fPulses * 60 / (noTicks * dt);
   motors.right.velReal = rPulses * 60 / (noTicks * dt);
   motors.left.velReal = lPulses * 60 / (noTicks * dt);
-
-  motors.front.velReal *= motors.front.PWMReal < 0 ? -1 : 1;
-  motors.right.velReal *= motors.right.PWMReal < 0 ? -1 : 1;
-  motors.left.velReal *= motors.left.PWMReal < 0 ? -1 : 1;
 }
 
 
