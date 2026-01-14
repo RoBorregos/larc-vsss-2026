@@ -1,0 +1,981 @@
+#VRML_SIM R2025a utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/backgrounds/protos/TexturedBackgroundLight.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/objects/floors/protos/RectangleArena.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2025a/projects/appearances/protos/Parquetry.proto"
+
+WorldInfo {
+}
+Viewpoint {
+  orientation 0.32617988351008076 -0.33068427949757445 -0.8855814987264133 4.604824521719541
+  position 0.295537962459688 -3.3913964396847334 2.8154945782625105
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+  luminosity 2
+}
+RectangleArena {
+  floorSize 1.5 1.3
+  floorAppearance Parquetry {
+    type "dark strip"
+    colorOverride 0 0 0
+  }
+  wallThickness 0.025
+  wallHeight 0.05
+}
+DEF Paton_nahuel Robot {
+  translation -0.649682080052931 1.6707126701624225e-10 0.05382776435136816
+  rotation -4.835372810138687e-07 0.9999999999998814 -5.7106636542908864e-08 0.005888258399581783
+  children [
+    DEF codigo_color Connector {
+      translation 0.0185 0 0.0379
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 1 0
+          }
+          geometry Plane {
+            size 0.0375 0.075
+          }
+        }
+      ]
+    }
+    DEF codigo_color2 Connector {
+      translation -0.0185 0.0185 0.0379
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 0
+          }
+          geometry Plane {
+            size 0.0375 0.0375
+          }
+        }
+      ]
+      name "connector(1)"
+    }
+    DEF codigo_color3 Connector {
+      translation -0.0185 -0.0185 0.0379
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0 0 1
+          }
+          geometry Plane {
+            size 0.0375 0.0375
+          }
+        }
+      ]
+      name "connector(2)"
+    }
+    DEF wheel1 HingeJoint {
+      jointParameters HingeJointParameters {
+        position 5.77220512962091e-10
+        anchor -0.0335 0 -0.44
+      }
+      device [
+        DEF encoder1 PositionSensor {
+          name "encoder1"
+        }
+        DEF motor1 RotationalMotor {
+          name " motor1"
+        }
+      ]
+      endPoint Solid {
+        translation -0.0335 5.065405126436707e-11 -0.043999999999999984
+        rotation -6.394411040642344e-11 0.9999999999999999 -6.395713543480706e-11 1.571
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.878431 0.105882 0.141176
+              metalness 0
+            }
+            geometry DEF wheel1 Cylinder {
+              height 0.01
+              radius 0.01
+            }
+          }
+        ]
+        boundingObject USE wheel1
+        physics Physics {
+        }
+        linearVelocity 2.537515581836846e-10 2.1432864395992526e-10 8.576164263436352e-11
+        angularVelocity -1.167511784818659e-09 4.451509301461888e-09 6.376032945595702e-09
+      }
+    }
+    DEF wheel2 HingeJoint {
+      jointParameters HingeJointParameters {
+        position -3.1186245043808485e-08
+        axis 0 1 0
+        anchor 0 0.029 -0.44
+      }
+      device [
+        DEF encoder2 PositionSensor {
+          name "encoder2"
+        }
+        DEF motor2 RotationalMotor {
+          name " motor2"
+        }
+      ]
+      endPoint Solid {
+        translation -1.2349753037348166e-08 0.029 -0.04399999999999987
+        rotation 0.9348938950711826 0.2509715026886218 0.25097153184544196 1.6379999921731405
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.878431 0.105882 0.141176
+              metalness 0
+            }
+            geometry DEF wheel1 Cylinder {
+              height 0.01
+              radius 0.01
+            }
+          }
+        ]
+        name "solid(1)"
+        boundingObject USE wheel1
+        physics Physics {
+        }
+        linearVelocity -5.980738355633208e-11 6.18052260165854e-11 2.5639115740491253e-08
+        angularVelocity 1.0164127784087007e-09 4.43721909918845e-09 6.364070492121721e-09
+      }
+    }
+    DEF wheel3 HingeJoint {
+      jointParameters HingeJointParameters {
+        position -3.118413882674531e-08
+        axis 0 1 0
+        anchor 0 -0.029 -0.44
+      }
+      device [
+        DEF encoder3 PositionSensor {
+          name "encoder3"
+        }
+        DEF motor3 RotationalMotor {
+          name " motor3"
+        }
+      ]
+      endPoint Solid {
+        translation -1.234891897539115e-08 -0.029 -0.04399999999999987
+        rotation -0.9348937947474879 0.25097144772195074 -0.2509719605274465 1.6379999921736712
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.878431 0.105882 0.141176
+              metalness 0
+            }
+            geometry DEF wheel1 Cylinder {
+              height 0.01
+              radius 0.01
+            }
+          }
+        ]
+        name "solid(2)"
+        boundingObject USE wheel1
+        physics Physics {
+        }
+        linearVelocity 4.310021722410281e-11 -2.0000328320964804e-10 2.5575721772725328e-08
+        angularVelocity 1.119548393196534e-09 4.347147894963875e-09 6.363559620555205e-09
+      }
+    }
+    DEF Body Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 0
+        metalness 0
+      }
+      geometry DEF Body_robot Box {
+        size 0.075 0.075 0.075
+      }
+    }
+  ]
+  name "robot(1)"
+  boundingObject USE Body_robot
+  physics Physics {
+  }
+}
+DEF Papa_Guinac Robot {
+  translation -0.199682080052935 0.4000000001228512 0.053827764351368386
+  rotation -4.841951770072341e-07 0.9999999999998668 1.788385599177037e-07 0.005888258399550938
+  children [
+    DEF codigo_color Connector {
+      translation 0.0185 0 0.0379
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 1 0
+          }
+          geometry Plane {
+            size 0.0375 0.075
+          }
+        }
+      ]
+    }
+    DEF codigo_color2 Connector {
+      translation -0.0185 0.0185 0.0379
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 1
+          }
+          geometry Plane {
+            size 0.0375 0.0375
+          }
+        }
+      ]
+      name "connector(1)"
+    }
+    DEF codigo_color3 Connector {
+      translation -0.0185 -0.0185 0.0379
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0 0 1
+          }
+          geometry Plane {
+            size 0.0375 0.0375
+          }
+        }
+      ]
+      name "connector(2)"
+    }
+    DEF wheel1_2 HingeJoint {
+      jointParameters HingeJointParameters {
+        position -2.1277280516613996e-09
+        anchor -0.0335 0 -0.44
+      }
+      device [
+        DEF encoder1_2 PositionSensor {
+          name "encoder1_2"
+        }
+        DEF motor1_2 RotationalMotor {
+          name " motor1_2"
+        }
+      ]
+      endPoint Solid {
+        translation -0.0335 1.1218055870956794e-09 -0.043999999999999984
+        rotation -1.4161327381577e-09 0.9999999999999999 -1.4164211958278781e-09 1.571
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.878431 0.105882 0.141176
+              metalness 0
+            }
+            geometry DEF wheel1 Cylinder {
+              height 0.01
+              radius 0.01
+            }
+          }
+        ]
+        boundingObject USE wheel1
+        physics Physics {
+        }
+        linearVelocity 2.537315134418334e-10 2.143819164549288e-10 8.577782812374504e-11
+        angularVelocity -1.1673226130425063e-09 4.451732935050455e-09 6.375635269325041e-09
+      }
+    }
+    DEF wheel2_2 HingeJoint {
+      jointParameters HingeJointParameters {
+        position -3.118053679001521e-08
+        axis 0 1 0
+        anchor 0 0.029 -0.44
+      }
+      device [
+        DEF encoder2_2 PositionSensor {
+          name "encoder2_2"
+        }
+        DEF motor2_2 RotationalMotor {
+          name " motor2_2"
+        }
+      ]
+      endPoint Solid {
+        translation -1.234749256884603e-08 0.029 -0.04399999999999987
+        rotation 0.934893895071273 0.250971502691122 0.2509715318426056 1.6379999921745734
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.878431 0.105882 0.141176
+              metalness 0
+            }
+            geometry DEF wheel1 Cylinder {
+              height 0.01
+              radius 0.01
+            }
+          }
+        ]
+        name "solid(1)"
+        boundingObject USE wheel1
+        physics Physics {
+        }
+        linearVelocity -5.980588829702698e-11 6.182879968669892e-11 2.5639131572583298e-08
+        angularVelocity 1.0175947737540938e-09 4.438466318238518e-09 6.363671238187694e-09
+      }
+    }
+    DEF wheel3_2 HingeJoint {
+      jointParameters HingeJointParameters {
+        position -3.11895678320863e-08
+        axis 0 1 0
+        anchor 0 -0.029 -0.44
+      }
+      device [
+        DEF encoder3_2 PositionSensor {
+          name "encoder3_2"
+        }
+        DEF motor3_2 RotationalMotor {
+          name " motor3_2"
+        }
+      ]
+      endPoint Solid {
+        translation -1.2351068861506179e-08 -0.029 -0.04399999999999987
+        rotation -0.9348937947474022 0.2509714477195726 -0.2509719605301441 1.6379999921723079
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.878431 0.105882 0.141176
+              metalness 0
+            }
+            geometry DEF wheel1 Cylinder {
+              height 0.01
+              radius 0.01
+            }
+          }
+        ]
+        name "solid(2)"
+        boundingObject USE wheel1
+        physics Physics {
+        }
+        linearVelocity 4.312711655997911e-11 -2.0006091915022176e-10 2.557571724926978e-08
+        angularVelocity 1.1194141652042034e-09 4.3478435484153e-09 6.36315627281917e-09
+      }
+    }
+    DEF Body Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 0
+        metalness 0
+      }
+      geometry DEF Body_robot Box {
+        size 0.075 0.075 0.075
+      }
+    }
+  ]
+  name "robot(2)"
+  boundingObject USE Body_robot
+  physics Physics {
+  }
+}
+DEF El_10 Robot {
+  translation -0.199682080052935 -0.39999999987714885 0.053827764351368386
+  rotation -4.841951770072341e-07 0.9999999999998668 1.788385599177037e-07 0.005888258399550938
+  children [
+    DEF codigo_color Connector {
+      translation 0.0185 0 0.0379
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 1 0
+          }
+          geometry Plane {
+            size 0.0375 0.075
+          }
+        }
+      ]
+    }
+    DEF codigo_color2 Connector {
+      translation -0.0185 0.0185 0.0379
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 1
+          }
+          geometry Plane {
+            size 0.0375 0.0375
+          }
+        }
+      ]
+      name "connector(1)"
+    }
+    DEF codigo_color3 Connector {
+      translation -0.0185 -0.0185 0.0379
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0 1 0
+          }
+          geometry Plane {
+            size 0.0375 0.0375
+          }
+        }
+      ]
+      name "connector(2)"
+    }
+    DEF wheel1_3 HingeJoint {
+      jointParameters HingeJointParameters {
+        position -2.1277280516613996e-09
+        anchor -0.0335 0 -0.44
+      }
+      device [
+        DEF encoder1_3 PositionSensor {
+          name "encoder1_3"
+        }
+        DEF motor1_3 RotationalMotor {
+          name " motor1_3"
+        }
+      ]
+      endPoint Solid {
+        translation -0.0335 1.1218055870956794e-09 -0.043999999999999984
+        rotation -1.4161327381577e-09 0.9999999999999999 -1.4164211958278781e-09 1.571
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.878431 0.105882 0.141176
+              metalness 0
+            }
+            geometry DEF wheel1 Cylinder {
+              height 0.01
+              radius 0.01
+            }
+          }
+        ]
+        boundingObject USE wheel1
+        physics Physics {
+        }
+        linearVelocity 2.537315134418334e-10 2.143819164549288e-10 8.577782812374504e-11
+        angularVelocity -1.1673226130425063e-09 4.451732935050455e-09 6.375635269325041e-09
+      }
+    }
+    DEF wheel2_3 HingeJoint {
+      jointParameters HingeJointParameters {
+        position -3.118053679001521e-08
+        axis 0 1 0
+        anchor 0 0.029 -0.44
+      }
+      device [
+        DEF encoder2_3 PositionSensor {
+          name "encoder2_3"
+        }
+        DEF motor2_3 RotationalMotor {
+          name " motor2_3"
+        }
+      ]
+      endPoint Solid {
+        translation -1.234749256884603e-08 0.029 -0.04399999999999987
+        rotation 0.934893895071273 0.250971502691122 0.2509715318426056 1.6379999921745734
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.878431 0.105882 0.141176
+              metalness 0
+            }
+            geometry DEF wheel1 Cylinder {
+              height 0.01
+              radius 0.01
+            }
+          }
+        ]
+        name "solid(1)"
+        boundingObject USE wheel1
+        physics Physics {
+        }
+        linearVelocity -5.980588829702698e-11 6.182879968669892e-11 2.5639131572583298e-08
+        angularVelocity 1.0175947737540938e-09 4.438466318238518e-09 6.363671238187694e-09
+      }
+    }
+    DEF wheel3_3 HingeJoint {
+      jointParameters HingeJointParameters {
+        position -3.11895678320863e-08
+        axis 0 1 0
+        anchor 0 -0.029 -0.44
+      }
+      device [
+        DEF encoder3_3 PositionSensor {
+          name "encoder3_3"
+        }
+        DEF motor3_3 RotationalMotor {
+          name " motor3_3"
+        }
+      ]
+      endPoint Solid {
+        translation -1.2351068861506179e-08 -0.029 -0.04399999999999987
+        rotation -0.9348937947474022 0.2509714477195726 -0.2509719605301441 1.6379999921723079
+        children [
+          Shape {
+            appearance PBRAppearance {
+              baseColor 0.878431 0.105882 0.141176
+              metalness 0
+            }
+            geometry DEF wheel1 Cylinder {
+              height 0.01
+              radius 0.01
+            }
+          }
+        ]
+        name "solid(2)"
+        boundingObject USE wheel1
+        physics Physics {
+        }
+        linearVelocity 4.312711655997911e-11 -2.0006091915022176e-10 2.557571724926978e-08
+        angularVelocity 1.1194141652042034e-09 4.3478435484153e-09 6.36315627281917e-09
+      }
+    }
+    DEF Body Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 0
+        metalness 0
+      }
+      geometry DEF Body_robot Box {
+        size 0.075 0.075 0.075
+      }
+    }
+  ]
+  name "robot(3)"
+  boundingObject USE Body_robot
+  physics Physics {
+  }
+}
+DEF circul Group {
+  children [
+    Solid {
+      translation -0.2 0.4 0
+      children [
+        Shape {
+          geometry Cylinder {
+            height 0.001
+            radius 0.02
+          }
+        }
+      ]
+      name "solid(32)"
+    }
+    Solid {
+      translation -0.58 0.4 0
+      children [
+        Shape {
+          geometry Cylinder {
+            height 0.001
+            radius 0.02
+          }
+        }
+      ]
+      name "solid(31)"
+    }
+    Solid {
+      translation -0.58 -0.4 0
+      children [
+        Shape {
+          geometry Cylinder {
+            height 0.001
+            radius 0.02
+          }
+        }
+      ]
+      name "solid(30)"
+    }
+    Solid {
+      translation -0.2 -0.4 0
+      children [
+        Shape {
+          geometry Cylinder {
+            height 0.001
+            radius 0.02
+          }
+        }
+      ]
+      name "solid(29)"
+    }
+    Solid {
+      translation 0.58 -0.4 0
+      children [
+        Shape {
+          geometry Cylinder {
+            height 0.001
+            radius 0.02
+          }
+        }
+      ]
+      name "solid(28)"
+    }
+    Solid {
+      translation 0.2 -0.4 0
+      children [
+        Shape {
+          geometry Cylinder {
+            height 0.001
+            radius 0.02
+          }
+        }
+      ]
+      name "solid(27)"
+    }
+    Solid {
+      translation 0.58 0.4 0
+      children [
+        Shape {
+          geometry Cylinder {
+            height 0.001
+            radius 0.02
+          }
+        }
+      ]
+      name "solid(26)"
+    }
+    Solid {
+      translation 0.2 0.4 0
+      children [
+        Shape {
+          geometry Cylinder {
+            height 0.001
+            radius 0.02
+          }
+        }
+      ]
+      name "solid(25)"
+    }
+  ]
+}
+DEF Tachas Group {
+  children [
+    Solid {
+      translation -0.375 0.4 0.001
+      rotation 0 0 1 1.56
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(24)"
+    }
+    Solid {
+      translation -0.375 0.4 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(23)"
+    }
+    Solid {
+      translation -0.375 0 0.001
+      rotation 0 0 1 1.56
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(22)"
+    }
+    Solid {
+      translation -0.375 0 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(21)"
+    }
+    Solid {
+      translation -0.375 -0.4 0.001
+      rotation 0 0 1 1.56
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(20)"
+    }
+    Solid {
+      translation -0.375 -0.4 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(19)"
+    }
+    Solid {
+      translation 0.375 -0.4 0.001
+      rotation 0 0 1 1.56
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(18)"
+    }
+    Solid {
+      translation 0.375 -0.4 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(17)"
+    }
+    Solid {
+      translation 0.375 0 0.001
+      rotation 0 0 1 1.56
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(16)"
+    }
+    Solid {
+      translation 0.375 0 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(15)"
+    }
+    Solid {
+      translation 0.375 0.4 0.001
+      rotation 0 0 1 1.56
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(14)"
+    }
+    Solid {
+      translation 0.375 0.4 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.04 0.003
+          }
+        }
+      ]
+      name "solid(13)"
+    }
+  ]
+}
+DEF Porteria_2 Group {
+  children [
+    Solid {
+      translation -0.68 0 0.0016
+      children [
+        Shape {
+          appearance Appearance {
+            material Material {
+              ambientIntensity 0
+              diffuseColor 0.0462043 0.0462043 0.0599985
+              shininess 0
+            }
+          }
+          geometry Plane {
+            size 0.15 0.2
+          }
+        }
+      ]
+      name "solid(11)"
+    }
+    Solid {
+      translation -0.65 0 0.001
+      children [
+        Shape {
+          geometry Cylinder {
+            bottom FALSE
+            height 0.001
+            radius 0.1
+          }
+          castShadows FALSE
+        }
+      ]
+      name "areaport2(4)"
+    }
+    Solid {
+      translation -0.68 -0.35 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.15 0.003
+          }
+        }
+      ]
+      name "areaport2(3)"
+    }
+    Solid {
+      translation -0.68 0.35 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.15 0.003
+          }
+        }
+      ]
+      name "areaport2(2)"
+    }
+    Solid {
+      translation -0.606 0 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.003 0.7
+          }
+        }
+      ]
+      name "areaport2"
+    }
+  ]
+}
+DEF Porteria_1 Group {
+  children [
+    Solid {
+      translation 0.68 0 0.0016
+      children [
+        Shape {
+          appearance Appearance {
+            material Material {
+              diffuseColor 0.0462043 0.0462043 0.0599985
+            }
+          }
+          geometry Plane {
+            size 0.15 0.2
+          }
+        }
+      ]
+      name "solid(6)"
+    }
+    Solid {
+      translation 0.65 0 0.001
+      children [
+        Shape {
+          geometry Cylinder {
+            bottom FALSE
+            height 0.001
+            radius 0.1
+          }
+          castShadows FALSE
+        }
+      ]
+      name "areaport1(4)"
+    }
+    Solid {
+      translation 0.68 -0.35 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.15 0.003
+          }
+        }
+      ]
+      name "areaport1(3)"
+    }
+    Solid {
+      translation 0.68 0.35 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.15 0.003
+          }
+        }
+      ]
+      name "areaport1(2)"
+    }
+    Solid {
+      translation 0.606 0 0.001
+      children [
+        Shape {
+          geometry Plane {
+            size 0.003 0.7
+          }
+        }
+      ]
+      name "areaport1"
+    }
+  ]
+}
+DEF Central Group {
+  children [
+    Solid {
+      translation 0 0 0.01
+      children [
+        Shape {
+          geometry Plane {
+            size 0.003 1.3
+          }
+        }
+      ]
+      name "linecentral"
+    }
+    Solid {
+      children [
+        Shape {
+          geometry Cylinder {
+            bottom FALSE
+            height 0.01
+            radius 0.2
+            subdivision 100
+          }
+        }
+      ]
+      name "centralcirc"
+    }
+    Solid {
+      translation 0 0 0.001
+      children [
+        Shape {
+          appearance Appearance {
+            material Material {
+              diffuseColor 0.0462043 0.0462043 0.0599985
+            }
+          }
+          geometry Cylinder {
+            bottom FALSE
+            height 0.01
+            radius 0.195
+            subdivision 100
+          }
+        }
+      ]
+      name "circulo central"
+    }
+  ]
+}
+DEF Pelota Solid {
+  translation 0 0 0.021335565432261314
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0.470588 0
+      }
+      geometry Sphere {
+        radius 0.0214
+      }
+    }
+  ]
+  name "pelota"
+  boundingObject Sphere {
+    radius 0.0214
+  }
+  physics Physics {
+    centerOfMass [
+      0 0 0
+    ]
+  }
+}
