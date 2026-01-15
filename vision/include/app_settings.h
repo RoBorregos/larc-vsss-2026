@@ -5,7 +5,7 @@
 
 enum class AppState {
 	MAIN_MENU,
-	ROBOT_CALIBRATING,
+	MASK_CALIBRATING,
 	BLOB_CALIBRATION_MENU,
 	BLOB_CALIBRATING,
 	COLOR_CALIBRATING,
@@ -23,14 +23,13 @@ struct VisionParams {
 	float red_boost = 1.0f;
 };
 
-struct ObjectVisionParams {
-	float saturation = 1.0f;
-	float gamma_correction = 1.0f;
-	float clahe_clip_limit = 1.0f;
-	float bilateral_sigma = 0.0f;
-	float green_boost = 1.0f;
-	float blue_boost = 1.0f;
-	float red_boost = 1.0f;
+struct MaskParams {
+	float h_min = 0;
+	float s_min = 0;
+	float v_min = 0;
+	float h_max = 180;
+	float s_max = 255;
+	float v_max = 255;
 };
 
 struct CalibrationResult {
@@ -59,7 +58,7 @@ struct AppData {
 	std::string current_color = "None";
 	std::string calibration_filename = "/home/iker/Documents/RoboticProjects/VSSS/vision/vsss_calibration.json";
 	VisionParams color_params;
-	ObjectVisionParams object_params;
+	MaskParams mask_params;
 	MatchCalibration match_calibration;
 	std::vector<cv::Point> roi_points;
 	bool paused = false;

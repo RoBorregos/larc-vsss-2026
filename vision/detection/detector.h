@@ -65,6 +65,7 @@ private:
 	void filter_patches();
 	void categorize_objects();
 	void find_objects();
+	static void show_debug_rois(const cv::Mat& src_img, const std::vector<std::vector<cv::Point>>& contours);
 public:
 	Detector(GUI* gui, AppData* app_data, BlobCalibrator* blob_calibrator);
 

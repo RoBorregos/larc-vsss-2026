@@ -11,16 +11,6 @@
 	hsv_gamma_correction(image, params.gamma_correction);
 }
 
-[[maybe_unused]] void preprocessing::apply_preprogrammed_filters(cv::Mat &image, const ObjectVisionParams& params) {
-	hsv_red_boost(image, params.red_boost);
-	hsv_green_boost(image, params.green_boost);
-	hsv_blue_boost(image, params.blue_boost);
-	hsv_saturation(image, params.saturation);
-	hsv_clahe(image, params.clahe_clip_limit);
-	hsv_bilateral(image, params.bilateral_sigma);
-	hsv_gamma_correction(image, params.gamma_correction);
-}
-
 [[maybe_unused]] void preprocessing::saturation(cv::Mat &image, float alpha) {
     cv::Mat hsv;
     cv::cvtColor(image, hsv, cv::COLOR_BGR2HSV);

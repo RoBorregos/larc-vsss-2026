@@ -10,7 +10,6 @@
 
 namespace preprocessing {
 	[[maybe_unused]] void apply_preprogrammed_filters(cv::Mat& image, const VisionParams& params);
-	[[maybe_unused]] void apply_preprogrammed_filters(cv::Mat& image, const ObjectVisionParams& params);
 
     [[maybe_unused]] void saturation(cv::Mat &image, float alpha);
     [[maybe_unused]] void brightness(cv::Mat &image, int beta);

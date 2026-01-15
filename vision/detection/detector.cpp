@@ -22,49 +22,55 @@ void Detector::on_debug_mouse(int event, int x, int y, int flags, void* userdata
 	data->calibrator->handle_click(global_x, global_y);
 }
 
-
 void Detector::find_objects() {
 	cv::Mat white_mask;
-	cv::inRange(hsv_mat, cv::Scalar(0, 0, 180), cv::Scalar(180, 60, 255), white_mask);
-	cv::Mat kernel_white = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
-	cv::dilate(white_mask, white_mask, kernel_white);
-	hsv_mat.setTo(cv::Scalar(0, 0, 0), white_mask);
+    cv::inRange(hsv_mat,
+                cv::Scalar(0, 0, 200),      // Blancos brillantes
+                cv::Scalar(180, 50, 255),
+                white_mask);
 
-	cv::GaussianBlur(hsv_mat, hsv_mat, cv::Size(5, 5), 1.5);
+	static const cv::Mat kernel_noise = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+	cv::dilate(white_mask, white_mask, kernel_noise);
 
 	cv::Mat object_mask;
 	cv::inRange(hsv_mat,
-				cv::Scalar(0, 100, 50),
-				cv::Scalar(180, 255, 255),
+				cv::Scalar(app_data->mask_params.h_min, app_data->mask_params.s_min, app_data->mask_params.v_min),
+				cv::Scalar(app_data->mask_params.h_max, app_data->mask_params.s_max, app_data->mask_params.v_max),
 				object_mask);
 
-	cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7));
-	cv::morphologyEx(object_mask, object_mask, cv::MORPH_OPEN, kernel);
-	cv::morphologyEx(object_mask, object_mask, cv::MORPH_CLOSE, kernel);
+	cv::bitwise_and(object_mask, ~white_mask, object_mask);
 
-	cv::imshow("Mascara Limpia S+V", object_mask);
+    static const cv::Mat kernel_clean = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
 
-	std::vector<std::vector<cv::Point>> temp_objects;
-	cv::findContours(object_mask, temp_objects, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    cv::morphologyEx(object_mask, object_mask, cv::MORPH_OPEN, kernel_clean);
+    cv::morphologyEx(object_mask, object_mask, cv::MORPH_CLOSE, kernel_clean);
 
-	std::vector<std::vector<cv::Point>> objects;
-	for (const auto& cnt : temp_objects) {
-		double area = cv::contourArea(cnt);
-		cv::Rect box = cv::boundingRect(cnt);
+    cv::imshow("Mascara Final", object_mask);
+    std::vector<std::vector<cv::Point>> temp_contours;
+    cv::findContours(object_mask, temp_contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-		double aspect_ratio = (double)box.width / box.height;
+    std::vector<std::vector<cv::Point>> final_objects;
+    final_objects.reserve(temp_contours.size());
 
-		if (area > 200 && area < 10000 && aspect_ratio > 0.5 && aspect_ratio < 2.0) {
+    for (const auto& cnt : temp_contours) {
+        double area = cv::contourArea(cnt);
 
-			std::vector<cv::Point> approx;
-			double epsilon = 0.03 * cv::arcLength(cnt, true);
-			cv::approxPolyDP(cnt, approx, epsilon, true);
+        if (area > 200 && area < 10000) {
 
-			objects.push_back(approx);
-		}
-	}
+            cv::Rect box = cv::boundingRect(cnt);
+            double aspect_ratio = (double)box.width / box.height;
 
-	this->found_objects = objects;
+            if (aspect_ratio > 0.5 && aspect_ratio < 2.0) {
+                std::vector<cv::Point> approx;
+                double epsilon = 0.03 * cv::arcLength(cnt, true);
+                cv::approxPolyDP(cnt, approx, epsilon, true);
+
+                final_objects.push_back(std::move(approx));
+            }
+        }
+    }
+
+    this->found_objects = std::move(final_objects);
 }
 
 void Detector::categorize_objects() {
@@ -230,21 +236,21 @@ void Detector::filter_patches() {
 	}
 }
 
-
 void Detector::update() {
 	hsv_mat = gui->get_image(cv::COLOR_BGR2HSV);
+	preprocessing::apply_preprogrammed_filters(hsv_mat, app_data->color_params);
 
 	found_objects.clear();
 	categorized_objects.clear();
 	square_patches.clear();
+
 
 	find_objects();
 	for (const auto& contour : found_objects) {
 		gui->closed_polyline(contour);
 	}
 
-	categorize_objects();
-	filter_patches();
+	// show_debug_rois(hsv_mat, found_objects);
 }
 
 std::optional<State> Detector::ball() {
@@ -316,14 +322,14 @@ void Detector::display_debug_info() {
     	cv::cvtColor(zoomed_view, zoomed_view, cv::COLOR_BGR2HSV);
     	preprocessing::apply_preprogrammed_filters(zoomed_view, app_data->color_params);
     	cv::cvtColor(zoomed_view, zoomed_view, cv::COLOR_HSV2BGR);
-        cv::imshow(win_name, zoomed_view);
+        // cv::imshow(win_name, zoomed_view);
 
     	DebugWindowData context;
     	context.calibrator = this->blob_calibrator;
     	context.roi_offset = rect;
     	context.zoom_factor = zoom;
     	debug_window_contexts.push_back(context);
-    	cv::setMouseCallback(win_name, Detector::on_debug_mouse, &debug_window_contexts.back());
+    	// cv::setMouseCallback(win_name, Detector::on_debug_mouse, &debug_window_contexts.back());
     }
 
 	auto it = window_names.begin();
@@ -337,4 +343,23 @@ void Detector::display_debug_info() {
 	}
 
 	window_names.insert(current_window_names.begin(), current_window_names.end());
+}
+
+void Detector::show_debug_rois(const cv::Mat& src_img, const std::vector<std::vector<cv::Point>>& contours) {
+	for (size_t i = 0; i < contours.size(); ++i) {
+		cv::Rect rect = cv::boundingRect(contours[i]);
+		rect = rect & cv::Rect(0, 0, src_img.cols, src_img.rows);
+
+		if (rect.area() > 0) {
+			cv::Mat roi = src_img(rect);
+			cv::Mat display_roi;
+
+			cv::cvtColor(roi, display_roi, cv::COLOR_HSV2BGR);
+
+			std::string win_name = "Debug_Robot_" + std::to_string(i);
+			cv::imshow(win_name, display_roi);
+		}
+	}
+
+	cv::waitKey(1);
 }

@@ -57,7 +57,7 @@ int main() {
             return -1;
         }
         double fps = cap.get(cv::CAP_PROP_FPS);
-        delay = (fps > 0) ? static_cast<int>(1000 / fps) : 30;
+        delay = (fps > 0) ? static_cast<int>(1000 / fps) : 10;
         std::cout << "[INFO] Modo VIDEO detectado. FPS: " << fps << std::endl;
     } else {
         image = cv::imread(path);
@@ -87,8 +87,8 @@ int main() {
         drawer.upload_frame(image);
 
         // if (app_data.current_state == AppState::DETECTION) {
-        detector.update();
-        robot_1.update();
+            detector.update();
+            robot_1.update();
         // }
 
         interface_manager.draw_interface();

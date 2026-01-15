@@ -17,8 +17,8 @@ void InterfaceManager::init_widgets() {
 		app_data->current_state = AppState::COLOR_CALIBRATING;
     	app_data->paused = true;
 	}));
-	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 6, "MODO: ROBOT CALIBRATION", [this](){
-		app_data->current_state = AppState::ROBOT_CALIBRATING;
+	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 6, "MODO: MASK CALIBRATION", [this](){
+		app_data->current_state = AppState::MASK_CALIBRATING;
 		app_data->paused = true;
 	}));
 	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 7, "MODO: ROI CALIBRATION", [this](){
@@ -70,6 +70,19 @@ void InterfaceManager::init_widgets() {
     	save_current_blob_calibration();
     }));
 
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 0, "H Min", &app_data->mask_params.h_min, 0, 180));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 1, "S Min", &app_data->mask_params.s_min, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 2, "V Min", &app_data->mask_params.v_min, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 3, "H Max", &app_data->mask_params.h_max, 0, 180));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 4, "S Max", &app_data->mask_params.s_max, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 5, "V Max", &app_data->mask_params.v_max, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 7, "Reset Values", [this](){
+		app_data->mask_params = MaskParams();
+	}));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
+		app_data->current_state = AppState::MAIN_MENU;
+		color_calibrator->save_calibration(app_data->calibration_filename);
+	}));
 
 	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 0, "Saturacion", &app_data->color_params.saturation, 0.0f, 15.0f));
 	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 1, "Gamma", &app_data->color_params.gamma_correction, 0.0f, 5.0f));
@@ -85,24 +98,6 @@ void InterfaceManager::init_widgets() {
 		app_data->current_state = AppState::MAIN_MENU;
 		color_calibrator->save_calibration(app_data->calibration_filename);
 	}));
-
-
-
-	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 0, "Saturacion", &app_data->object_params.saturation, 0.0f, 15.0f));
-	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 1, "Gamma", &app_data->object_params.gamma_correction, 0.0f, 5.0f));
-	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 2, "CLAHE Clip", &app_data->object_params.clahe_clip_limit, 0.1f, 5.0f));
-	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 3, "Bilateral", &app_data->object_params.bilateral_sigma, 0.0f, 100.0f));
-	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 4, "Green Boost", &app_data->object_params.green_boost, 0.2f, 2.0f));
-	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 5, "Blue Boost", &app_data->object_params.blue_boost, 0.2f, 2.0f));
-	robot_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 6, "Red Boost", &app_data->object_params.red_boost, 0.2f, 2.0f));
-	robot_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 7, "Reset Filter", [this](){
-		app_data->object_params = ObjectVisionParams();
-	}));
-	robot_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
-		app_data->current_state = AppState::MAIN_MENU;
-	}));
-
-
 
 	roi_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 7, "Remove Last Point", [this](){
 		color_calibrator->remove_last_point();
@@ -187,9 +182,9 @@ void InterfaceManager::draw_interface() {
     		drawer->text("MODO COLOR CALIBRATION", 0, 0.8, true);
     		current_widgets = &color_calibration_tool_widgets;
     		break;
-    	case AppState::ROBOT_CALIBRATING:
-    		drawer->text("MODO ROBOT CALIBRATION", 0, 0.8, true);
-			current_widgets = &robot_calibration_tool_widgets;
+    	case AppState::MASK_CALIBRATING:
+    		drawer->text("MODO MASK CALIBRATION", 0, 0.8, true);
+			current_widgets = &mask_calibration_tool_widgets;
 			break;
     	case AppState::ROI_CALIBRATIING:
     		drawer->text("MODO ROI CALIBRATION", 0, 0.8, true);
@@ -241,7 +236,7 @@ void InterfaceManager::handle_input(int event, int x, int y) {
         case AppState::BLOB_CALIBRATION_MENU: current_widgets = &blob_calibration_menu_widgets; break;
         case AppState::BLOB_CALIBRATING: current_widgets = &blob_calibration_tool_widgets; break;
     	case AppState::COLOR_CALIBRATING: current_widgets = &color_calibration_tool_widgets; break;
-    	case AppState::ROBOT_CALIBRATING: current_widgets = &robot_calibration_tool_widgets; break;
+    	case AppState::MASK_CALIBRATING: current_widgets = &mask_calibration_tool_widgets; break;
     	case AppState::ROI_CALIBRATIING: current_widgets = &roi_calibration_tool_widgets; break;
         default: break;
     }

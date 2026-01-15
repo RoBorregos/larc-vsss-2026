@@ -95,6 +95,15 @@ void ColorCalibrator::save_calibration(const std::string &filename) {
 
 	root["roi_points"] = points_to_json(roi_points);
 
+	root["mask_params"] = {
+		{"h_min", app_data->mask_params.h_min},
+		{"s_min", app_data->mask_params.s_min},
+		{"v_min", app_data->mask_params.v_min},
+		{"h_max", app_data->mask_params.h_max},
+		{"s_max", app_data->mask_params.s_max},
+		{"v_max", app_data->mask_params.v_max}
+	};
+
 	std::ofstream outfile(filename);
 	if (outfile.is_open()) {
 		outfile << root.dump(4);
@@ -139,6 +148,15 @@ void ColorCalibrator::load_calibration(const std::string &filename) {
 		app_data->color_params.green_boost       = j_color.value("green_boost",       app_data->color_params.green_boost);
 		app_data->color_params.blue_boost        = j_color.value("blue_boost",        app_data->color_params.blue_boost);
 		app_data->color_params.red_boost         = j_color.value("red_boost",         app_data->color_params.red_boost);
+
+		auto j_mask = root["mask_params"];
+		app_data->mask_params.h_min = j_mask.value("h_min", app_data->mask_params.h_min);
+		app_data->mask_params.s_min = j_mask.value("s_min", app_data->mask_params.s_min);
+		app_data->mask_params.v_min = j_mask.value("v_min", app_data->mask_params.v_min);
+		app_data->mask_params.h_max = j_mask.value("h_max", app_data->mask_params.h_max);
+		app_data->mask_params.s_max = j_mask.value("s_max", app_data->mask_params.s_max);
+		app_data->mask_params.v_max = j_mask.value("v_max", app_data->mask_params.v_max);
+
 		std::cout << "[INFO] Parámetros de color cargados desde el archivo." << std::endl;
 	} else {
 		std::cerr << "[WARN] No se encontraron parámetros de calibración de color en el archivo." << std::endl;

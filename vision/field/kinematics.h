@@ -6,7 +6,6 @@
 
 const double EPSILON = 1e-9;
 
-
 class Kinematics {
 private:
 	size_t history_size{5};
@@ -37,7 +36,5 @@ public:
 	[[nodiscard]] double get_y() const { return current_state.y; };
 	[[nodiscard]] double get_facing() const { return current_state.facing; };
 };
-
-
 
 #endif //KINEMATICS_H
