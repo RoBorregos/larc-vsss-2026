@@ -2,10 +2,12 @@
 #define CALIBRATOR_H
 
 #include <fstream>
+#include <cuda_runtime.h>
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <optional>
 #include <gui.h>
+#include "blob_kernels.h"
 #include "app_settings.h"
 #include "json.hpp"
 using json = nlohmann::json;
@@ -13,7 +15,7 @@ using json = nlohmann::json;
 class BlobCalibrator {
 private:
 	std::vector<cv::Point> points;
-	GUI* drawer;
+	GUI* gui;
 	AppData* app_data;
 
 	static std::vector<double> scalar_to_json(const cv::Scalar& s);
@@ -22,7 +24,7 @@ private:
 	static std::vector<cv::Point> json_to_points(const std::vector<std::vector<int>>& v);
 
 public:
-	BlobCalibrator(GUI* drawer, AppData* app_data);
+	BlobCalibrator(GUI* gui, AppData* app_data);
 
 	void handle_click(int x, int y);
 	static void on_mouse(int event, int x, int y, int flags, void* userdata);

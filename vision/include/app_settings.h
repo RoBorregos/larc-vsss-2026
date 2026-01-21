@@ -15,7 +15,8 @@ enum class AppState {
 
 struct VisionParams {
 	float saturation = 1.0f;
-	float gamma_correction = 1.0f;
+	float gamma_correction_s = 1.0f;
+	float gamma_correction_v = 1.0f;
 	float clahe_clip_limit = 1.0f;
 	float bilateral_sigma = 0.0f;
 	float green_boost = 1.0f;

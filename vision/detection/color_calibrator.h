@@ -12,14 +12,14 @@ using json = nlohmann::json;
 class ColorCalibrator {
 private:
 	std::vector<cv::Point> roi_points;
-	GUI* drawer;
+	GUI* gui;
 	AppData* app_data;
 
 	void handle_click(int x, int y);
 	static std::vector<std::vector<int>> points_to_json(const std::vector<cv::Point>& pts);
 	static std::vector<cv::Point> json_to_points(const std::vector<std::vector<int>>& v);
 public:
-	ColorCalibrator(GUI* drawer, AppData* app_data);
+	ColorCalibrator(GUI* gui, AppData* app_data);
 	static void on_mouse(int event, int x, int y, int flags, void* userdata);
 
 	void calibrate_roi();

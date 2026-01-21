@@ -85,13 +85,14 @@ void InterfaceManager::init_widgets() {
 	}));
 
 	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 0, "Saturacion", &app_data->color_params.saturation, 0.0f, 15.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 1, "Gamma", &app_data->color_params.gamma_correction, 0.0f, 5.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 2, "CLAHE Clip", &app_data->color_params.clahe_clip_limit, 0.1f, 5.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 3, "Bilateral", &app_data->color_params.bilateral_sigma, 0.0f, 100.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 4, "Green Boost", &app_data->color_params.green_boost, 0.2f, 2.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 5, "Blue Boost", &app_data->color_params.blue_boost, 0.2f, 2.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 6, "Red Boost", &app_data->color_params.red_boost, 0.2f, 2.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 7, "Reset Filter", [this](){
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 1, "Gamma S", &app_data->color_params.gamma_correction_s, 0.0f, 5.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 2, "Gamma V", &app_data->color_params.gamma_correction_v, 0.0f, 5.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 3, "CLAHE Clip", &app_data->color_params.clahe_clip_limit, 0.1f, 5.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 4, "Bilateral", &app_data->color_params.bilateral_sigma, 0.0f, 100.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 5, "Green Boost", &app_data->color_params.green_boost, 0.2f, 2.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 6, "Blue Boost", &app_data->color_params.blue_boost, 0.2f, 2.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 7, "Red Boost", &app_data->color_params.red_boost, 0.2f, 2.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 8, "Reset Filter", [this](){
 		app_data->color_params = VisionParams();
 	}));
 	color_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
@@ -179,7 +180,6 @@ void InterfaceManager::draw_interface() {
     		last_calculated_result = blob_calibrator->calibrate_individual();
             break;
     	case AppState::COLOR_CALIBRATING:
-    		drawer->text("MODO COLOR CALIBRATION", 0, 0.8, true);
     		current_widgets = &color_calibration_tool_widgets;
     		break;
     	case AppState::MASK_CALIBRATING:
@@ -195,7 +195,7 @@ void InterfaceManager::draw_interface() {
             drawer->text("MODO DETECTION (ESC para salir)", 1, 0.6, false);
             break;
     }
-	detector->display_debug_info();
+	// detector->display_debug_info();
 
     if (current_widgets) {
         for (const auto& widget : *current_widgets) {
@@ -224,8 +224,15 @@ void InterfaceManager::handle_input(int event, int x, int y) {
 	if (event == cv::EVENT_LBUTTONDBLCLK) {
 		cv::Point real_coords = drawer->screen_to_world(cv::Point(x, y));
 		std::cout << "Clicked at (" << x << ", " << y << ")" << " real: [" << x << ", " << y << "]" << std::endl;
-		cv::Mat img = drawer->get_image(cv::COLOR_BGR2HSV);
-		cv::Vec3b hsv_pixel = img.at<cv::Vec3b>(real_coords.y, real_coords.x);
+		const cv::cuda::GpuMat img = drawer->get_image(cv::COLOR_BGR2HSV);
+
+		const cv::Rect roi(real_coords.x, real_coords.y, 1, 1);
+		const cv::cuda::GpuMat gpu_pixel_region(img, roi);
+
+		cv::Mat cpu_pixel_1x1;
+		gpu_pixel_region.download(cpu_pixel_1x1);
+
+		const cv::Vec3b hsv_pixel = cpu_pixel_1x1.at<cv::Vec3b>(0, 0);
 		std::cout << "HSV Value: [" << static_cast<int>(hsv_pixel[0]) << ", "
 				  << static_cast<int>(hsv_pixel[1]) << ", "
 				  << static_cast<int>(hsv_pixel[2]) << "]" << std::endl;

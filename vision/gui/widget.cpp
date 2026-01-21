@@ -10,7 +10,7 @@ Widget::Widget(GUI *gui, int rowspace, std::string label) {
 
 bool Widget::handle_input(int mouse_x, int mouse_y, int event) {
 	cv::Rect roi = gui->rowspace_roi(rowspace);
-	is_hovered = roi.contains({mouse_x, mouse_y});
+	is_hovered = roi.contains<int>({mouse_x, mouse_y});
 	return false;
 }
 

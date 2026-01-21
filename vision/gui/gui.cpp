@@ -33,29 +33,29 @@ bool GUI::valid_coordinate(const std::vector<cv::Point>& points) const {
 }
 
 void GUI::upload_frame(cv::Mat &input_frame) {
-	preprocessing::resize(input_frame, 1024 * 0.7, 768 * 0.7);
-	image = input_frame.clone();
+	fps_timer.start();
 
-	const int new_total_width = std::ceil(input_frame.cols * 1.5);
-	const int new_total_height = input_frame.rows;
+	image_bgr.upload(input_frame);
+	preprocessing::resize(image_bgr, 1024 * 0.7, 768 * 0.7);
+	preprocessing::filters(image_bgr, image_bgr, image_hsv, app_data->color_params);
 
-	const bool dimensions_modified = this->frame.cols != new_total_width
-		|| this->frame.rows != new_total_height
-		|| this->frame.type() != input_frame.type();
+	const int new_total_width = std::ceil(image_bgr.cols * 1.5);
+	const int new_total_height = image_bgr.rows;
+
+	const bool dimensions_modified = this->image_with_gui.cols != new_total_width
+		|| this->image_with_gui.rows != new_total_height
+		|| this->image_with_gui.type() != image_bgr.type();
 
 	if (dimensions_modified) {
-		this->frame = cv::Mat::zeros(new_total_height, new_total_width, input_frame.type());
+		this->image_with_gui = cv::Mat::zeros(new_total_height, new_total_width, image_bgr.type());
 
-		image_width = input_frame.cols;
+		image_width = image_bgr.cols;
 		total_width = new_total_width;
 		total_height = new_total_height;
 		this->viewport = cv::Rect(0, 0, image_width, total_height);
 	} else {
-		this->frame.setTo(cv::Scalar(0, 0, 0));
+		this->image_with_gui.setTo(cv::Scalar(0, 0, 0));
 	}
-
-	const auto image_roi = cv::Rect(0, 0, input_frame.cols, input_frame.rows);
-	input_frame.copyTo(this->frame(image_roi));
 }
 
 cv::Point GUI::screen_to_world(const cv::Point& screen_point) const {
@@ -106,30 +106,20 @@ void GUI::zoom(int mouse_x, int mouse_y, int scroll_amount) {
 }
 
 cv::Mat& GUI::get_frame() {
-	return frame;
+	return image_with_gui;
 }
 
-cv::Mat GUI::get_image(const int conversion_code, bool apply_preprocessing) const {
-	if (conversion_code == -1 && !apply_preprocessing) {
-		return image;
-	}
-	cv::Mat output = image.clone();
-
-	if (apply_preprocessing) {
-		inverse_closed_polyline(app_data->roi_points, output, {0, 0, 0});
-		cv::cvtColor(output, output, cv::COLOR_BGR2HSV);
-
-		if (conversion_code == cv::COLOR_BGR2HSV) {
-			preprocessing::apply_preprogrammed_filters(output, app_data->color_params);
-			return output;
-		}
-
-		cv::cvtColor(output, output, cv::COLOR_HSV2BGR);
+cv::cuda::GpuMat GUI::get_image(const int conversion_code) const {
+	if (conversion_code == -1) {
+		return image_bgr;
 	}
 
-	if (conversion_code != -1) {
-		cv::cvtColor(image, output, conversion_code);
+	if (conversion_code == cv::COLOR_BGR2HSV) {
+		return image_hsv;
 	}
+
+	cv::cuda::GpuMat output;
+	cv::cvtColor(image_bgr, output, conversion_code);
 
 	return output;
 }
@@ -149,120 +139,83 @@ cv::Rect GUI::rowspace_roi(int rowspace) const {
 }
 
 void GUI::free_rowspace(const int rowspace) {
-	if (frame.empty()) return;
+	if (image_with_gui.empty()) return;
 	cv::Rect roi = rowspace_roi(rowspace);
-	roi = roi & cv::Rect(0, 0, frame.cols, frame.rows);
+	roi = roi & cv::Rect(0, 0, image_with_gui.cols, image_with_gui.rows);
 
-	cv::rectangle(frame, roi, cv::Scalar(0, 0, 0), cv::FILLED);
+	cv::rectangle(image_with_gui, roi, cv::Scalar(0, 0, 0), cv::FILLED);
 }
-
-void GUI::set_display_brightness(int brightness) {
-	this->brightness = brightness;
-}
-
-void GUI::set_display_contrast(float contrast) {
-	this->contrast = contrast;
-}
-
-void GUI::set_display_saturation(float saturation) {
-	this->saturation = saturation;
-}
-
-void GUI::set_display_gamma_correction(float gamma_correction) {
-	this->gamma_correction = gamma_correction;
-}
-
-void GUI::set_clahe_clip_limit(float clip_limit) {
-	this->clahe_clip_limit = clip_limit;
-}
-
-void GUI::set_bilateral_sigma(int sigma) {
-	this->bilateral_sigma = sigma;
-}
-
-void GUI::set_green_boost(float green_boost_factor) {
-	this->green_boost = green_boost_factor;
-}
-
-void GUI::set_blue_boost(float blue_boost_factor) {
-	this->blue_boost_factor = blue_boost_factor;
-}
-
-void GUI::set_red_boost(float red_boost_factor) {
-	this->red_boost = red_boost_factor;
-}
-
 
 void GUI::text(const std::string &text, const int rowspace, float font_scale, bool erase_rowspace, int y_offset) {
-	if (frame.empty()) return;
-	if (erase_rowspace) free_rowspace(rowspace);
-
+	if (image_with_gui.empty()) return;
 	cv::Rect roi = rowspace_roi(rowspace);
-
-	constexpr int font_face = cv::FONT_HERSHEY_SIMPLEX;
-	constexpr int thickness = 1;
-	int baseline = 0;
-
-	cv::Size text_size = cv::getTextSize(text, font_face, font_scale, thickness, &baseline);
-
-	while (text_size.width > roi.width && font_scale > 0.3) {
-		font_scale -= 0.1;
-		text_size = cv::getTextSize(text, font_face, font_scale, thickness, &baseline);
-	}
-
-	cv::Point text_org;
-	text_org.x = roi.x + (roi.width - text_size.width) / 2;
-	text_org.y = roi.y + (roi.height + text_size.height) / 2 + y_offset;
-
-	cv::putText(frame, text, text_org, font_face, font_scale, cv::Scalar(255, 255, 255), thickness);
+	drawer.text(text, roi, font_scale, y_offset, erase_rowspace);
 }
 
-void GUI::display_frame() const {
-	if (frame.empty()) return;
+void GUI::display_frame() {
+	if (image_with_gui.empty()) return;
+	cv::Mat display_buffer = cv::Mat::zeros(total_height, total_width, image_with_gui.type());
 
-	cv::Mat display_buffer = cv::Mat::zeros(total_height, total_width, frame.type());
+	cv::Mat cpu_image_bgr;
+	image_bgr.download(cpu_image_bgr);
 
-	cv::Mat image_view = frame(viewport);
+	cv::Mat image_view = cpu_image_bgr(viewport);
 	cv::resize(image_view, image_view, cv::Size(image_width, total_height), 0, 0, cv::INTER_LINEAR);
-
-	cv::cvtColor(image_view, image_view, cv::COLOR_BGR2HSV);
-	preprocessing::apply_preprogrammed_filters(image_view, app_data->color_params);
-	cv::cvtColor(image_view, image_view, cv::COLOR_HSV2BGR);
 
 	image_view.copyTo(display_buffer(cv::Rect(0, 0, image_width, total_height)));
 
 	cv::Rect sidebar_rect(image_width, 0, total_width - image_width, total_height);
-	cv::Mat sidebar = frame(sidebar_rect);
+	cv::Mat sidebar = image_with_gui(sidebar_rect);
 
 	sidebar.copyTo(display_buffer(sidebar_rect));
 
 	if (app_data->roi_points.size() > 1) {
-		inverse_closed_polyline(app_data->roi_points, display_buffer, {0, 0, 0});
+		inverse_closed_polyline(app_data->roi_points, {0, 0, 0});
 	}
 
+	drawer.render(display_buffer);
+	drawer.clear();
+
+
+	fps_timer.stop();
+	frame_counter++;
+	if (frame_counter % 10 == 0) {
+		double time_sec = fps_timer.getTimeSec();
+		if (time_sec > 0) {
+			current_fps = 10.0 / time_sec;
+		}
+		fps_timer.reset();
+	}
+	cv::rectangle(display_buffer, cv::Rect(5, 5, 150, 40), cv::Scalar(0, 0, 0, 0.3), -1);
+	std::string fps_text = "FPS: " + std::to_string(int(current_fps));
+	cv::putText(display_buffer, fps_text, cv::Point(15, 35),
+				cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
+
+	std::cout << "\r" << fps_text << "            " << std::flush;
 	cv::imshow(window_name, display_buffer);
 }
+
 void GUI::plot(const cv::Point &point, const cv::Scalar &color) {
 	if (!valid_coordinate(point)) return;
-	cv::circle(frame, point, 1, color, -1);
+	drawer.plot(point, color);
 }
 
 
 void GUI::solid_circle(const cv::Point& center, const int radius, const cv::Scalar& color) {
 	if (!valid_coordinate(center)) return;
-	cv::circle(frame, center, radius, color, -1);
+	drawer.circle(center, radius, cv::FILLED, color);
 }
 
 void GUI::hollow_circle(const cv::Point& center, const int radius, const int thickness, const cv::Scalar& color) {
 	if (!valid_coordinate(center)) return;
-	cv::circle(frame, center, radius, color, thickness);
+	drawer.circle(center, radius, thickness, color);
 }
 
 void GUI::line(const cv::Point& point1, const cv::Point& point2, const int thickness, const cv::Scalar& color) {
 	if (!valid_coordinate(point1)) return;
 	if (!valid_coordinate(point2)) return;
 
-	cv::line(frame, point1, point2, color, thickness);
+	drawer.line(point1, point2, thickness, color);
 }
 
 void GUI::polyline(const std::vector<cv::Point>& points, const int thickness, const cv::Scalar&
@@ -270,8 +223,7 @@ color) {
 	if (points.size() <= 1) return;
 	if (!valid_coordinate(points)) return;
 
-	const std::vector<std::vector<cv::Point>> contours = { points };
-	cv::polylines(frame, contours, false, color, thickness);
+	drawer.polyline(points, false, thickness, color);
 }
 
 void GUI::closed_polyline(const std::vector<cv::Point>& points, const int thickness, const cv::Scalar
@@ -279,39 +231,15 @@ void GUI::closed_polyline(const std::vector<cv::Point>& points, const int thickn
 	if (points.size() <= 1) return;
 	if (!valid_coordinate(points)) return;
 
-	std::vector<std::vector<cv::Point>> contours = { points };
-
-	cv::polylines(frame, contours, true, color, thickness);
+	drawer.polyline(points, true, thickness, color);
 }
 
 void GUI::inverse_closed_polyline(const std::vector<cv::Point> &points, const cv::Scalar &color) {
 	if (points.size() <= 1) return;
 	if (!valid_coordinate(points)) return;
 
-	std::vector<std::vector<cv::Point>> contours = { points };
-	cv::Mat mask(frame.size(), CV_8UC1, cv::Scalar(255));
-	cv::fillPoly(mask, contours, cv::Scalar(0));
-	frame.setTo(color, mask);
+	cv::Rect image_area(0, 0, image_width, total_height);
+	drawer.inverse_polyline(points, color, image_area);
 }
-
-void GUI::inverse_closed_polyline(const std::vector<cv::Point> &points, cv::Mat& input_mat, const cv::Scalar &color) const {
-	if (points.size() <= 1) return;
-	if (input_mat.empty()) return;
-
-	if (input_mat.cols < image.cols) return;
-	if (input_mat.rows < image.rows) return;
-
-	cv::Rect safe_viewport = cv::Rect(0, 0, image.cols, image.rows);
-	if (safe_viewport.empty()) return;
-
-	std::vector<std::vector<cv::Point>> contours = { points };
-	cv::Mat mask = cv::Mat::zeros(input_mat.size(), CV_8UC1);
-	cv::rectangle(mask, safe_viewport, cv::Scalar(255), -1);
-
-	cv::fillPoly(mask, contours, cv::Scalar(0));
-	input_mat.setTo(color, mask);
-}
-
-
 
 

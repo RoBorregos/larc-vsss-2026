@@ -2,22 +2,23 @@
 
 #include "image_preprocessing.h"
 
-BlobCalibrator::BlobCalibrator(GUI* drawer, AppData* app_data) : app_data(app_data) {
-	this->drawer = drawer;
+BlobCalibrator::BlobCalibrator(GUI* gui, AppData* app_data) : app_data(app_data) {
+	this->gui = gui;
 }
 
 void BlobCalibrator::on_mouse(const int event, const int x, const int y, int flags, void* userdata) {
 	auto* self = static_cast<BlobCalibrator*>(userdata);
-	if (x < 0 || y < 0 || x >= self->drawer->get_image().cols || y >= self->drawer->get_image().rows)
+	if (x < 0 || y < 0 || x >= self->gui->get_image().cols || y >= self->gui->get_image().rows)
 		return;
 
 	if (event == cv::EVENT_LBUTTONDOWN) {
-		const cv::Point real_coords = self->drawer->screen_to_world(cv::Point(x, y));
+		const cv::Point real_coords = self->gui->screen_to_world(cv::Point(x, y));
 		self->handle_click(real_coords.x, real_coords.y);
 	}
 }
 
 void BlobCalibrator::handle_click(int x, int y) {
+	if (app_data->current_state != AppState::BLOB_CALIBRATING) return;
     if (points.size() >= 4) return;
     points.emplace_back(x, y);
 }
@@ -74,58 +75,84 @@ void BlobCalibrator::print_calibrations(const MatchCalibration &calibration) {
 }
 
 
+
 std::optional<CalibrationResult> BlobCalibrator::calibrate_individual() {
-	for (const auto point : points) drawer->plot(point);
-	if (points.size() == 4)	drawer->closed_polyline(points);
-	else if (points.size() > 1)	drawer->polyline(points);
+    for (const auto point : points) gui->plot(point);
+    if (points.size() == 4)    gui->closed_polyline(points);
+    else if (points.size() > 1)    gui->polyline(points);
 
-	if (points.size() != 4) return std::nullopt;
+    if (points.size() != 4) return std::nullopt;
 
-	cv::Mat hsv_image = drawer->get_image(cv::COLOR_BGR2HSV);
+	cv::cuda::GpuMat d_hsv_image = gui->get_image(cv::COLOR_BGR2HSV);
 
 	cv::Rect roi_rect = cv::boundingRect(points);
-	roi_rect = roi_rect & cv::Rect(0, 0, hsv_image.cols, hsv_image.rows); // Prevent roi from image-overflow
+	roi_rect = roi_rect & cv::Rect(0, 0, d_hsv_image.cols, d_hsv_image.rows);
+	if (roi_rect.empty()) return std::nullopt;
+
+	cv::cuda::GpuMat d_cropped_hsv = d_hsv_image(roi_rect);
 
 	cv::Mat mask = cv::Mat::zeros(roi_rect.size(), CV_8UC1);
 	std::vector<cv::Point> offset_points;
 	for (const auto& p : points) {
 		offset_points.push_back(p - roi_rect.tl());
 	}
-
 	cv::fillConvexPoly(mask, offset_points, cv::Scalar(255));
 
+
 	cv::Mat computation_mask;
-	int margin_px = 10;
+	int margin_px = 5;
 	int kernel_size = 2 * margin_px + 1;
 	cv::Mat element = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(kernel_size, kernel_size));
 	cv::erode(mask, computation_mask, element);
-	if (cv::countNonZero(computation_mask) == 0) {
-		computation_mask = mask;
-	}
 
-	cv::Mat cropped_hsv = hsv_image(roi_rect);
+    if (cv::countNonZero(computation_mask) == 0) {
+       computation_mask = mask;
+    }
 
-	cv::Scalar avg_hsv, std_dev_hsv;
-	cv::meanStdDev(cropped_hsv, avg_hsv, std_dev_hsv, computation_mask);
+	cv::cuda::GpuMat d_mask;
+	d_mask.upload(computation_mask);
 
-	std::vector<cv::Mat> channels;
-	cv::split(cropped_hsv, channels);
+	BlobStats* d_stats = nullptr;
+	cudaMalloc(&d_stats, sizeof(BlobStats));
 
-	double min_h, max_h;
-	double min_s, max_s;
-	double min_v, max_v;
+	launchBlobKernel(d_cropped_hsv, d_mask, d_stats);
 
-	cv::minMaxLoc(channels[0], &min_h, &max_h, nullptr, nullptr, computation_mask);
-	cv::minMaxLoc(channels[1], &min_s, &max_s, nullptr, nullptr, computation_mask);
-	cv::minMaxLoc(channels[2], &min_v, &max_v, nullptr, nullptr, computation_mask);
+	BlobStats h_stats;
+	cudaMemcpy(&h_stats, d_stats, sizeof(BlobStats), cudaMemcpyDeviceToHost);
+	cudaFree(d_stats);
+
+	if (h_stats.count == 0) return std::nullopt;
+	bool use_wrap = (h_stats.count_low_red > 0 && h_stats.count_high_red > 0);
+
+	unsigned long long sum_h = use_wrap ? h_stats.sum_h_wrap : h_stats.sum_h;
+	unsigned long long sq_sum_h = use_wrap ? h_stats.sq_sum_h_wrap : h_stats.sq_sum_h;
+	int min_h = use_wrap ? h_stats.min_h_wrap : h_stats.min_h;
+	int max_h = use_wrap ? h_stats.max_h_wrap : h_stats.max_h;
+
+	double count = static_cast<double>(h_stats.count);
+
+	auto calc_stat = [&](unsigned long long sum, unsigned long long sq_sum) {
+		double avg = sum / count;
+		double var = (sq_sum / count) - (avg * avg);
+		double std_dev = std::sqrt(std::max(0.0, var));
+		return std::make_pair(avg, std_dev);
+	};
+
+	auto [avg_h, std_h] = calc_stat(sum_h, sq_sum_h);
+	auto [avg_s, std_s] = calc_stat(h_stats.sum_s, h_stats.sq_sum_s);
+	auto [avg_v, std_v] = calc_stat(h_stats.sum_v, h_stats.sq_sum_v);
+
+	if (avg_h >= 180.0) avg_h -= 180.0;
 
 	CalibrationResult result;
 	result.valid = true;
-	result.min_hsv = cv::Scalar(min_h, min_s, min_v);
-	result.max_hsv = cv::Scalar(max_h, max_s, max_v);
-	result.avg_hsv = avg_hsv;
-	result.std_dev_hsv = std_dev_hsv;
-
+	result.pixel_count = h_stats.count;
+	result.points = points;
+	result.frame_id = 0;
+	result.min_hsv = cv::Scalar(min_h, h_stats.min_s, h_stats.min_v);
+	result.max_hsv = cv::Scalar(max_h, h_stats.max_s, h_stats.max_v);
+	result.avg_hsv = cv::Scalar(avg_h, avg_s, avg_v);
+	result.std_dev_hsv = cv::Scalar(std_h, std_s, std_v);
 	return result;
 }
 

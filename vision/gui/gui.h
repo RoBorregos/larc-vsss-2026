@@ -1,27 +1,20 @@
-#ifndef DRAWER_H
-#define DRAWER_H
+#ifndef GUI_H
+#define GUI_H
 #include <string>
 #include <opencv4/opencv2/opencv.hpp>
+#include "drawer.h"
 #include "app_settings.h"
 
 class GUI {
 private:
 	AppData* app_data;
+	Drawer drawer;
 
 	std::string window_name{};
-	cv::Mat frame;
-	cv::Mat image;
+	cv::Mat image_with_gui;
+	cv::cuda::GpuMat image_bgr;
+	cv::cuda::GpuMat image_hsv;
 	cv::Rect viewport;
-
-	int brightness = 0;
-	float contrast = 1;
-	float saturation = 1;
-	float gamma_correction = 1;
-	float clahe_clip_limit = 2.0f;
-	int bilateral_sigma = 0;
-	float green_boost = 1.0f;
-	float blue_boost_factor = 1.0f;
-	float red_boost = 1.0f;
 
 	int image_width{};
 	int total_width{};
@@ -31,6 +24,10 @@ private:
 	[[nodiscard]] bool valid_coordinate(const std::vector<cv::Point>& points) const;
 
 	static inline cv::Scalar default_color{255, 255, 255};
+
+	cv::TickMeter fps_timer;
+	double current_fps = 0.0;
+	int frame_counter = 0;
 public:
 	explicit GUI(AppData* app_data);
 	GUI(AppData* app_data, const std::string& window_name);
@@ -41,21 +38,10 @@ public:
 	[[nodiscard]] std::string get_window_name() const;
 	[[nodiscard]] cv::Mat& get_frame();
 	[[nodiscard]] cv::Rect rowspace_roi(int rowspace) const;
-	[[nodiscard]] cv::Mat get_image(int conversion_code = -1, bool apply_preprocessing = true) const;
-
-	void set_display_brightness(int brightness);
-	void set_display_contrast(float contrast);
-	void set_display_saturation(float saturation);
-	void set_display_gamma_correction(float gamma_correction);
-	void set_clahe_clip_limit(float clip_limit);
-	void set_bilateral_sigma(int sigma);
-	void set_green_boost(float green_boost_factor);
-	void set_blue_boost(float blue_boost_factor);
-	void set_red_boost(float red_boost_factor);
+	[[nodiscard]] cv::cuda::GpuMat get_image(int conversion_code = -1) const;
 
 	void upload_frame(cv::Mat& input_frame);
-	void display_frame() const;
-	// void $display_processing_frame() const;
+	void display_frame();
 	void zoom(int mouse_x, int mouse_y, int scroll_amount);
 	void reset_zoom();
 
@@ -71,7 +57,6 @@ public:
 	void polyline(const std::vector<cv::Point>& points, int thickness = 1, const cv::Scalar& color = default_color);
 	void closed_polyline(const std::vector<cv::Point>& points, int thickness = 1, const cv::Scalar& color = default_color);
 	void inverse_closed_polyline(const std::vector<cv::Point>& points, const cv::Scalar& color = default_color);
-	void inverse_closed_polyline(const std::vector<cv::Point>& points, cv::Mat& input_mat, const cv::Scalar& color = default_color) const;
 };
 
-#endif //DRAWER_H
+#endif //GUI_H

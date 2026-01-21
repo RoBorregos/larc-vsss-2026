@@ -1,17 +1,17 @@
 #include "color_calibrator.h"
 
-ColorCalibrator::ColorCalibrator(GUI *drawer, AppData* app_data) {
+ColorCalibrator::ColorCalibrator(GUI *gui, AppData* app_data) {
 	this->app_data = app_data;
-	this->drawer = drawer;
+	this->gui = gui;
 }
 
 void ColorCalibrator::on_mouse(const int event, const int x, const int y, int flags, void* userdata) {
 	auto* self = static_cast<ColorCalibrator*>(userdata);
-	if (x < 0 || y < 0 || x >= self->drawer->get_image().cols || y >= self->drawer->get_image().rows)
+	if (x < 0 || y < 0 || x >= self->gui->get_image().cols || y >= self->gui->get_image().rows)
 		return;
 
 	if (event == cv::EVENT_LBUTTONDOWN) {
-		const cv::Point real_coords = self->drawer->screen_to_world(cv::Point(x, y));
+		const cv::Point real_coords = self->gui->screen_to_world(cv::Point(x, y));
 		self->handle_click(real_coords.x, real_coords.y);
 	}
 }
@@ -29,16 +29,16 @@ void ColorCalibrator::calibrate_roi() {
 		const cv::Point& point = roi_points[i];
 
 		if (i == 0) {
-			drawer->plot(point, {0, 255, 0});
+			gui->plot(point, {0, 255, 0});
 		} else if (i == roi_points.size() - 1) {
-			drawer->plot(point, {255, 0, 0});
+			gui->plot(point, {255, 0, 0});
 		} else {
-			drawer->plot(point);
+			gui->plot(point);
 		}
 	}
 
 	if (roi_points.size() > 1) {
-		drawer->closed_polyline(roi_points);
+		gui->closed_polyline(roi_points);
 	}
 }
 
@@ -85,7 +85,8 @@ void ColorCalibrator::save_calibration(const std::string &filename) {
 
 	root["color_calibration"] = {
 		{"saturation",          app_data->color_params.saturation},
-		{"gamma_correction",    app_data->color_params.gamma_correction},
+		{"gamma_correction_s",    app_data->color_params.gamma_correction_s},
+		{"gamma_correction_v",    app_data->color_params.gamma_correction_v},
 		{"clahe_clip_limit",    app_data->color_params.clahe_clip_limit},
 		{"bilateral_sigma",     app_data->color_params.bilateral_sigma},
 		{"green_boost",         app_data->color_params.green_boost},
@@ -142,7 +143,8 @@ void ColorCalibrator::load_calibration(const std::string &filename) {
 	if (root.contains("color_calibration")) {
 		auto j_color = root["color_calibration"];
 		app_data->color_params.saturation        = j_color.value("saturation",        app_data->color_params.saturation);
-		app_data->color_params.gamma_correction  = j_color.value("gamma_correction",  app_data->color_params.gamma_correction);
+		app_data->color_params.gamma_correction_s= j_color.value("gamma_correction_s",app_data->color_params.gamma_correction_s);
+		app_data->color_params.gamma_correction_v= j_color.value("gamma_correction_v",app_data->color_params.gamma_correction_v);
 		app_data->color_params.clahe_clip_limit  = j_color.value("clahe_clip_limit",  app_data->color_params.clahe_clip_limit);
 		app_data->color_params.bilateral_sigma   = j_color.value("bilateral_sigma",   app_data->color_params.bilateral_sigma);
 		app_data->color_params.green_boost       = j_color.value("green_boost",       app_data->color_params.green_boost);

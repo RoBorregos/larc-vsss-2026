@@ -23,7 +23,8 @@ bool is_video_file(const std::string& path) {
 }
 
 int main() {
-    std::cout << "USING OPENCV VERSION: " << CV_VERSION << std::endl;
+    std::cout << "[INFO] USING OPENCV VERSION: " << CV_VERSION << std::endl;
+    std::cout << "[INFO] USING " << cv::cuda::getCudaEnabledDeviceCount() << " CUDA DEVICES" << std::endl;
 
     const std::string path = "/home/iker/Documents/RoboticProjects/VSSS/media/image.jpeg";
     // const std::string path = "/home/iker/Documents/RoboticProjects/VSSS/media/robot_display.mp4";
@@ -32,17 +33,17 @@ int main() {
     cv::namedWindow(window_name);
 
     AppData app_data;
-    GUI drawer(&app_data, window_name);
-    BlobCalibrator blob_calibrator(&drawer, &app_data);
-    ColorCalibrator color_calibrator(&drawer, &app_data);
-    Detector detector(&drawer, &app_data, &blob_calibrator);
+    GUI gui(&app_data, window_name);
+    BlobCalibrator blob_calibrator(&gui, &app_data);
+    ColorCalibrator color_calibrator(&gui, &app_data);
+    Detector detector(&gui, &app_data, &blob_calibrator);
 
     blob_calibrator.load_calibration(app_data.calibration_filename);
     color_calibrator.load_calibration(app_data.calibration_filename);
 
-    InterfaceManager interface_manager(&drawer, &blob_calibrator, &color_calibrator, &app_data, &detector);
+    InterfaceManager interface_manager(&gui, &blob_calibrator, &color_calibrator, &app_data, &detector);
 
-    Robot robot_1(&drawer, &app_data, &detector);
+    Robot robot_1(&gui, &app_data, &detector);
     robot_1.initialize(1, TeamColor::BLUE, {PatchColor::CYAN, PatchColor::GREEN});
 
     bool is_video = is_video_file(path);
@@ -61,6 +62,7 @@ int main() {
         std::cout << "[INFO] Modo VIDEO detectado. FPS: " << fps << std::endl;
     } else {
         image = cv::imread(path);
+        delay = 1;
         if (image.empty()) {
             std::cerr << "[ERROR] No se pudo abrir la imagen: " << path << std::endl;
             return -1;
@@ -84,24 +86,17 @@ int main() {
 
         if (image.empty()) break;
 
-        drawer.upload_frame(image);
+        gui.upload_frame(image);
 
         // if (app_data.current_state == AppState::DETECTION) {
-            detector.update();
-            robot_1.update();
+            // detector.update();
+            // robot_1.update();
+            // detector.display_debug_info();
         // }
 
         interface_manager.draw_interface();
 
-        drawer.set_clahe_clip_limit(app_data.color_params.clahe_clip_limit);
-        drawer.set_display_saturation(app_data.color_params.saturation);
-        drawer.set_display_gamma_correction(app_data.color_params.gamma_correction);
-        drawer.set_bilateral_sigma(static_cast<int>(app_data.color_params.bilateral_sigma));
-        drawer.set_green_boost(app_data.color_params.green_boost);
-        drawer.set_blue_boost(app_data.color_params.blue_boost);
-        drawer.set_red_boost(app_data.color_params.red_boost);
-
-        drawer.display_frame();
+        gui.display_frame();
 
         if (cv::waitKey(delay) == KEY_ESC) break;
     }

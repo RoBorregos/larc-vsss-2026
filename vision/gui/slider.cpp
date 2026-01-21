@@ -35,7 +35,7 @@ void Slider::draw() {
 bool Slider::handle_input(int mouse_x, int mouse_y, const int event) {
 	cv::Rect roi = gui->rowspace_roi(rowspace);
 
-	if (event == cv::EVENT_LBUTTONDOWN && roi.contains({mouse_x, mouse_y})) {
+	if (event == cv::EVENT_LBUTTONDOWN && roi.contains<int>({mouse_x, mouse_y})) {
 		is_dragging = true;
 	} else if (event == cv::EVENT_LBUTTONUP) {
 		is_dragging = false;
