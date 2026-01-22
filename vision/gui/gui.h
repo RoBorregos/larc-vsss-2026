@@ -47,16 +47,16 @@ public:
 
 	[[nodiscard]] cv::Point screen_to_world(const cv::Point& screen_point) const;
 
-	void text(const std::string& text, int rowspace, float font_scale = 0.7, bool erase_rowspace = true, int y_offset = 0);
+	void text(const std::string& text, int rowspace, Drawer::Layer layer, float font_scale = 0.7, bool erase_rowspace = true, int y_offset = 0);
 
-	void plot(const cv::Point& point, const cv::Scalar& color = default_color);
-	void solid_circle(const cv::Point& center, int radius, const cv::Scalar& color = default_color);
-	void hollow_circle(const cv::Point& center, int radius, int thickness = 1, const cv::Scalar& color = default_color);
+	void plot(const cv::Point& point, Drawer::Layer layer, const cv::Scalar& color = default_color);
+	void solid_circle(const cv::Point& center, int radius, Drawer::Layer layer, const cv::Scalar& color = default_color);
+	void hollow_circle(const cv::Point& center, int radius, Drawer::Layer layer, int thickness = 1, const cv::Scalar& color = default_color);
 
-	void line(const cv::Point& point1, const cv::Point& point2, int thickness = 1, const cv::Scalar& color = default_color);
-	void polyline(const std::vector<cv::Point>& points, int thickness = 1, const cv::Scalar& color = default_color);
-	void closed_polyline(const std::vector<cv::Point>& points, int thickness = 1, const cv::Scalar& color = default_color);
-	void inverse_closed_polyline(const std::vector<cv::Point>& points, const cv::Scalar& color = default_color);
+	void line(const cv::Point& point1, const cv::Point& point2, Drawer::Layer layer, int thickness = 1, const cv::Scalar& color = default_color);
+	void polyline(const std::vector<cv::Point>& points, Drawer::Layer layer, int thickness = 1, const cv::Scalar& color = default_color);
+	void closed_polyline(const std::vector<cv::Point>& points, Drawer::Layer layer, int thickness = 1, const cv::Scalar& color = default_color);
+	void inverse_closed_polyline(const std::vector<cv::Point>& points, Drawer::Layer layer, const cv::Scalar& color = default_color);
 };
 
 #endif //GUI_H

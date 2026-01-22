@@ -99,3 +99,13 @@ void preprocessing::resize(cv::cuda::GpuMat& input_image, const int target_width
 	cv::cuda::resize(input_image, temp, cv::Size(target_width, target_height), 0, 0, cv::INTER_LINEAR);
 	input_image = temp;
 }
+
+void preprocessing::resize(cv::Mat& input_image, const int target_width, const int target_height) {
+	if (input_image.cols == target_width && input_image.rows == target_height) {
+		return;
+	}
+
+	cv::Mat temp;
+	cv::resize(input_image, temp, cv::Size(target_width, target_height), 0, 0, cv::INTER_LINEAR);
+	input_image = temp;
+}

@@ -29,16 +29,16 @@ void ColorCalibrator::calibrate_roi() {
 		const cv::Point& point = roi_points[i];
 
 		if (i == 0) {
-			gui->plot(point, {0, 255, 0});
+			gui->plot(point, Drawer::Layer::MARKINGS, {0, 255, 0});
 		} else if (i == roi_points.size() - 1) {
-			gui->plot(point, {255, 0, 0});
+			gui->plot(point, Drawer::Layer::MARKINGS, {255, 0, 0});
 		} else {
-			gui->plot(point);
+			gui->plot(point, Drawer::Layer::MARKINGS);
 		}
 	}
 
 	if (roi_points.size() > 1) {
-		gui->closed_polyline(roi_points);
+		gui->closed_polyline(roi_points, Drawer::Layer::MARKINGS);
 	}
 }
 

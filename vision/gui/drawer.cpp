@@ -82,37 +82,44 @@ public:
     }
 };
 
-void Drawer::plot(const cv::Point& p, const cv::Scalar& color) {
-    command_queue.push_back(std::make_unique<PlotCmd>(p, color));
+void Drawer::plot(const cv::Point& p, const cv::Scalar& color, Layer layer) {
+    queues[layer].push_back(std::make_unique<PlotCmd>(p, color));
 }
 
-void Drawer::line(const cv::Point& p1, const cv::Point& p2, int thickness, const cv::Scalar& color) {
-    command_queue.push_back(std::make_unique<LineCmd>(p1, p2, thickness, color));
+void Drawer::line(const cv::Point& p1, const cv::Point& p2, int thickness, const cv::Scalar& color, Layer layer) {
+    queues[layer].push_back(std::make_unique<LineCmd>(p1, p2, thickness, color));
 }
 
-void Drawer::circle(const cv::Point& center, int radius, int thickness, const cv::Scalar& color) {
-    command_queue.push_back(std::make_unique<CircleCmd>(center, radius, thickness, color));
+void Drawer::circle(const cv::Point& center, int radius, int thickness, const cv::Scalar& color, Layer layer) {
+    queues[layer].push_back(std::make_unique<CircleCmd>(center, radius, thickness, color));
 }
 
-void Drawer::polyline(const std::vector<cv::Point>& points, bool is_closed, int thickness, const cv::Scalar& color) {
-    command_queue.push_back(std::make_unique<PolylineCmd>(points, is_closed, thickness, color));
+void Drawer::polyline(const std::vector<cv::Point>& points, bool is_closed, int thickness, const cv::Scalar& color, Layer layer) {
+    queues[layer].push_back(std::make_unique<PolylineCmd>(points, is_closed, thickness, color));
 }
 
-void Drawer::inverse_polyline(const std::vector<cv::Point>& points, const cv::Scalar& color, const cv::Rect& restriction_roi) {
-    command_queue.push_back(std::make_unique<InversePolyCmd>(points, color, restriction_roi));
+void Drawer::inverse_polyline(const std::vector<cv::Point>& points, const cv::Scalar& color, const cv::Rect& restriction_roi, Layer layer) {
+    queues[layer].push_back(std::make_unique<InversePolyCmd>(points, color, restriction_roi));
 }
 
-void Drawer::text(const std::string& content, const cv::Rect& roi, float font_scale, int y_offset, bool erase_bg) {
-    command_queue.push_back(std::make_unique<TextCmd>(content, roi, font_scale, y_offset, erase_bg));
+void Drawer::text(const std::string& content, const cv::Rect& roi, float font_scale, int y_offset, bool erase_bg, Layer layer) {
+    queues[layer].push_back(std::make_unique<TextCmd>(content, roi, font_scale, y_offset, erase_bg));
 }
 
-void Drawer::render(cv::Mat& target) {
-    for (const auto& cmd : command_queue) {
+void Drawer::render(cv::Mat& target, const Layer layer) {
+    if (queues.find(layer) == queues.end()) return;
+
+    for (auto& cmd : queues[layer]) {
         cmd->draw(target);
     }
-    command_queue.clear();
+
+    clear(layer);
 }
 
-void Drawer::clear() {
-    command_queue.clear();
+void Drawer::clear(const Layer layer) {
+    queues[layer].clear();
+}
+
+void Drawer::clear_all() {
+    queues.clear();
 }

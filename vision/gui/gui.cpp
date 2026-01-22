@@ -35,8 +35,14 @@ bool GUI::valid_coordinate(const std::vector<cv::Point>& points) const {
 void GUI::upload_frame(cv::Mat &input_frame) {
 	fps_timer.start();
 
+	preprocessing::resize(input_frame, 1024 * 0.7, 768 * 0.7);
+
+	if (app_data->roi_points.size() > 1) {
+		inverse_closed_polyline(app_data->roi_points, Drawer::Layer::PREPROCESSING, {0, 0, 0});
+	}
+	drawer.render(input_frame, Drawer::Layer::PREPROCESSING);
+
 	image_bgr.upload(input_frame);
-	preprocessing::resize(image_bgr, 1024 * 0.7, 768 * 0.7);
 	preprocessing::filters(image_bgr, image_bgr, image_hsv, app_data->color_params);
 
 	const int new_total_width = std::ceil(image_bgr.cols * 1.5);
@@ -146,10 +152,17 @@ void GUI::free_rowspace(const int rowspace) {
 	cv::rectangle(image_with_gui, roi, cv::Scalar(0, 0, 0), cv::FILLED);
 }
 
-void GUI::text(const std::string &text, const int rowspace, float font_scale, bool erase_rowspace, int y_offset) {
-	if (image_with_gui.empty()) return;
-	cv::Rect roi = rowspace_roi(rowspace);
-	drawer.text(text, roi, font_scale, y_offset, erase_rowspace);
+void GUI::text(
+	const std::string &text,
+	const int rowspace,
+	const Drawer::Layer layer,
+	const float font_scale,
+	const bool erase_rowspace,
+	const int y_offset
+	) {
+
+	const cv::Rect roi = rowspace_roi(rowspace);
+	drawer.text(text, roi, font_scale, y_offset, erase_rowspace, layer);
 }
 
 void GUI::display_frame() {
@@ -158,6 +171,8 @@ void GUI::display_frame() {
 
 	cv::Mat cpu_image_bgr;
 	image_bgr.download(cpu_image_bgr);
+
+	drawer.render(cpu_image_bgr, Drawer::Layer::MARKINGS);
 
 	cv::Mat image_view = cpu_image_bgr(viewport);
 	cv::resize(image_view, image_view, cv::Size(image_width, total_height), 0, 0, cv::INTER_LINEAR);
@@ -169,13 +184,7 @@ void GUI::display_frame() {
 
 	sidebar.copyTo(display_buffer(sidebar_rect));
 
-	if (app_data->roi_points.size() > 1) {
-		inverse_closed_polyline(app_data->roi_points, {0, 0, 0});
-	}
-
-	drawer.render(display_buffer);
-	drawer.clear();
-
+	drawer.render(display_buffer, Drawer::Layer::INTERFACE);
 
 	fps_timer.stop();
 	frame_counter++;
@@ -195,51 +204,65 @@ void GUI::display_frame() {
 	cv::imshow(window_name, display_buffer);
 }
 
-void GUI::plot(const cv::Point &point, const cv::Scalar &color) {
+void GUI::plot(const cv::Point &point, const Drawer::Layer layer, const cv::Scalar &color) {
 	if (!valid_coordinate(point)) return;
-	drawer.plot(point, color);
+	drawer.plot(point, color, layer);
 }
 
 
-void GUI::solid_circle(const cv::Point& center, const int radius, const cv::Scalar& color) {
+void GUI::solid_circle(const cv::Point& center, const int radius, const Drawer::Layer layer, const cv::Scalar& color) {
 	if (!valid_coordinate(center)) return;
-	drawer.circle(center, radius, cv::FILLED, color);
+	drawer.circle(center, radius, cv::FILLED, color, layer);
 }
 
-void GUI::hollow_circle(const cv::Point& center, const int radius, const int thickness, const cv::Scalar& color) {
+void GUI::hollow_circle(const cv::Point& center, const int radius, const Drawer::Layer layer, const int thickness, const cv::Scalar& color) {
 	if (!valid_coordinate(center)) return;
-	drawer.circle(center, radius, thickness, color);
+	drawer.circle(center, radius, thickness, color, layer);
 }
 
-void GUI::line(const cv::Point& point1, const cv::Point& point2, const int thickness, const cv::Scalar& color) {
+void GUI::line(const cv::Point& point1, const cv::Point& point2, const Drawer::Layer layer, const int thickness, const cv::Scalar& color) {
 	if (!valid_coordinate(point1)) return;
 	if (!valid_coordinate(point2)) return;
 
-	drawer.line(point1, point2, thickness, color);
+	drawer.line(point1, point2, thickness, color, layer);
 }
 
-void GUI::polyline(const std::vector<cv::Point>& points, const int thickness, const cv::Scalar&
-color) {
+void GUI::polyline(
+	const std::vector<cv::Point>& points,
+	const Drawer::Layer layer,
+	const int thickness,
+	const cv::Scalar& color) {
+
 	if (points.size() <= 1) return;
 	if (!valid_coordinate(points)) return;
 
-	drawer.polyline(points, false, thickness, color);
+	drawer.polyline(points, false, thickness, color, layer);
 }
 
-void GUI::closed_polyline(const std::vector<cv::Point>& points, const int thickness, const cv::Scalar
-&color) {
+void GUI::closed_polyline(
+	const std::vector<cv::Point>& points,
+	const Drawer::Layer layer,
+	const int thickness,
+	const cv::Scalar &color
+	) {
+
 	if (points.size() <= 1) return;
 	if (!valid_coordinate(points)) return;
 
-	drawer.polyline(points, true, thickness, color);
+	drawer.polyline(points, true, thickness, color, layer);
 }
 
-void GUI::inverse_closed_polyline(const std::vector<cv::Point> &points, const cv::Scalar &color) {
+void GUI::inverse_closed_polyline(
+	const std::vector<cv::Point> &points,
+	const Drawer::Layer layer,
+	const cv::Scalar &color
+	) {
+
 	if (points.size() <= 1) return;
 	if (!valid_coordinate(points)) return;
 
 	cv::Rect image_area(0, 0, image_width, total_height);
-	drawer.inverse_polyline(points, color, image_area);
+	drawer.inverse_polyline(points, color, image_area, layer);
 }
 
 

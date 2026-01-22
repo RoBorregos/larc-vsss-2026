@@ -1,35 +1,35 @@
 #include "interface_manager.h"
 
 InterfaceManager::InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, AppData* app_data, Detector* detector)
-    : drawer(drawer), blob_calibrator(blob_calibrator), color_calibrator(color_calibrator), app_data(app_data), detector(detector) {
+    : gui(drawer), blob_calibrator(blob_calibrator), color_calibrator(color_calibrator), app_data(app_data), detector(detector) {
     init_widgets();
 }
 
 void InterfaceManager::init_widgets() {
-    main_menu_widgets.push_back(std::make_unique<Button>(drawer, 2, "MODO: DETECTION", [this](){
+    main_menu_widgets.push_back(std::make_unique<Button>(gui, 2, "MODO: DETECTION", [this](){
         app_data->current_state = AppState::DETECTION;
     }));
-    main_menu_widgets.push_back(std::make_unique<Button>(drawer, 4, "MODO: BLOB CALIBRATION", [this](){
+    main_menu_widgets.push_back(std::make_unique<Button>(gui, 4, "MODO: BLOB CALIBRATION", [this](){
         app_data->current_state = AppState::BLOB_CALIBRATION_MENU;
     	app_data->paused = true;
     }));
-	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 5, "MODO: COLOR CALIBRATION", [this](){
+	main_menu_widgets.push_back(std::make_unique<Button>(gui, 5, "MODO: COLOR CALIBRATION", [this](){
 		app_data->current_state = AppState::COLOR_CALIBRATING;
     	app_data->paused = true;
 	}));
-	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 6, "MODO: MASK CALIBRATION", [this](){
+	main_menu_widgets.push_back(std::make_unique<Button>(gui, 6, "MODO: MASK CALIBRATION", [this](){
 		app_data->current_state = AppState::MASK_CALIBRATING;
 		app_data->paused = true;
 	}));
-	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 7, "MODO: ROI CALIBRATION", [this](){
+	main_menu_widgets.push_back(std::make_unique<Button>(gui, 7, "MODO: ROI CALIBRATION", [this](){
 		app_data->current_state = AppState::ROI_CALIBRATIING;
     	app_data->paused = true;
 	}));
-	main_menu_widgets.push_back(std::make_unique<Button>(drawer, 9, "SALIR", [this](){
+	main_menu_widgets.push_back(std::make_unique<Button>(gui, 9, "SALIR", [this](){
 		std::exit(0);
 	}));
 
-	auto pause_btn_ptr = std::make_unique<Button>(drawer, 8, "PAUSAR", [this]() {
+	auto pause_btn_ptr = std::make_unique<Button>(gui, 8, "PAUSAR", [this]() {
 		app_data->paused = !app_data->paused;
 	});
 	pause_button = pause_btn_ptr.get();
@@ -43,7 +43,7 @@ void InterfaceManager::init_widgets() {
     };
 
 	auto create_color_btn = [&](const int row, const std::string& color) {
-		auto btn = std::make_unique<Button>(drawer, row, color, [=](){ select_color(color); });
+		auto btn = std::make_unique<Button>(gui, row, color, [=](){ select_color(color); });
 		color_buttons[color] = btn.get();
 		blob_calibration_menu_widgets.push_back(std::move(btn));
 	};
@@ -56,57 +56,57 @@ void InterfaceManager::init_widgets() {
 	create_color_btn(6, "MAGENTA");
 	create_color_btn(7, "ORANGE");
 
-	blob_calibration_menu_widgets.push_back(std::make_unique<Button>(drawer, 8, "VOLVER AL MENU", [this](){
+	blob_calibration_menu_widgets.push_back(std::make_unique<Button>(gui, 8, "VOLVER AL MENU", [this](){
         app_data->current_state = AppState::MAIN_MENU;
     }));
-	blob_calibration_menu_widgets.push_back(std::make_unique<Button>(drawer, 9, "IMPRIMIR CALIBRACIONES", [this](){
+	blob_calibration_menu_widgets.push_back(std::make_unique<Button>(gui, 9, "IMPRIMIR CALIBRACIONES", [this](){
 		BlobCalibrator::print_calibrations(app_data->match_calibration);
 	}));
 
-    blob_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 8, "Reset Points", [this](){
+    blob_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 8, "Reset Points", [this](){
         blob_calibrator->reset_points();
     }));
-    blob_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
+    blob_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 9, "GUARDAR Y VOLVER", [this](){
     	save_current_blob_calibration();
     }));
 
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 0, "H Min", &app_data->mask_params.h_min, 0, 180));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 1, "S Min", &app_data->mask_params.s_min, 0, 255));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 2, "V Min", &app_data->mask_params.v_min, 0, 255));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 3, "H Max", &app_data->mask_params.h_max, 0, 180));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 4, "S Max", &app_data->mask_params.s_max, 0, 255));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 5, "V Max", &app_data->mask_params.v_max, 0, 255));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 7, "Reset Values", [this](){
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 0, "H Min", &app_data->mask_params.h_min, 0, 180));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 1, "S Min", &app_data->mask_params.s_min, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 2, "V Min", &app_data->mask_params.v_min, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 3, "H Max", &app_data->mask_params.h_max, 0, 180));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 4, "S Max", &app_data->mask_params.s_max, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 5, "V Max", &app_data->mask_params.v_max, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 7, "Reset Values", [this](){
 		app_data->mask_params = MaskParams();
 	}));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
+	mask_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 9, "GUARDAR Y VOLVER", [this](){
 		app_data->current_state = AppState::MAIN_MENU;
 		color_calibrator->save_calibration(app_data->calibration_filename);
 	}));
 
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 0, "Saturacion", &app_data->color_params.saturation, 0.0f, 15.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 1, "Gamma S", &app_data->color_params.gamma_correction_s, 0.0f, 5.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 2, "Gamma V", &app_data->color_params.gamma_correction_v, 0.0f, 5.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 3, "CLAHE Clip", &app_data->color_params.clahe_clip_limit, 0.1f, 5.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 4, "Bilateral", &app_data->color_params.bilateral_sigma, 0.0f, 100.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 5, "Green Boost", &app_data->color_params.green_boost, 0.2f, 2.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 6, "Blue Boost", &app_data->color_params.blue_boost, 0.2f, 2.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(drawer, 7, "Red Boost", &app_data->color_params.red_boost, 0.2f, 2.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 8, "Reset Filter", [this](){
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 0, "Saturacion", &app_data->color_params.saturation, 0.0f, 15.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 1, "Gamma S", &app_data->color_params.gamma_correction_s, 0.0f, 5.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 2, "Gamma V", &app_data->color_params.gamma_correction_v, 0.0f, 5.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 3, "CLAHE Clip", &app_data->color_params.clahe_clip_limit, 0.1f, 5.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 4, "Bilateral", &app_data->color_params.bilateral_sigma, 0.0f, 100.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 5, "Green Boost", &app_data->color_params.green_boost, 0.2f, 2.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 6, "Blue Boost", &app_data->color_params.blue_boost, 0.2f, 2.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 7, "Red Boost", &app_data->color_params.red_boost, 0.2f, 2.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 8, "Reset Filter", [this](){
 		app_data->color_params = VisionParams();
 	}));
-	color_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
+	color_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 9, "GUARDAR Y VOLVER", [this](){
 		app_data->current_state = AppState::MAIN_MENU;
 		color_calibrator->save_calibration(app_data->calibration_filename);
 	}));
 
-	roi_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 7, "Remove Last Point", [this](){
+	roi_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 7, "Remove Last Point", [this](){
 		color_calibrator->remove_last_point();
 	}));
-	roi_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 8, "Reset Points", [this](){
+	roi_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 8, "Reset Points", [this](){
 		color_calibrator->reset_points();
 	}));
-	roi_calibration_tool_widgets.push_back(std::make_unique<Button>(drawer, 9, "GUARDAR Y VOLVER", [this](){
+	roi_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 9, "GUARDAR Y VOLVER", [this](){
 		app_data->current_state = AppState::MAIN_MENU;
 		app_data->roi_points = color_calibrator->get_roi();
 		color_calibrator->save_calibration(app_data->calibration_filename);
@@ -168,11 +168,11 @@ void InterfaceManager::draw_interface() {
 
     switch (app_data->current_state) {
         case AppState::MAIN_MENU:
-            drawer->text("MAIN MENU", 1, 1.0, true, -10);
+            gui->text("MAIN MENU", 1, Drawer::Layer::INTERFACE, 1.0, true, -10);
             current_widgets = &main_menu_widgets;
             break;
         case AppState::BLOB_CALIBRATION_MENU:
-            drawer->text("SELECCIONAR COLOR", 0, 0.8, true);
+            gui->text("SELECCIONAR COLOR", 0, Drawer::Layer::INTERFACE, 0.8, true);
             current_widgets = &blob_calibration_menu_widgets;
             break;
         case AppState::BLOB_CALIBRATING:
@@ -183,16 +183,16 @@ void InterfaceManager::draw_interface() {
     		current_widgets = &color_calibration_tool_widgets;
     		break;
     	case AppState::MASK_CALIBRATING:
-    		drawer->text("MODO MASK CALIBRATION", 0, 0.8, true);
+    		gui->text("MODO MASK CALIBRATION", 0, Drawer::Layer::INTERFACE, 0.8, true);
 			current_widgets = &mask_calibration_tool_widgets;
 			break;
     	case AppState::ROI_CALIBRATIING:
-    		drawer->text("MODO ROI CALIBRATION", 0, 0.8, true);
+    		gui->text("MODO ROI CALIBRATION", 0, Drawer::Layer::INTERFACE, 0.8, true);
 			current_widgets = &roi_calibration_tool_widgets;
     		color_calibrator->calibrate_roi();
     		break;
         case AppState::DETECTION:
-            drawer->text("MODO DETECTION (ESC para salir)", 1, 0.6, false);
+            gui->text("MODO DETECTION (ESC para salir)", 1, Drawer::Layer::INTERFACE, 0.6, false);
             break;
     }
 	// detector->display_debug_info();
@@ -213,18 +213,18 @@ void InterfaceManager::handle_input(int event, int x, int y) {
 	std::vector<std::unique_ptr<Widget>>* current_widgets = nullptr;
 
 	if (event == cv::EVENT_RBUTTONDOWN) {
-		drawer->zoom(x, y, 2);
-		drawer->display_frame();
+		gui->zoom(x, y, 2);
+		gui->display_frame();
 	}
 	if (event == cv::EVENT_MBUTTONDOWN) {
-		drawer->reset_zoom();
-		drawer->display_frame();
+		gui->reset_zoom();
+		gui->display_frame();
 	}
 
 	if (event == cv::EVENT_LBUTTONDBLCLK) {
-		cv::Point real_coords = drawer->screen_to_world(cv::Point(x, y));
+		cv::Point real_coords = gui->screen_to_world(cv::Point(x, y));
 		std::cout << "Clicked at (" << x << ", " << y << ")" << " real: [" << x << ", " << y << "]" << std::endl;
-		const cv::cuda::GpuMat img = drawer->get_image(cv::COLOR_BGR2HSV);
+		const cv::cuda::GpuMat img = gui->get_image(cv::COLOR_BGR2HSV);
 
 		const cv::Rect roi(real_coords.x, real_coords.y, 1, 1);
 		const cv::cuda::GpuMat gpu_pixel_region(img, roi);

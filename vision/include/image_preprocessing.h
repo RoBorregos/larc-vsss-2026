@@ -14,6 +14,7 @@
 namespace preprocessing {
 	void filters(const cv::cuda::GpuMat& bgr_image_src, cv::cuda::GpuMat& bgr_image_out, cv::cuda::GpuMat& hsv_image_out, const VisionParams& params);
 	void resize(cv::cuda::GpuMat& input_image, int target_width, int target_height);
+	void resize(cv::Mat& input_image, int target_width, int target_height);
 }
 
 #endif //OPENCV_IMAGE_PREPROCESSING_H

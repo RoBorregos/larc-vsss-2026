@@ -16,7 +16,7 @@ void Button::draw() {
 	const cv::Scalar bg_color = is_hovered ? cv::Scalar(100, 100, 100) : cv::Scalar(50, 50, 50);
 
 	cv::rectangle(frame, roi, bg_color, cv::FILLED);
-	gui->text(label, rowspace, 0.7, false);
+	gui->text(label, rowspace, Drawer::Layer::INTERFACE, 0.7, false);
 }
 
 bool Button::handle_input(int x, int y, int event) {

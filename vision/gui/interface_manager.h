@@ -17,7 +17,7 @@
 
 class InterfaceManager {
 private:
-	GUI* drawer;
+	GUI* gui;
 	BlobCalibrator* blob_calibrator;
 	ColorCalibrator* color_calibrator;
 	AppData* app_data;

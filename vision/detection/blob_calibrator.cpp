@@ -77,9 +77,9 @@ void BlobCalibrator::print_calibrations(const MatchCalibration &calibration) {
 
 
 std::optional<CalibrationResult> BlobCalibrator::calibrate_individual() {
-    for (const auto point : points) gui->plot(point);
-    if (points.size() == 4)    gui->closed_polyline(points);
-    else if (points.size() > 1)    gui->polyline(points);
+    for (const auto point : points) gui->plot(point, Drawer::Layer::MARKINGS);
+    if (points.size() == 4)    gui->closed_polyline(points, Drawer::Layer::MARKINGS);
+    else if (points.size() > 1)    gui->polyline(points, Drawer::Layer::MARKINGS);
 
     if (points.size() != 4) return std::nullopt;
 

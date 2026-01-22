@@ -24,12 +24,12 @@ void Slider::draw() {
 	int knob_x = start_x + static_cast<int>(normalized * (bar_width * 1.0));
 	int center_y = roi.y + roi.height / 2 + 10;
 
-	gui->text(label, rowspace, 0.4, false, -10);
+	gui->text(label, rowspace, Drawer::Layer::INTERFACE, 0.4, false, -10);
 
 	const cv::Scalar knob_color = (is_hovered || is_dragging) ? cv::Scalar(0, 255, 255) : cv::Scalar(0, 200, 200);
 
-	gui->line({start_x, center_y}, {start_x + bar_width, center_y}, 4, cv::Scalar(255, 0, 0));
-	gui->solid_circle({knob_x, center_y}, 8, knob_color);
+	gui->line({start_x, center_y}, {start_x + bar_width, center_y}, Drawer::Layer::INTERFACE, 4, cv::Scalar(255, 0, 0));
+	gui->solid_circle({knob_x, center_y}, 8, Drawer::Layer::INTERFACE, knob_color);
 }
 
 bool Slider::handle_input(int mouse_x, int mouse_y, const int event) {
