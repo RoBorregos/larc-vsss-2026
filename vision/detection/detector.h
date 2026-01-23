@@ -5,11 +5,13 @@
 #include <iostream>
 #include <vector>
 #include <opencv4/opencv2/opencv.hpp>
+#include <opencv2/cudaarithm.hpp>
+
 
 #include "gui.h"
 #include "blob_calibrator.h"
 #include "app_settings.h"
-#include "image_preprocessing.h"
+#include "color_segmentation.cuh"
 
 enum class TeamColor { NONE, BLUE, YELLOW };
 enum class PatchColor { RED, GREEN, CYAN, MAGENTA, UNKNOWN };
@@ -47,34 +49,15 @@ private:
 	AppData* app_data;
 	BlobCalibrator* blob_calibrator;
 
-	std::vector<DebugWindowData> debug_window_contexts;
-
-	cv::Mat hsv_mat;
-
-	std::vector<std::vector<DetectedPatch>> square_patches;
-	std::vector<std::vector<DetectedPatch>> categorized_objects;
-	std::vector<std::vector<cv::Point>> found_objects;
-
 	std::set<std::string> window_names;
 
 	static void on_debug_mouse(int event, int x, int y, int flags, void* userdata);
 
-	bool valid_square(const std::vector<cv::Point>& contour, std::vector<cv::Point>& dst);
-	static double angle_cosine(cv::Point pt1, cv::Point pt2, cv::Point pt0);
-
-	void filter_patches();
-	void categorize_objects();
-	void find_objects();
-	static void show_debug_rois(const cv::Mat& src_img, const std::vector<std::vector<cv::Point>>& contours);
+	[[nodiscard]] cv::cuda::GpuMat get_blob_mask(const cv::cuda::GpuMat& hsv_image);
 public:
 	Detector(GUI* gui, AppData* app_data, BlobCalibrator* blob_calibrator);
 
 	void update();
-	void display_debug_info();
-	void destroy_debug_windows();
-
-	std::optional<State> ball();
-	std::optional<State> robot(TeamColor team, const std::vector<PatchColor>& color_pattern);
 };
 
 #endif //DETECTION_METHOD_H

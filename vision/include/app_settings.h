@@ -3,6 +3,12 @@
 
 #include <string>
 
+struct ColorCalibration {
+	int id{};
+	cv::Scalar hsv_avg{};
+	cv::Scalar hsv_stddev{};
+};
+
 enum class AppState {
 	MAIN_MENU,
 	MASK_CALIBRATING,

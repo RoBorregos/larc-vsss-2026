@@ -70,13 +70,13 @@ void InterfaceManager::init_widgets() {
     	save_current_blob_calibration();
     }));
 
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 0, "H Min", &app_data->mask_params.h_min, 0, 180));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 1, "S Min", &app_data->mask_params.s_min, 0, 255));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 2, "V Min", &app_data->mask_params.v_min, 0, 255));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 3, "H Max", &app_data->mask_params.h_max, 0, 180));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 4, "S Max", &app_data->mask_params.s_max, 0, 255));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 5, "V Max", &app_data->mask_params.v_max, 0, 255));
-	mask_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 7, "Reset Values", [this](){
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 1, "H Min", &app_data->mask_params.h_min, 0, 180));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 2, "S Min", &app_data->mask_params.s_min, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 3, "V Min", &app_data->mask_params.v_min, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 4, "H Max", &app_data->mask_params.h_max, 0, 180));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 5, "S Max", &app_data->mask_params.s_max, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 6, "V Max", &app_data->mask_params.v_max, 0, 255));
+	mask_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 8, "Reset Values", [this](){
 		app_data->mask_params = MaskParams();
 	}));
 	mask_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 9, "GUARDAR Y VOLVER", [this](){

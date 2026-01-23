@@ -89,7 +89,7 @@ int main() {
         gui.upload_frame(image);
 
         // if (app_data.current_state == AppState::DETECTION) {
-            // detector.update();
+            detector.update();
             // robot_1.update();
             // detector.display_debug_info();
         // }

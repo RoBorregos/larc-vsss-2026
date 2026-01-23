@@ -200,7 +200,6 @@ void GUI::display_frame() {
 	cv::putText(display_buffer, fps_text, cv::Point(15, 35),
 				cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
 
-	std::cout << "\r" << fps_text << "            " << std::flush;
 	cv::imshow(window_name, display_buffer);
 }
 

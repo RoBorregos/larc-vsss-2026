@@ -12,7 +12,6 @@ void Robot::initialize(const int robot_id, const TeamColor team_color, const std
 }
 
 void Robot::update() {
-	std::optional<State> current_state = detector->robot(team, color_pattern);
 }
 
 

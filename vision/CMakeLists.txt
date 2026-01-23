@@ -19,8 +19,12 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories(include)
 include_directories(lib)
 include_directories(detection)
+include_directories(calibration)
 include_directories(gui)
 include_directories(field)
+
+# --- DEFINITIONS ---
+add_definitions(-DDEBUG_MODE)
 
 # --- EJECUTABLE ---
 add_executable(opencv main.cpp
@@ -40,11 +44,14 @@ add_executable(opencv main.cpp
 
 		# Clases de detección
 		detection/detector.cpp              detection/detector.h
-		detection/blob_calibrator.cpp       detection/blob_calibrator.h
-		detection/color_calibrator.cpp      detection/color_calibrator.h
+		detection/color_segmentation.cu     detection/color_segmentation.cuh
+
+		# Clases de calibración
+		calibration/blob_calibrator.cpp     calibration/blob_calibrator.h
+		calibration/color_calibrator.cpp    calibration/color_calibrator.h
 
 		# Archivo CUDA
-		detection/blob_kernels.cu           detection/blob_kernels.h
+		calibration/blob_kernels.cu calibration/blob_kernels.h
 
 		# Interfaz Gráfica (GUI)
 		gui/gui.cpp                         gui/gui.h
