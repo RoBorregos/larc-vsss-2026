@@ -5,6 +5,9 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <gui.h>
+#include <cstring>
+#include <cerrno>
+#include <sysexits.h>
 #include "app_settings.h"
 #include "json.hpp"
 using json = nlohmann::json;

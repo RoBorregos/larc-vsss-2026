@@ -230,7 +230,7 @@ void BlobCalibrator::save_calibration(const std::string& filename) {
        std::cerr << "[ERROR] No se pudo crear el archivo: " << filename << std::endl;
     }
 }
-void BlobCalibrator::load_calibration(const std::string &filename) {
+std::vector<ColorCalibration> BlobCalibrator::load_calibration(const std::string &filename) {
 	std::cout << "[DEBUG] Abriendo archivo: "
 			  << filename << std::endl;
 
@@ -238,12 +238,12 @@ void BlobCalibrator::load_calibration(const std::string &filename) {
 
 	if (!file.is_open()) {
 		std::cerr << "[WARN] No se pudo abrir el archivo (No existe o permisos)." << std::endl;
-		return;
+		return {};
 	}
 
 	if (file.peek() == std::ifstream::traits_type::eof()) {
 		std::cerr << "[ERROR] El archivo existe pero ESTÁ VACÍO (0 bytes)." << std::endl;
-		return;
+		return {};
 	}
 
 	json root;
@@ -252,10 +252,12 @@ void BlobCalibrator::load_calibration(const std::string &filename) {
 		file >> root;
 	} catch (json::parse_error& e) {
 		std::cerr << "[ERROR] JSON corrupto: " << e.what() << std::endl;
-		return;
+		return {};
 	}
 
-	auto deserialize_list = [&](const std::string& key, std::vector<CalibrationResult>& list) {
+	std::vector<ColorCalibration> color_calibrations;
+
+	auto deserialize_list = [&](const std::string& key, char id, std::vector<CalibrationResult>& list) {
 		list.clear();
 		if (!root.contains(key)) return;
 
@@ -274,16 +276,23 @@ void BlobCalibrator::load_calibration(const std::string &filename) {
 			item.points = {};
 
 			list.push_back(item);
+			color_calibrations.push_back({
+				id,
+				item.avg_hsv,
+				item.std_dev_hsv,
+			});
 		}
 	};
 
-	deserialize_list("yellow",  app_data->match_calibration.yellow);
-	deserialize_list("blue",    app_data->match_calibration.blue);
-	deserialize_list("magenta", app_data->match_calibration.magenta);
-	deserialize_list("red",     app_data->match_calibration.red);
-	deserialize_list("cyan",    app_data->match_calibration.cyan);
-	deserialize_list("green",   app_data->match_calibration.green);
-	deserialize_list("orange",  app_data->match_calibration.orange);
+	deserialize_list("yellow", Color_ID::YELLOW,  app_data->match_calibration.yellow);
+	deserialize_list("blue", Color_ID::BLUE,      app_data->match_calibration.blue);
+	deserialize_list("magenta", Color_ID::MAGENTA,app_data->match_calibration.magenta);
+	deserialize_list("red", Color_ID::RED,        app_data->match_calibration.red);
+	deserialize_list("cyan", Color_ID::CYAN,      app_data->match_calibration.cyan);
+	deserialize_list("green", Color_ID::GREEN,    app_data->match_calibration.green);
+	deserialize_list("orange", Color_ID::ORANGE,  app_data->match_calibration.orange);
 
 	std::cout << "[INFO] Calibración cargada exitosamente." << std::endl;
+
+	return color_calibrations;
 }

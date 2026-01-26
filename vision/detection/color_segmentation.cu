@@ -3,6 +3,7 @@
 #include <opencv2/core/cuda/vec_traits.hpp>
 #include <opencv2/core/cuda/vec_math.hpp>
 #include <cuda_runtime.h>
+#include <cstdio>
 
 #define MAX_COLORS 16
 
@@ -22,8 +23,19 @@ __global__ void knc_weighted_kernel(
 
 	if (x >= hsv_image.cols || y >= hsv_image.rows) return;
 
+	bool debug_pixel = (x == 236 && y == 224);
+
+	if (debug_pixel) {
+		int h = hsv_image(y, x).x;
+		int s = hsv_image(y, x).y;
+		int v = hsv_image(y, x).z;
+
+		printf("\n[DEBUG GPU] Pixel(%d, %d) HSV: %d, %d, %d\n", x, y, h, s, v);
+	}
+
 	if (mask(y, x) == Color_ID::NONE) {
-		output(y, x) == Color_ID::NONE;
+		output(y, x) = Color_ID::NONE;
+		if (debug_pixel) printf("  -> Pixel empty in mask, skipping...\n");
 		return;
 	}
 
@@ -37,11 +49,19 @@ __global__ void knc_weighted_kernel(
 		const float3 mean = c_means[i];
 		float3 weights = c_weights[i];
 
-		const float dh = pixel.x - mean.x;
+		float diff_h = fabsf(pixel.x - mean.x);
+		if (diff_h > 90.0f) diff_h = 180.0f - diff_h;
+
+		const float dh = diff_h;
 		const float ds = pixel.y - mean.y;
 		const float dv = pixel.z - mean.z;
 
-		float distance = (dh * dh * weights.x) + (ds * ds * weights.y) + (dv * dv * weights.z);
+		float distance = (dh * dh) + (ds * ds) + (dv * dv);
+
+		if (debug_pixel) {
+			printf("  -> Comparando con Color[%d] (Mean: %.1f, %.1f, %.1f): Distancia Calc = %.2f\n",
+				   i, mean.x, mean.y, mean.z, distance);
+		}
 
 		if (distance < min_dist) {
 			min_dist = distance;
@@ -50,13 +70,15 @@ __global__ void knc_weighted_kernel(
 	}
 
 	if (min_dist > max_distance) {
-		best_id = Color_ID::NONE;
+		output(y, x) = Color_ID::NONE;
+		if (debug_pixel) printf("  -> Resultado: NONE (Dist %.2f > Max %.2f)\n", min_dist, max_distance);
 	} else {
 		output(y, x) = best_id;
+		if (debug_pixel) printf("  -> Resultado: ID %d (Dist %.2f)\n", best_id, min_dist);
 	}
 }
 
-void upload_color_calibration(const std::vector<ColorCalibration>& data) {
+void upload_calibrations_to_gpu(const std::vector<ColorCalibration>& data) {
 	int n = data.size();
 	if (n > MAX_COLORS) n = MAX_COLORS;
 
@@ -102,9 +124,11 @@ cv::cuda::GpuMat launch_color_segmentation(const cv::cuda::GpuMat& hsv, const cv
 	   (hsv.rows + block.y - 1) / block.y
 	);
 
-	float max_dist_sq = 60.0f * 60.0f;
+	float max_dist = 60.0f;
 
-	knc_weighted_kernel<<<grid, block>>>(hsv, mask, internal_buffer, max_dist_sq);
+	fflush(stdout);
+	knc_weighted_kernel<<<grid, block>>>(hsv, mask, internal_buffer, max_dist*max_dist);
+	cudaError_t error = cudaDeviceSynchronize();
 
 	return internal_buffer;
 }

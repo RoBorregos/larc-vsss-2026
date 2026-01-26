@@ -47,6 +47,41 @@ void Detector::update() {
 	#ifdef DEBUG_MODE
 		cv::Mat mask_host;
 		label_map.download(mask_host);
-		cv::imshow("Label Map: ", mask_host);
+
+		cv::Mat colored_mask = visualize_labels(mask_host);
+		cv::imshow("Label Map: ", colored_mask);
 	#endif
+}
+
+void Detector::upload_calibrations(const std::vector<ColorCalibration>& color_calibrations) {
+	upload_calibrations_to_gpu(color_calibrations);
+}
+
+cv::Mat Detector::visualize_labels(const cv::Mat& label_map) {
+	cv::Mat colored_img = cv::Mat::zeros(label_map.size(), CV_8UC3);
+
+	for (int y = 0; y < label_map.rows; ++y) {
+		const uchar* row_ptr = label_map.ptr<uchar>(y);
+		cv::Vec3b* out_ptr = colored_img.ptr<cv::Vec3b>(y);
+
+		for (int x = 0; x < label_map.cols; ++x) {
+			int id = row_ptr[x];
+			if (id == 0) continue;
+
+			switch (id) {
+			case Color_ID::BLUE:    out_ptr[x] = cv::Vec3b(255, 0, 0);   break; // Azul
+			case Color_ID::YELLOW:  out_ptr[x] = cv::Vec3b(0, 255, 255); break; // Amarillo
+			case Color_ID::CYAN:    out_ptr[x] = cv::Vec3b(255, 255, 0); break; // Cyan
+			case Color_ID::GREEN:   out_ptr[x] = cv::Vec3b(0, 255, 0);   break; // Verde
+			case Color_ID::MAGENTA: out_ptr[x] = cv::Vec3b(255, 0, 255); break; // Magenta
+			case Color_ID::RED:     out_ptr[x] = cv::Vec3b(0, 0, 255);   break; // Rojo
+			case Color_ID::ORANGE:  out_ptr[x] = cv::Vec3b(0, 165, 255); break; // Naranja
+			default:
+				out_ptr[x] = cv::Vec3b(255, 255, 255);
+				break;
+			}
+		}
+	}
+
+	return colored_img;
 }

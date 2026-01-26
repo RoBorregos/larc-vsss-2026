@@ -54,10 +54,13 @@ private:
 	static void on_debug_mouse(int event, int x, int y, int flags, void* userdata);
 
 	[[nodiscard]] cv::cuda::GpuMat get_blob_mask(const cv::cuda::GpuMat& hsv_image);
+
+	cv::Mat visualize_labels(const cv::Mat& label_map);
 public:
 	Detector(GUI* gui, AppData* app_data, BlobCalibrator* blob_calibrator);
 
 	void update();
+	void upload_calibrations(const std::vector<ColorCalibration>& color_calibrations);
 };
 
 #endif //DETECTION_METHOD_H

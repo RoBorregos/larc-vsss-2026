@@ -1,11 +1,14 @@
 #include "widget.h"
+
+#include <utility>
 #include "gui.h"
 
-Widget::Widget(GUI *gui, int rowspace, std::string label) {
+Widget::Widget(GUI *gui, const int rowspace, std::string label, std::function<void()> callback) {
 	this->gui = gui;
 	this->rowspace = rowspace;
 	this->label = std::move(label);
 	this->is_hovered = false;
+	this->on_change_callback = std::move(callback);
 }
 
 bool Widget::handle_input(int mouse_x, int mouse_y, int event) {
@@ -22,3 +25,6 @@ void Widget::set_rowspace(int new_rowspace) {
 	this->rowspace = new_rowspace;
 }
 
+void Widget::attach_callback(std::function<void()> callback) {
+	this->on_change_callback = std::move(callback);
+}

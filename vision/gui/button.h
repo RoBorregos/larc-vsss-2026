@@ -7,7 +7,6 @@
 
 class Button final : public Widget {
 private:
-	std::function<void()> callback;
 	bool is_pressed = false;
 
 public:

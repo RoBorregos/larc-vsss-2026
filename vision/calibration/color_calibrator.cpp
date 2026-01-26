@@ -77,7 +77,23 @@ void ColorCalibrator::save_calibration(const std::string &filename) {
 		try {
 			infile >> root;
 		} catch (json::parse_error& e) {
-			std::cerr << "[WARN] JSON corrupto al guardar, se sobrescribirá: " << e.what() << std::endl;
+			std::cerr << "[ERROR]: JSON corrupto en " << filename << ": " << e.what() << std::endl;
+
+			infile.close();
+
+			std::string backupName = filename + ".corrupt";
+
+			std::cerr << "[WARN]: Moviendo archivo corrupto a '" << backupName
+					  << "' y generando configuración nueva." << std::endl;
+
+			try {
+				std::filesystem::rename(filename, backupName);
+			} catch (std::filesystem::filesystem_error& fs_e) {
+				std::cerr << "[ERROR] No se pudo crear el backup: " << fs_e.what() << std::endl;
+				std::cerr << "[FATAL] Cannot safe-keep corrupt config data. Fix permissions or disk space." << std::endl;
+				exit(EX_CANTCREAT);
+			}
+
 			root = json::object();
 		}
 	}
@@ -111,7 +127,11 @@ void ColorCalibrator::save_calibration(const std::string &filename) {
 		outfile.close();
 		std::cout << "[INFO] ColorCalibrator guardado en: " << filename << std::endl;
 	} else {
-		std::cerr << "[ERROR] No se pudo crear el archivo: " << filename << std::endl;
+		std::cerr << "[ERROR]: Fallo al intentar escribir en: " << filename << std::endl;
+		std::cerr << "[SYSTEM] " << std::strerror(errno) << std::endl;
+		std::cerr << "[FATAL] Cannot create output file. Check directory permissions or disk space." << std::endl;
+
+		exit(EX_CANTCREAT);
 	}
 }
 
@@ -122,13 +142,14 @@ void ColorCalibrator::load_calibration(const std::string &filename) {
 	std::ifstream file(filename);
 
 	if (!file.is_open()) {
-		std::cerr << "[WARN] No se pudo abrir el archivo (No existe o permisos)." << std::endl;
+		std::cerr << "[Warn] No se pudo abrir el archivo (No existe o permisos)." << std::endl;
 		return;
 	}
 
 	if (file.peek() == std::ifstream::traits_type::eof()) {
-		std::cerr << "[ERROR] El archivo existe pero ESTÁ VACÍO (0 bytes)." << std::endl;
-		return;
+		std::cerr << "[ERROR] El archivo existe pero está vacío (posible corrupción): " << filename << std::endl;
+		std::cerr << "[FATAL] Configuration file '" << filename << "' is empty/corrupt. Delete it to regenerate defaults or fix manually." << std::endl;
+		exit(EX_CONFIG);
 	}
 
 	json root;
@@ -137,7 +158,9 @@ void ColorCalibrator::load_calibration(const std::string &filename) {
 		file >> root;
 	} catch (json::parse_error& e) {
 		std::cerr << "[ERROR] JSON corrupto: " << e.what() << std::endl;
-		return;
+		std::cerr << "[FATAL] Configuration file '" << filename
+				  << "' contains invalid syntax. Verify structure or delete the file to reset." << std::endl;
+		exit(EX_CONFIG);
 	}
 
 	if (root.contains("color_calibration")) {
@@ -150,7 +173,13 @@ void ColorCalibrator::load_calibration(const std::string &filename) {
 		app_data->color_params.green_boost       = j_color.value("green_boost",       app_data->color_params.green_boost);
 		app_data->color_params.blue_boost        = j_color.value("blue_boost",        app_data->color_params.blue_boost);
 		app_data->color_params.red_boost         = j_color.value("red_boost",         app_data->color_params.red_boost);
+		std::cout << "[INFO] Color parameters loaded from file." << std::endl;
+	} else {
+		std::cerr << "[WARN] Color calibration parameters not found in file." << std::endl;
+		std::cout << "[INFO] Using default color parameters." << std::endl;
+	}
 
+	if (root.contains("mask_params")) {
 		auto j_mask = root["mask_params"];
 		app_data->mask_params.h_min = j_mask.value("h_min", app_data->mask_params.h_min);
 		app_data->mask_params.s_min = j_mask.value("s_min", app_data->mask_params.s_min);
@@ -158,17 +187,18 @@ void ColorCalibrator::load_calibration(const std::string &filename) {
 		app_data->mask_params.h_max = j_mask.value("h_max", app_data->mask_params.h_max);
 		app_data->mask_params.s_max = j_mask.value("s_max", app_data->mask_params.s_max);
 		app_data->mask_params.v_max = j_mask.value("v_max", app_data->mask_params.v_max);
-
-		std::cout << "[INFO] Parámetros de color cargados desde el archivo." << std::endl;
+		std::cout << "[INFO] Mask parameters loaded from file." << std::endl;
 	} else {
-		std::cerr << "[WARN] No se encontraron parámetros de calibración de color en el archivo." << std::endl;
+		std::cerr << "[WARN] Mask calibration parameters not found in file." << std::endl;
+		std::cout << "[INFO] Using default mask parameters." << std::endl;
 	}
 
 	if (root.contains("roi_points")) {
 		roi_points = json_to_points(root["roi_points"].get<std::vector<std::vector<int>>>());
 		app_data->roi_points = roi_points;
-		std::cout << "[INFO] Puntos ROI cargados desde el archivo." << std::endl;
+		std::cout << "[INFO] ROI points loaded from file." << std::endl;
 	} else {
-		std::cerr << "[WARN] No se encontraron puntos ROI en el archivo." << std::endl;
+		std::cerr << "[WARN] ROI points not found in file." << std::endl;
+		std::cout << "[INFO] Defaulting to full image." << std::endl;
 	}
 }

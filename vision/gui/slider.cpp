@@ -2,8 +2,8 @@
 
 #include <gui.h>
 
-Slider::Slider(GUI *gui, const int rowspace, std::string label, float *value_ptr, float min_v, float max_v): Widget(gui,
-rowspace, std::move(label)) {
+Slider::Slider(GUI *gui, const int rowspace, std::string label, float *value_ptr, float min_v, float max_v, std::function<void()> callback): Widget(gui,
+rowspace, std::move(label), std::move(callback)) {
 
 	this->value_ptr = value_ptr;
 	this->min_v = min_v;
@@ -35,13 +35,9 @@ void Slider::draw() {
 bool Slider::handle_input(int mouse_x, int mouse_y, const int event) {
 	cv::Rect roi = gui->rowspace_roi(rowspace);
 
-	if (event == cv::EVENT_LBUTTONDOWN && roi.contains<int>({mouse_x, mouse_y})) {
+	if (event == cv::EVENT_LBUTTONDOWN && is_hovered) {
 		is_dragging = true;
 	} else if (event == cv::EVENT_LBUTTONUP) {
-		is_dragging = false;
-	}
-
-	if (!is_hovered) {
 		is_dragging = false;
 	}
 
@@ -53,6 +49,7 @@ bool Slider::handle_input(int mouse_x, int mouse_y, const int event) {
 		ratio = std::clamp(ratio, 0.0f, 1.0f);
 		*value_ptr = min_v + ratio * (max_v - min_v);
 
+		if (on_change_callback)	on_change_callback();
 		return true;
 	}
 

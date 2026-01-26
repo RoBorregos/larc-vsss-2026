@@ -76,15 +76,15 @@ void preprocessing::filters(const cv::cuda::GpuMat& bgr_image_src,
     cv::cuda::split(hsv_image_out, hsv_channels);
 
     if (do_saturation) {
-       cv::cuda::multiply(hsv_channels[1], params.saturation, hsv_channels[1]);
+		cv::cuda::multiply(hsv_channels[1], params.saturation, hsv_channels[1]);
     }
 
     if (do_gamma_s) {
-       lut_s_alg->transform(hsv_channels[1], hsv_channels[1]);
+    	lut_s_alg->transform(hsv_channels[1], hsv_channels[1]);
     }
 
     if (do_gamma_v) {
-       lut_v_alg->transform(hsv_channels[2], hsv_channels[2]);
+    	lut_v_alg->transform(hsv_channels[2], hsv_channels[2]);
     }
 
     cv::cuda::merge(hsv_channels, hsv_image_out);

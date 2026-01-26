@@ -2,9 +2,7 @@
 #include "gui.h"
 
 Button::Button(GUI *gui, const int rowspace, std::string label, std::function<void()> callback): Widget(gui, rowspace,
-std::move(label)) {
-	this->callback = std::move(callback);
-}
+std::move(label), std::move(callback)) {}
 
 void Button::draw() {
 	if (!gui) return;
@@ -23,8 +21,8 @@ bool Button::handle_input(int x, int y, int event) {
 	Widget::handle_input(x, y, event);
 
 	if (is_hovered && event == cv::EVENT_LBUTTONDOWN) {
-		if (callback) {
-			callback();
+		if (on_change_callback) {
+			on_change_callback();
 		}
 		return true;
 	}

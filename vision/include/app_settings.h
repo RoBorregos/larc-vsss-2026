@@ -2,6 +2,18 @@
 #define APP_SETTINGS_H
 
 #include <string>
+#include <opencv2/opencv.hpp>
+
+namespace Color_ID {
+	constexpr unsigned char NONE    = 0;
+	constexpr unsigned char BLUE    = 1;
+	constexpr unsigned char YELLOW  = 2;
+	constexpr unsigned char CYAN    = 3;
+	constexpr unsigned char GREEN   = 4;
+	constexpr unsigned char MAGENTA = 5;
+	constexpr unsigned char RED     = 6;
+	constexpr unsigned char ORANGE  = 7;
+}
 
 struct ColorCalibration {
 	int id{};
@@ -14,8 +26,9 @@ enum class AppState {
 	MASK_CALIBRATING,
 	BLOB_CALIBRATION_MENU,
 	BLOB_CALIBRATING,
+	CAMERA_CALIBRATING,
 	COLOR_CALIBRATING,
-	ROI_CALIBRATIING,
+	ROI_CALIBRATING,
 	DETECTION
 };
 
@@ -28,6 +41,17 @@ struct VisionParams {
 	float green_boost = 1.0f;
 	float blue_boost = 1.0f;
 	float red_boost = 1.0f;
+};
+
+struct CameraParams {
+	float brightness = 100.0f;
+	float contrast = 100.0f;
+
+	bool auto_exposure = false;
+	float exposure = 150.0f;
+
+	bool auto_focus = false;
+	float focus = 0.0f;
 };
 
 struct MaskParams {
@@ -63,8 +87,9 @@ struct MatchCalibration {
 struct AppData {
 	AppState current_state = AppState::MAIN_MENU;
 	std::string current_color = "None";
-	std::string calibration_filename = "/home/iker/Documents/RoboticProjects/VSSS/vision/vsss_calibration.json";
+	std::string calibration_filename = "/media/ikercsv/Files/Projects/larc-vsss-2026/vision/vsss_calibration.json";
 	VisionParams color_params;
+	CameraParams camera_params;
 	MaskParams mask_params;
 	MatchCalibration match_calibration;
 	std::vector<cv::Point> roi_points;

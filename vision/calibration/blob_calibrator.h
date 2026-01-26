@@ -35,7 +35,7 @@ public:
 	[[nodiscard]] std::vector<cv::Point> get_points() const { return points; }
 
 	void save_calibration(const std::string& filename);
-	void load_calibration(const std::string& filename);
+	std::vector<ColorCalibration> load_calibration(const std::string& filename);
 };
 
 #endif //CALIBRATOR_H

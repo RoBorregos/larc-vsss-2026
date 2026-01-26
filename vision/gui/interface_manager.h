@@ -10,16 +10,19 @@
 #include "widget.h"
 #include "button.h"
 #include "slider.h"
+#include "toggle.h"
 #include "blob_calibrator.h"
 #include "app_settings.h"
 #include "color_calibrator.h"
+#include "camera_calibrator.h"
 #include "detector.h"
 
-class InterfaceManager {
+class  InterfaceManager {
 private:
 	GUI* gui;
 	BlobCalibrator* blob_calibrator;
 	ColorCalibrator* color_calibrator;
+	CameraCalibrator* camera_calibrator;
 	AppData* app_data;
 	Detector* detector;
 
@@ -28,6 +31,7 @@ private:
 	std::vector<std::unique_ptr<Widget>> blob_calibration_menu_widgets;
 	std::vector<std::unique_ptr<Widget>> blob_calibration_tool_widgets;
 	std::vector<std::unique_ptr<Widget>> color_calibration_tool_widgets;
+	std::vector<std::unique_ptr<Widget>> camera_calibration_tool_widgets;
 	std::vector<std::unique_ptr<Widget>> mask_calibration_tool_widgets;
 	std::vector<std::unique_ptr<Widget>> roi_calibration_tool_widgets;
 
@@ -37,7 +41,7 @@ private:
 	void init_widgets();
 	void save_current_blob_calibration();
 public:
-	InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, AppData* app_data, Detector* detector);
+	InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, CameraCalibrator* camera_calibrator, AppData* app_data, Detector* detector);
 	~InterfaceManager() = default;
 
 	void draw_interface();

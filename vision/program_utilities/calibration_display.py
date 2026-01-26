@@ -9,7 +9,7 @@ import numpy as np
 import mplcursors
 
 # ================= CONFIGURACIÓN =================
-JSON_PATH = "/home/iker/Documents/RoboticProjects/VSSS/vision/vsss_calibration.json"
+JSON_PATH = "/media/ikercsv/Files/Projects/larc-vsss-2026/vision/vsss_calibration.json"
 
 COLOR_MAP = {
 	"blue":    "navy",

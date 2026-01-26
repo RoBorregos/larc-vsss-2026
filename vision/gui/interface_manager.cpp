@@ -1,7 +1,9 @@
 #include "interface_manager.h"
 
-InterfaceManager::InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, AppData* app_data, Detector* detector)
-    : gui(drawer), blob_calibrator(blob_calibrator), color_calibrator(color_calibrator), app_data(app_data), detector(detector) {
+#include "camera_calibrator.h"
+
+InterfaceManager::InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, CameraCalibrator* camera_calibrator, AppData* app_data, Detector* detector)
+    : gui(drawer), blob_calibrator(blob_calibrator), color_calibrator(color_calibrator), camera_calibrator(camera_calibrator), app_data(app_data), detector(detector) {
     init_widgets();
 }
 
@@ -9,20 +11,23 @@ void InterfaceManager::init_widgets() {
     main_menu_widgets.push_back(std::make_unique<Button>(gui, 2, "MODO: DETECTION", [this](){
         app_data->current_state = AppState::DETECTION;
     }));
-    main_menu_widgets.push_back(std::make_unique<Button>(gui, 4, "MODO: BLOB CALIBRATION", [this](){
+    main_menu_widgets.push_back(std::make_unique<Button>(gui, 3, "MODO: BLOB CALIBRATION", [this](){
         app_data->current_state = AppState::BLOB_CALIBRATION_MENU;
     	app_data->paused = true;
     }));
-	main_menu_widgets.push_back(std::make_unique<Button>(gui, 5, "MODO: COLOR CALIBRATION", [this](){
+	main_menu_widgets.push_back(std::make_unique<Button>(gui, 4, "MODO: COLOR CALIBRATION", [this](){
 		app_data->current_state = AppState::COLOR_CALIBRATING;
     	app_data->paused = true;
+	}));
+	main_menu_widgets.push_back(std::make_unique<Button>(gui, 5, "MODO: CAMERA CALIBRATION", [this]() {
+		app_data->current_state = AppState::CAMERA_CALIBRATING;
 	}));
 	main_menu_widgets.push_back(std::make_unique<Button>(gui, 6, "MODO: MASK CALIBRATION", [this](){
 		app_data->current_state = AppState::MASK_CALIBRATING;
 		app_data->paused = true;
 	}));
 	main_menu_widgets.push_back(std::make_unique<Button>(gui, 7, "MODO: ROI CALIBRATION", [this](){
-		app_data->current_state = AppState::ROI_CALIBRATIING;
+		app_data->current_state = AppState::ROI_CALIBRATING;
     	app_data->paused = true;
 	}));
 	main_menu_widgets.push_back(std::make_unique<Button>(gui, 9, "SALIR", [this](){
@@ -99,6 +104,23 @@ void InterfaceManager::init_widgets() {
 		app_data->current_state = AppState::MAIN_MENU;
 		color_calibrator->save_calibration(app_data->calibration_filename);
 	}));
+
+	auto cam_callback = [this] { camera_calibrator->upload_to_camera(); };
+	camera_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 0, "Brillo", &app_data->camera_params.brightness, 0.0f, 255.0f, cam_callback));
+	camera_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 1, "Contrast", &app_data->camera_params.contrast, 0.0f, 255.0f, cam_callback));
+	camera_calibration_tool_widgets.push_back(std::make_unique<Toggle>(gui, 2, "Auto-exposure", &app_data->camera_params.auto_exposure, cam_callback));
+	camera_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 3, "Exposure", &app_data->camera_params.exposure, 0, 1000.0f, cam_callback));
+	camera_calibration_tool_widgets.push_back(std::make_unique<Toggle>(gui, 4, "Auto-focus", &app_data->camera_params.auto_focus, cam_callback));
+	camera_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 5, "Focus", &app_data->camera_params.focus, 0.0f, 255.0f, cam_callback));
+	camera_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 8, "Reset parameters", [this]() {
+		camera_calibrator->reset_parameters();
+		camera_calibrator->upload_to_camera();
+	}));
+	camera_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 9, "GUARDAR Y VOLVER", [this]() {
+		app_data->current_state = AppState::MAIN_MENU;
+		camera_calibrator->save_calibration(app_data->calibration_filename);
+	}));
+
 
 	roi_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 7, "Remove Last Point", [this](){
 		color_calibrator->remove_last_point();
@@ -182,11 +204,14 @@ void InterfaceManager::draw_interface() {
     	case AppState::COLOR_CALIBRATING:
     		current_widgets = &color_calibration_tool_widgets;
     		break;
+		case AppState::CAMERA_CALIBRATING:
+    		current_widgets = &camera_calibration_tool_widgets;
+    		break;
     	case AppState::MASK_CALIBRATING:
     		gui->text("MODO MASK CALIBRATION", 0, Drawer::Layer::INTERFACE, 0.8, true);
 			current_widgets = &mask_calibration_tool_widgets;
 			break;
-    	case AppState::ROI_CALIBRATIING:
+    	case AppState::ROI_CALIBRATING:
     		gui->text("MODO ROI CALIBRATION", 0, Drawer::Layer::INTERFACE, 0.8, true);
 			current_widgets = &roi_calibration_tool_widgets;
     		color_calibrator->calibrate_roi();
@@ -223,28 +248,38 @@ void InterfaceManager::handle_input(int event, int x, int y) {
 
 	if (event == cv::EVENT_LBUTTONDBLCLK) {
 		cv::Point real_coords = gui->screen_to_world(cv::Point(x, y));
-		std::cout << "Clicked at (" << x << ", " << y << ")" << " real: [" << x << ", " << y << "]" << std::endl;
+
 		const cv::cuda::GpuMat img = gui->get_image(cv::COLOR_BGR2HSV);
 
-		const cv::Rect roi(real_coords.x, real_coords.y, 1, 1);
-		const cv::cuda::GpuMat gpu_pixel_region(img, roi);
+		if (real_coords.x >= 0 && real_coords.y >= 0 &&
+			real_coords.x < img.cols && real_coords.y < img.rows) {
 
-		cv::Mat cpu_pixel_1x1;
-		gpu_pixel_region.download(cpu_pixel_1x1);
+			std::cout << "Clicked at screen(" << x << ", " << y << ")"
+					  << " world: [" << real_coords.x << ", " << real_coords.y << "]" << std::endl;
 
-		const cv::Vec3b hsv_pixel = cpu_pixel_1x1.at<cv::Vec3b>(0, 0);
-		std::cout << "HSV Value: [" << static_cast<int>(hsv_pixel[0]) << ", "
-				  << static_cast<int>(hsv_pixel[1]) << ", "
-				  << static_cast<int>(hsv_pixel[2]) << "]" << std::endl;
+			const cv::Rect roi(real_coords.x, real_coords.y, 1, 1);
+			const cv::cuda::GpuMat gpu_pixel_region(img, roi);
+
+			cv::Mat cpu_pixel_1x1;
+			gpu_pixel_region.download(cpu_pixel_1x1);
+
+			const cv::Vec3b hsv_pixel = cpu_pixel_1x1.at<cv::Vec3b>(0, 0);
+			std::cout << "HSV Value: [" << static_cast<int>(hsv_pixel[0]) << ", "
+					  << static_cast<int>(hsv_pixel[1]) << ", "
+					  << static_cast<int>(hsv_pixel[2]) << "]" << std::endl;
+			} else {
+				std::cout << "Ignorado: Click fuera de los límites de la imagen." << std::endl;
+			}
 	}
 
     switch (app_data->current_state) {
         case AppState::MAIN_MENU: current_widgets = &main_menu_widgets; break;
         case AppState::BLOB_CALIBRATION_MENU: current_widgets = &blob_calibration_menu_widgets; break;
         case AppState::BLOB_CALIBRATING: current_widgets = &blob_calibration_tool_widgets; break;
+		case AppState::CAMERA_CALIBRATING: current_widgets = &camera_calibration_tool_widgets; break;
     	case AppState::COLOR_CALIBRATING: current_widgets = &color_calibration_tool_widgets; break;
     	case AppState::MASK_CALIBRATING: current_widgets = &mask_calibration_tool_widgets; break;
-    	case AppState::ROI_CALIBRATIING: current_widgets = &roi_calibration_tool_widgets; break;
+    	case AppState::ROI_CALIBRATING: current_widgets = &roi_calibration_tool_widgets; break;
         default: break;
     }
 
@@ -260,7 +295,7 @@ void InterfaceManager::handle_input(int event, int x, int y) {
 	if (!widget_consumed && app_data->current_state == AppState::BLOB_CALIBRATING) {
         BlobCalibrator::on_mouse(event, x, y, 0, blob_calibrator);
     }
-	if (!widget_consumed && app_data->current_state == AppState::ROI_CALIBRATIING) {
+	if (!widget_consumed && app_data->current_state == AppState::ROI_CALIBRATING) {
 		ColorCalibrator::on_mouse(event, x, y, 0, color_calibrator);
 	}
 }
