@@ -16,7 +16,7 @@ bool use_camera = true;
 const auto camera_id = "/dev/vsss_cam";
 // const std::string file_path = "/media/ikercsv/Files/Projects/larc-vsss-2026/media/image.jpeg";
 const std::string file_path = "/media/ikercsv/Files/Projects/larc-vsss-2026/media/log/raw_2026-01-23_21-48-45.avi";
-const bool record_video = false;
+const bool record_video = true;
 
 bool is_video_file(const std::string& path) {
     std::string p = path;
@@ -79,6 +79,7 @@ int main() {
 
     std::vector<ColorCalibration> calibrations = blob_calibrator.load_calibration(app_data.calibration_filename);
     color_calibrator.load_calibration(app_data.calibration_filename);
+    camera_calibrator.load_calibration(app_data.calibration_filename);
 
     detector.upload_calibrations(calibrations);
 
@@ -92,9 +93,9 @@ int main() {
 
     cv::VideoWriter raw_writer;
     cv::VideoWriter processed_writer;
-    int frame_width = 1024;
-    int frame_height = 768;
-    double fps = 60.0;
+    int frame_width = 1920;
+    int frame_height = 1080;
+    double fps = 60;
 
     if (use_camera) {
         int index = get_camera_index(camera_id);
@@ -107,7 +108,7 @@ int main() {
         if (!cap.isOpened()) {
             return -1;
         }
-
+        cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
         cap.set(cv::CAP_PROP_FRAME_WIDTH, frame_width);
         cap.set(cv::CAP_PROP_FRAME_HEIGHT, frame_height);
         cap.set(cv::CAP_PROP_FPS, fps);
@@ -150,6 +151,8 @@ int main() {
     cv::Mat processed_frame_cpu;
 
     while (true) {
+	    gui.fps_timer.start();
+
         if (use_camera) {
             cv::Mat temp;
             cap >> temp;
@@ -172,7 +175,7 @@ int main() {
 
         gui.upload_frame(image);
 
-        // detector.update();
+        detector.update();
 
         interface_manager.draw_interface();
 

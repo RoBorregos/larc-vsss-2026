@@ -25,7 +25,6 @@ private:
 
 	static inline cv::Scalar default_color{255, 255, 255};
 
-	cv::TickMeter fps_timer;
 	double current_fps = 0.0;
 	int frame_counter = 0;
 public:
@@ -57,6 +56,7 @@ public:
 	void polyline(const std::vector<cv::Point>& points, Drawer::Layer layer, int thickness = 1, const cv::Scalar& color = default_color);
 	void closed_polyline(const std::vector<cv::Point>& points, Drawer::Layer layer, int thickness = 1, const cv::Scalar& color = default_color);
 	void inverse_closed_polyline(const std::vector<cv::Point>& points, Drawer::Layer layer, const cv::Scalar& color = default_color);
+	cv::TickMeter fps_timer;
 };
 
 #endif //GUI_H

@@ -87,7 +87,7 @@ void CameraCalibrator::load_calibration(const std::string& filename) {
 
     std::ifstream file(filename);
 
-    if (file.is_open()) {
+    if (!file.is_open()) {
         std::cerr << "[WARN] No se pudo abrir el archivo (No existe o permisos)." << std::endl;
         return;
     }

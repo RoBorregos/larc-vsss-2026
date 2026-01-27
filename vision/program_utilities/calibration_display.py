@@ -47,7 +47,7 @@ def main():
 
 	# Iterar colores
 	for color_key, items_list in data.items():
-		if color_key == "color_calibration" or color_key == "roi_points" or color_key == "mask_params":
+		if color_key == "color_calibration" or color_key == "roi_points" or color_key == "mask_params" or color_key == "camera_calibration":
 			continue
 
 		display_color = COLOR_MAP.get(color_key, "gray")

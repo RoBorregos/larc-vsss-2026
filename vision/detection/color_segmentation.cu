@@ -23,7 +23,8 @@ __global__ void knc_weighted_kernel(
 
 	if (x >= hsv_image.cols || y >= hsv_image.rows) return;
 
-	bool debug_pixel = (x == 236 && y == 224);
+	// bool debug_pixel = (x == 236 && y == 224);
+	bool debug_pixel = false;
 
 	if (debug_pixel) {
 		int h = hsv_image(y, x).x;
@@ -124,7 +125,7 @@ cv::cuda::GpuMat launch_color_segmentation(const cv::cuda::GpuMat& hsv, const cv
 	   (hsv.rows + block.y - 1) / block.y
 	);
 
-	float max_dist = 60.0f;
+	float max_dist = 1000.0f;
 
 	fflush(stdout);
 	knc_weighted_kernel<<<grid, block>>>(hsv, mask, internal_buffer, max_dist*max_dist);

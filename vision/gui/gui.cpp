@@ -33,8 +33,6 @@ bool GUI::valid_coordinate(const std::vector<cv::Point>& points) const {
 }
 
 void GUI::upload_frame(cv::Mat &input_frame) {
-	fps_timer.start();
-
 	preprocessing::resize(input_frame, 1024 * 0.7, 768 * 0.7);
 
 	if (app_data->roi_points.size() > 1) {
