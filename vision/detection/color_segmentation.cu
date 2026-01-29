@@ -5,10 +5,9 @@
 #include <cuda_runtime.h>
 #include <cstdio>
 
-#define MAX_COLORS 16
+#define MAX_COLORS 256
 
 __constant__ float3 c_means[MAX_COLORS];
-__constant__ float3 c_weights[MAX_COLORS];
 __constant__ uchar  c_ids[MAX_COLORS];
 __constant__ int    c_num_colors;
 
@@ -23,8 +22,12 @@ __global__ void knc_weighted_kernel(
 
 	if (x >= hsv_image.cols || y >= hsv_image.rows) return;
 
-	// bool debug_pixel = (x == 236 && y == 224);
+	const float w_h = 4.0f;
+	const float w_s = 0.5f;
+	const float w_v = 0.5f;
+
 	bool debug_pixel = false;
+	// debug_pixel = (x == 354 && y == 293);
 
 	if (debug_pixel) {
 		int h = hsv_image(y, x).x;
@@ -48,7 +51,6 @@ __global__ void knc_weighted_kernel(
 
 	for (int i = 0; i < c_num_colors; ++i) {
 		const float3 mean = c_means[i];
-		float3 weights = c_weights[i];
 
 		float diff_h = fabsf(pixel.x - mean.x);
 		if (diff_h > 90.0f) diff_h = 180.0f - diff_h;
@@ -57,7 +59,7 @@ __global__ void knc_weighted_kernel(
 		const float ds = pixel.y - mean.y;
 		const float dv = pixel.z - mean.z;
 
-		float distance = (dh * dh) + (ds * ds) + (dv * dv);
+		float distance = (w_h * dh * dh) + (w_s * ds * ds) + (w_v * dv * dv);
 
 		if (debug_pixel) {
 			printf("  -> Comparando con Color[%d] (Mean: %.1f, %.1f, %.1f): Distancia Calc = %.2f\n",
@@ -79,13 +81,68 @@ __global__ void knc_weighted_kernel(
 	}
 }
 
+__global__ void label_moore_neighborhood(
+	const cv::cuda::PtrStepSz<uchar>& label_mask,
+	cv::cuda::PtrStepSz<uchar> object_mask,
+	int min_required
+) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= label_mask.cols || y >= label_mask.rows) return;
+
+	if (x == 0 || x == label_mask.cols - 1 || y == 0 || y == label_mask.rows - 1) {
+		object_mask(y, x) = Color_ID::NONE;
+		return;
+	}
+
+	uchar color = label_mask(y, x);
+
+	if (color == Color_ID::NONE) {
+		object_mask(y, x) = Color_ID::NONE;
+		return;
+	}
+
+	int count = 0;
+	#pragma unroll
+	for (int dy = -1; dy <= 1; ++dy) {
+		#pragma unroll
+		for (int dx = -1; dx <= 1; ++dx) {
+			if (dx == 0 && dy == 0) continue;
+
+			if (label_mask(y + dy, x + dx) == color) ++count;
+		}
+	}
+
+	if (count >= min_required) {
+		object_mask(y, x) = color;
+	} else {
+		object_mask(y, x) = Color_ID::NONE;
+	}
+}
+
+__global__ void map_group_to_color(
+	const cv::cuda::PtrStepSz<int>& labels,
+	const cv::cuda::PtrStepSz<uchar>& colors,
+	uchar* lookup_table
+) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (x >= labels.cols || y >= labels.rows) return;
+
+	int groupId = labels(y, x);
+	if (groupId > 0) {
+		lookup_table[groupId] = colors(y, x);
+	}
+}
+
 void upload_calibrations_to_gpu(const std::vector<ColorCalibration>& data) {
 	int n = data.size();
 	if (n > MAX_COLORS) n = MAX_COLORS;
 
 	std::vector<uchar>  h_ids(n);
 	std::vector<float3> h_means(n);
-	std::vector<float3> h_weights(n);
 
 	for(int i = 0; i < n; i++) {
 		const auto& item = data[i];
@@ -98,26 +155,20 @@ void upload_calibrations_to_gpu(const std::vector<ColorCalibration>& data) {
 			(float)item.hsv_avg[2]
 		);
 
-		float sH = (float)item.hsv_stddev[0];
-		float sS = (float)item.hsv_stddev[1];
-		float sV = (float)item.hsv_stddev[2];
-
-		h_weights[i].x = 1.0f / (sH * sH + 1e-6f);
-		h_weights[i].y = 1.0f / (sS * sS + 1e-6f);
-		h_weights[i].z = 1.0f / (sV * sV + 1e-6f);
 	}
 
 	cudaMemcpyToSymbol(c_ids, h_ids.data(), n * sizeof(uchar));
 	cudaMemcpyToSymbol(c_means, h_means.data(), n * sizeof(float3));
-	cudaMemcpyToSymbol(c_weights, h_weights.data(), n * sizeof(float3));
 	cudaMemcpyToSymbol(c_num_colors, &n, sizeof(int));
 }
 
 cv::cuda::GpuMat launch_color_segmentation(const cv::cuda::GpuMat& hsv, const cv::cuda::GpuMat& mask) {
 
 	static cv::cuda::GpuMat internal_buffer;
+	static cv::cuda::GpuMat output_buffer;
 
 	internal_buffer.create(hsv.size(), CV_8UC1);
+	output_buffer.create(hsv.size(), CV_8UC1);
 
 	dim3 block(32, 32);
 	dim3 grid(
@@ -125,11 +176,13 @@ cv::cuda::GpuMat launch_color_segmentation(const cv::cuda::GpuMat& hsv, const cv
 	   (hsv.rows + block.y - 1) / block.y
 	);
 
-	float max_dist = 1000.0f;
+	float max_dist = 150.0f;
 
 	fflush(stdout);
 	knc_weighted_kernel<<<grid, block>>>(hsv, mask, internal_buffer, max_dist*max_dist);
+	label_moore_neighborhood<<<grid, block>>>(internal_buffer, output_buffer, 6);
 	cudaError_t error = cudaDeviceSynchronize();
 
-	return internal_buffer;
+	return output_buffer;
 }
+

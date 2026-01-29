@@ -2,6 +2,8 @@ vision/cmake-build-debug/
 vision/build/
 vision/.idea
 
+media/log/
+
 .idea
 build/
 cmake-build-debug/
