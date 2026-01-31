@@ -13,10 +13,10 @@ WiFiUDP udp;
 const int localPort = 8081;
 
 struct __attribute__((packed)) Packet {
-  float vx;
-  float vy;
-  float phi;
-  float phiDot;
+  float w;
+  float x;
+  float y;
+  float z;
 };
 
 // TODO: set pins to actual values
@@ -179,34 +179,19 @@ void taskCommunication(void *parameter) {
 }
 
 void taskReadGyro(void *parameter) {
-  float last_vx = 0;
-  float last_vy = 0;
+  float w = 0, x = 0, y = 0, z = 0;
   for (;;) {
     if (xSemaphoreTake(readGyro, portMAX_DELAY) == pdTRUE) {
 
       // Read gyroscope
-      sensors_event_t orientationData, angVelocityData, linearAccelData;
-
-      bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
-      bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
-      bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
+      imu::Quaternion quat = bno.getQuat();
 
       Packet data;
 
-      float ax = linearAccelData.acceleration.x;
-      float ay = linearAccelData.acceleration.y;
-
-      float vx = last_vx + ax*0.001;
-      float vy = last_vy + ay*0.001;
-
-      last_vx = vx;
-      last_vy = vy;
-
-      data.vx = vx;
-      data.vy = vy;
-      data.phi = orientationData.gyro.z;
-      data.phiDot = angVelocityData.gyro.z;
-
+      data.w = quat.w();
+      data.x = quat.x();
+      data.y = quat.y();
+      data.z = quat.z();
 
       udp.beginPacket(udp.remoteIP(), udp.remotePort());
       udp.write((uint8_t*)&data, sizeof(data));
@@ -287,7 +272,7 @@ void setup() {
                           NULL,
                           1,
                           NULL,
-                          0
+                          tskNO_AFFINITY
   );
 
   xTaskCreatePinnedToCore(taskControl,

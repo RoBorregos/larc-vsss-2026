@@ -2,13 +2,17 @@
 #define MOTORCONTROLLER_H
 
 /*
- * Representation of each robot motor
+ * @class MotorController
+ * @brief Implements the control and movement of a motor
+ *
+ * The MotorController class allows to set the motor,
+ * Moving it, and controlling it using a simple PID controller.
 */
 
 class MotorController {
 private:
   // PWM Properties
-  const int PWM_FREQUENCY = 5000; // 5 kHz
+  const int PWM_FREQUENCY = 20000; // 20 kHz
   const int PWM_RESOLUTION = 8; // 8-bit resolution (0-255)
   const int MAX_PWM_VALUE = 255;
 
