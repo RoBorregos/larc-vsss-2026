@@ -1,0 +1,103 @@
+<?xml version="1.0" ?>
+<robot name="robot">
+    <webots>
+        <plugin type="omni_drive_sim.omni_robot_driver.RobotDriver"/>
+    </webots>
+
+    <!--######-->
+    <!-- BODY -->
+    <!--######-->
+
+    <link name="base_link">
+		<visual>
+            <geometry>
+                <box size="0.075 0.075 0.075"/>
+            </geometry>
+            <material name="black"/>
+		</visual>
+		<collision>
+            <geometry>
+                <box size="0.075 0.075 0.075"/>
+            </geometry>
+		</collision>
+	</link>
+
+
+    <!--########-->
+    <!-- WHEELS -->
+    <!--########-->
+
+     <!-- Motor 1 -->
+    <joint name="motor1" type="continuous">
+		<parent link="base_link"/>
+		<child link="wheel1"/>
+		<axis xyz="1 0 0"/>
+		<limit effort="10" velocity="20"/>
+		<origin xyz="-0.0335 0 -0.044" rpy="0 1.57 0"/>
+	</joint>
+	<link name="wheel1">
+		<visual>
+		    <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.01" length="0.01"/>
+            </geometry>
+            <material name="red"/>
+		</visual>
+		<collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.01" length="0.01"/>
+            </geometry>
+		</collision>
+	</link>
+
+    <!-- Motor 2-->
+    <joint name="motor2" type="continuous">
+		<parent link="base_link"/>
+		<child link="wheel2"/>
+		<axis xyz="0 1 0"/>
+		<limit effort="10" velocity="20"/>
+		<origin xyz="0 0.029 -0.044" rpy="1.57 1.047 0"/>
+	</joint>
+	<link name="wheel2">
+		<visual>
+		    <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.01" length="0.01"/>
+            </geometry>
+            <material name="red"/>
+		</visual>
+		<collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.01" length="0.01"/>
+            </geometry>
+		</collision>
+	</link>
+
+    <!-- Motor 3 -->
+    <joint name="motor3" type="continuous">
+		<parent link="base_link"/>
+		<child link="wheel3"/>
+		<axis xyz="0 1 0"/>
+		<limit effort="10" velocity="20"/>
+		<origin xyz="0 -0.029 -0.044" rpy="1.57 -1.047 0"/>
+	</joint>
+	<link name="wheel3">
+		<visual>
+		    <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.01" length="0.01"/>
+            </geometry>
+            <material name="red"/>
+		</visual>
+		<collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder radius="0.01" length="0.01"/>
+            </geometry>
+		</collision>
+	</link>
+
+   
+</robot>
