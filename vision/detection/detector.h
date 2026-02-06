@@ -4,7 +4,9 @@
 #include <optional>
 #include <iostream>
 #include <algorithm>
+#include <ranges>
 #include <vector>
+#include <unordered_map>
 #include <opencv4/opencv2/opencv.hpp>
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudafilters.hpp>
@@ -50,12 +52,26 @@ struct Patch {
 	int color;
 	cv::Point2d centroid;
 	bool parent;
+	cv::Rect bounding_box{};
+	bool valid = true;
+};
+
+struct RobotRelationship {
+	int parent_id;
+	int child_1_id;
+	std::optional<int> child_2_id;
+};
+
+struct BallPatch {
+	std::shared_ptr<Patch> patch;
+	cv::Point2d center{};
 };
 
 struct RobotPatch {
-	Patch parent_patch;
-	std::vector<Patch> child_patches;
-	std::vector<Patch> patches;
+	std::vector<std::shared_ptr<Patch>> patches;
+
+	std::shared_ptr<Patch> parent;
+	std::vector<std::shared_ptr<Patch>> children;
 	cv::Point2d center{};
 	double facing{};
 };
@@ -71,17 +87,19 @@ private:
 	static void on_debug_mouse(int event, int x, int y, int flags, void* userdata);
 
 	cv::Mat get_label_map();
-	std::vector<Patch> get_patches(const cv::Mat& label_map);
-	std::vector<RobotPatch> get_robot_patches(const std::vector<Patch>& patches);
+	std::vector<std::shared_ptr<Patch>> get_patches(const cv::Mat& label_map);
+	std::vector<RobotPatch> get_robot_patches(std::vector<std::shared_ptr<Patch>>& patches);
+	std::optional<BallPatch> get_ball_patch(const std::vector<std::shared_ptr<Patch>>& patches);
+	std::vector<RobotPatch> get_isolated_robot_patches(std::vector<std::shared_ptr<Patch>>& patches);
+	std::vector<RobotPatch> get_clustered_robot_patches(const std::vector<std::shared_ptr<Patch>>& clustered_patches);
 	void get_robot_data(std::vector<RobotPatch>& robot_patches);
 
 	[[nodiscard]] cv::cuda::GpuMat get_blob_mask(const cv::cuda::GpuMat& hsv_image);
 
 	cv::Mat visualize_labels(const cv::Mat& label_map);
-	static double distance(const cv::Point2d& point_1, const cv::Point2d& point_2);
-	static cv::Point2d find_geometric_median(const RobotPatch& robot_patch, int iterations = 5);
 
-	void display_debug(cv::Mat& label_map, const std::vector<Patch>& patches, const std::vector<RobotPatch>& robot_patches);
+	void display_debug(cv::Mat& label_map, const std::vector<std::shared_ptr<Patch>>& patches, const std::vector<RobotPatch>& robot_patches, std
+	                   ::optional<BallPatch>& ball_patch);
 public:
 	Detector(GUI* gui, AppData* app_data, BlobCalibrator* blob_calibrator);
 

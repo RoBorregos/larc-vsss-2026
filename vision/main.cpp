@@ -15,8 +15,8 @@
 bool use_camera = true;
 const auto camera_id = "/dev/vsss_cam";
 // const std::string file_path = "/media/ikercsv/Files/Projects/larc-vsss-2026/media/image.jpeg";
-const std::string file_path = "/media/ikercsv/Files/Projects/larc-vsss-2026/media/log/raw_2026-01-23_21-48-45.avi";
-const bool record_video = true;
+const std::string file_path = "/media/ikercsv/Files/Projects/larc-vsss-2026/media/log/raw_2026-01-28_18-43-53.avi";
+const bool record_video = false;
 
 bool is_video_file(const std::string& path) {
     std::string p = path;

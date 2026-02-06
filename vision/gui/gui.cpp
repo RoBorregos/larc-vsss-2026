@@ -171,7 +171,6 @@ void GUI::display_frame() {
 	image_bgr.download(cpu_image_bgr);
 
 	drawer.render(cpu_image_bgr, Drawer::Layer::MARKINGS);
-
 	cv::Mat image_view = cpu_image_bgr(viewport);
 	cv::resize(image_view, image_view, cv::Size(image_width, total_height), 0, 0, cv::INTER_LINEAR);
 
@@ -184,19 +183,34 @@ void GUI::display_frame() {
 
 	drawer.render(display_buffer, Drawer::Layer::INTERFACE);
 
-	fps_timer.stop();
-	frame_counter++;
-	if (frame_counter % 10 == 0) {
-		double time_sec = fps_timer.getTimeSec();
-		if (time_sec > 0) {
-			current_fps = 10.0 / time_sec;
+	{
+		fps_timer.stop();
+		frame_counter++;
+		if (frame_counter % 10 == 0) {
+			double time_sec = fps_timer.getTimeSec();
+			if (time_sec > 0) {
+				current_fps = 10.0 / time_sec;
+			}
+			fps_timer.reset();
 		}
-		fps_timer.reset();
+		cv::rectangle(display_buffer, cv::Rect(5, 5, 150, 40), cv::Scalar(0, 0, 0, 0.3), -1);
+		std::string fps_text = "FPS: " + std::to_string(int(current_fps));
+		cv::putText(display_buffer, fps_text, cv::Point(15, 35),
+					cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
+
+		int dot_phase = (frame_counter / 5) % 4;
+
+		for (int i = 0; i < 4; i++) {
+			cv::Point center(135 + (i * 10), 28);
+			int radius = 3;
+
+			if (i <= dot_phase) {
+				cv::circle(display_buffer, center, radius, cv::Scalar(0, 255, 0), -1);
+			} else {
+				cv::circle(display_buffer, center, radius, cv::Scalar(0, 100, 0), 1);
+			}
+		}
 	}
-	cv::rectangle(display_buffer, cv::Rect(5, 5, 150, 40), cv::Scalar(0, 0, 0, 0.3), -1);
-	std::string fps_text = "FPS: " + std::to_string(int(current_fps));
-	cv::putText(display_buffer, fps_text, cv::Point(15, 35),
-				cv::FONT_HERSHEY_DUPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
 
 	cv::imshow(window_name, display_buffer);
 }

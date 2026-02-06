@@ -11,74 +11,99 @@ __constant__ float3 c_means[MAX_COLORS];
 __constant__ uchar  c_ids[MAX_COLORS];
 __constant__ int    c_num_colors;
 
-__global__ void knc_weighted_kernel(
-	const cv::cuda::PtrStepSz<uchar3> hsv_image,
-	const cv::cuda::PtrStepSz<uchar> mask,
-	cv::cuda::PtrStepSz<uchar> output,
-	float max_distance
+__global__ void knc_dynamic_k_kernel(
+    const cv::cuda::PtrStepSz<uchar3> hsv_image,
+    const cv::cuda::PtrStepSz<uchar> mask,
+    cv::cuda::PtrStepSz<uchar> output,
+    float max_distance,
+    int k_param
 ) {
-	int x = blockIdx.x * blockDim.x + threadIdx.x;
-	int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if (x >= hsv_image.cols || y >= hsv_image.rows) return;
+    if (x >= hsv_image.cols || y >= hsv_image.rows) return;
 
-	const float w_h = 4.0f;
-	const float w_s = 0.5f;
-	const float w_v = 0.5f;
+    const float w_h = 4.5f;
+    const float w_s = 1.0f;
+    const float w_v = 1.5f;
 
-	bool debug_pixel = false;
-	// debug_pixel = (x == 354 && y == 293);
+    if (mask(y, x) == Color_ID::NONE) {
+       output(y, x) = Color_ID::NONE;
+       return;
+    }
 
-	if (debug_pixel) {
-		int h = hsv_image(y, x).x;
-		int s = hsv_image(y, x).y;
-		int v = hsv_image(y, x).z;
+    const uchar3 p = hsv_image(y, x);
+    const float3 pixel = make_float3(p.x, p.y, p.z);
 
-		printf("\n[DEBUG GPU] Pixel(%d, %d) HSV: %d, %d, %d\n", x, y, h, s, v);
-	}
+    const int MAX_K = 9;
 
-	if (mask(y, x) == Color_ID::NONE) {
-		output(y, x) = Color_ID::NONE;
-		if (debug_pixel) printf("  -> Pixel empty in mask, skipping...\n");
-		return;
-	}
+    int k = (k_param > MAX_K) ? MAX_K : (k_param < 1 ? 1 : k_param);
 
-	const uchar3 p = hsv_image(y, x);
-	const float3 pixel = make_float3(p.x, p.y, p.z);
+    float best_dist[MAX_K];
+    uchar best_ids[MAX_K];
 
-	float min_dist = 1e9f;
-	uchar best_id = Color_ID::NONE;
+    #pragma unroll
+    for (int i = 0; i < MAX_K; ++i) {
+        best_dist[i] = 1e9f;
+        best_ids[i] = Color_ID::NONE;
+    }
 
-	for (int i = 0; i < c_num_colors; ++i) {
-		const float3 mean = c_means[i];
+    for (int i = 0; i < c_num_colors; ++i) {
+       const float3 mean = c_means[i];
 
-		float diff_h = fabsf(pixel.x - mean.x);
-		if (diff_h > 90.0f) diff_h = 180.0f - diff_h;
+       float diff_h = fabsf(pixel.x - mean.x);
+       if (diff_h > 90.0f) diff_h = 180.0f - diff_h;
 
-		const float dh = diff_h;
-		const float ds = pixel.y - mean.y;
-		const float dv = pixel.z - mean.z;
+       const float dh = diff_h;
+       const float ds = pixel.y - mean.y;
+       const float dv = pixel.z - mean.z;
 
-		float distance = (w_h * dh * dh) + (w_s * ds * ds) + (w_v * dv * dv);
+       float distance = (w_h * dh * dh) + (w_s * ds * ds) + (w_v * dv * dv);
 
-		if (debug_pixel) {
-			printf("  -> Comparando con Color[%d] (Mean: %.1f, %.1f, %.1f): Distancia Calc = %.2f\n",
-				   i, mean.x, mean.y, mean.z, distance);
-		}
+       if (distance < max_distance) {
+          for (int j = 0; j < k; ++j) {
+             if (distance < best_dist[j]) {
+                for (int shift = k - 1; shift > j; --shift) {
+                   best_dist[shift] = best_dist[shift-1];
+                   best_ids[shift] = best_ids[shift-1];
+                }
+                best_dist[j] = distance;
+                best_ids[j] = c_ids[i];
+                break;
+             }
+          }
+       }
+    }
 
-		if (distance < min_dist) {
-			min_dist = distance;
-			best_id = c_ids[i];
-		}
-	}
+    uchar final_id = Color_ID::NONE;
+    if (best_ids[0] != Color_ID::NONE) {
+        if (k == 1) {
+            final_id = best_ids[0];
+        } else {
+            int max_votes = 0;
+            final_id = best_ids[0];
 
-	if (min_dist > max_distance) {
-		output(y, x) = Color_ID::NONE;
-		if (debug_pixel) printf("  -> Resultado: NONE (Dist %.2f > Max %.2f)\n", min_dist, max_distance);
-	} else {
-		output(y, x) = best_id;
-		if (debug_pixel) printf("  -> Resultado: ID %d (Dist %.2f)\n", best_id, min_dist);
-	}
+            for (int i = 0; i < k; ++i) {
+                if (best_ids[i] == Color_ID::NONE) break;
+
+                int current_id = best_ids[i];
+                int current_votes = 1;
+
+                for (int j = i + 1; j < k; ++j) {
+                    if (best_ids[j] == current_id) {
+                        current_votes++;
+                    }
+                }
+
+                if (current_votes > max_votes) {
+                    max_votes = current_votes;
+                    final_id = current_id;
+                }
+            }
+        }
+    }
+
+    output(y, x) = final_id;
 }
 
 __global__ void label_moore_neighborhood(
@@ -176,10 +201,11 @@ cv::cuda::GpuMat launch_color_segmentation(const cv::cuda::GpuMat& hsv, const cv
 	   (hsv.rows + block.y - 1) / block.y
 	);
 
-	float max_dist = 150.0f;
+	float max_dist = 70.0f;
+	constexpr int k = 5;
 
 	fflush(stdout);
-	knc_weighted_kernel<<<grid, block>>>(hsv, mask, internal_buffer, max_dist*max_dist);
+	knc_dynamic_k_kernel<<<grid, block>>>(hsv, mask, internal_buffer, max_dist*max_dist, k);
 	label_moore_neighborhood<<<grid, block>>>(internal_buffer, output_buffer, 6);
 	cudaError_t error = cudaDeviceSynchronize();
 

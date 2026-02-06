@@ -68,7 +68,10 @@ void InterfaceManager::init_widgets() {
 		BlobCalibrator::print_calibrations(app_data->match_calibration);
 	}));
 
-    blob_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 8, "Reset Points", [this](){
+	blob_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 7, "Salir sin guardar", [this]() {
+		app_data->current_state = AppState::BLOB_CALIBRATION_MENU;
+	}));
+	blob_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 8, "Reset Points", [this](){
         blob_calibrator->reset_points();
     }));
     blob_calibration_tool_widgets.push_back(std::make_unique<Button>(gui, 9, "GUARDAR Y VOLVER", [this](){
@@ -89,10 +92,10 @@ void InterfaceManager::init_widgets() {
 		color_calibrator->save_calibration(app_data->calibration_filename);
 	}));
 
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 0, "Saturacion", &app_data->color_params.saturation, 0.0f, 15.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 0, "Saturacion", &app_data->color_params.saturation, 0.0f, 2.0f));
 	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 1, "Gamma S", &app_data->color_params.gamma_correction_s, 0.0f, 5.0f));
 	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 2, "Gamma V", &app_data->color_params.gamma_correction_v, 0.0f, 5.0f));
-	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 3, "CLAHE Clip", &app_data->color_params.clahe_clip_limit, 0.1f, 5.0f));
+	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 3, "CLAHE Clip", &app_data->color_params.clahe_clip_limit, 0.1f, 3.0f));
 	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 4, "Bilateral", &app_data->color_params.bilateral_sigma, 0.0f, 100.0f));
 	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 5, "Green Boost", &app_data->color_params.green_boost, 0.2f, 2.0f));
 	color_calibration_tool_widgets.push_back(std::make_unique<Slider>(gui, 6, "Blue Boost", &app_data->color_params.blue_boost, 0.2f, 2.0f));
