@@ -1,5 +1,4 @@
-#ifndef INTERFACE_MANAGER_H
-#define INTERFACE_MANAGER_H
+#pragma once
 
 #include <vector>
 #include <map>
@@ -15,11 +14,13 @@
 #include "app_settings.h"
 #include "color_calibrator.h"
 #include "camera_calibrator.h"
+#include "coordinates.h"
 #include "detector.h"
 
 class  InterfaceManager {
 private:
 	GUI* gui;
+	Coordinates* coordinates;
 	BlobCalibrator* blob_calibrator;
 	ColorCalibrator* color_calibrator;
 	CameraCalibrator* camera_calibrator;
@@ -41,7 +42,7 @@ private:
 	void init_widgets();
 	void save_current_blob_calibration();
 public:
-	InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, CameraCalibrator* camera_calibrator, AppData* app_data, Detector* detector);
+	InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, CameraCalibrator* camera_calibrator, AppData* app_data, Detector* detector, Coordinates* coordinates);
 	~InterfaceManager() = default;
 
 	void draw_interface();
@@ -49,4 +50,3 @@ public:
 	void handle_input(int event, int x, int y);
 };
 
-#endif // INTERFACE_MANAGER_H

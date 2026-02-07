@@ -1,19 +1,7 @@
-#ifndef APP_SETTINGS_H
-#define APP_SETTINGS_H
+#pragma once
 
 #include <string>
 #include <opencv2/opencv.hpp>
-
-namespace Color_ID {
-	constexpr unsigned char NONE    = 0;
-	constexpr unsigned char BLUE    = 1;
-	constexpr unsigned char YELLOW  = 2;
-	constexpr unsigned char CYAN    = 3;
-	constexpr unsigned char GREEN   = 4;
-	constexpr unsigned char MAGENTA = 5;
-	constexpr unsigned char RED     = 6;
-	constexpr unsigned char ORANGE  = 7;
-}
 
 struct ColorCalibration {
 	int id{};
@@ -95,5 +83,3 @@ struct AppData {
 	std::vector<cv::Point> roi_points;
 	bool paused = false;
 };
-
-#endif // APP_SETTINGS_H

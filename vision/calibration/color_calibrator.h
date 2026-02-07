@@ -1,5 +1,4 @@
-#ifndef COLOR_CALIBRATOR_H
-#define COLOR_CALIBRATOR_H
+#pragma once
 
 #include <fstream>
 #include <opencv2/opencv.hpp>
@@ -34,4 +33,3 @@ public:
 	void load_calibration(const std::string& filename);
 };
 
-#endif // COLOR_CALIBRATOR_H

@@ -8,7 +8,8 @@
 #include "blob_calibrator.h"
 #include "interface_manager.h"
 #include "app_settings.h"
-#include "robot.h"
+#include "coordinates.h"
+#include "tracker.h"
 
 #define KEY_ESC 27
 
@@ -68,10 +69,14 @@ int main() {
     const std::string window_name = "VSSS";
     cv::namedWindow(window_name);
 
+    std::set<int> infield_objects = {1, 3, 4, 12, 17, 18, 20};
+
     cv::VideoCapture cap;
 
     AppData app_data;
     GUI gui(&app_data, window_name);
+    Coordinates coordinates(&app_data);
+    Tracker tracker(&coordinates);
     BlobCalibrator blob_calibrator(&gui, &app_data);
     ColorCalibrator color_calibrator(&gui, &app_data);
     CameraCalibrator camera_calibrator(&app_data, &cap, &use_camera);
@@ -82,11 +87,10 @@ int main() {
     camera_calibrator.load_calibration(app_data.calibration_filename);
 
     detector.upload_calibrations(calibrations);
+    coordinates.update_matrix();
+    tracker.upload_infield_objects(infield_objects);
 
-    InterfaceManager interface_manager(&gui, &blob_calibrator, &color_calibrator, &camera_calibrator, &app_data, &detector);
-
-    Robot robot_1(&gui, &app_data, &detector);
-    robot_1.initialize(1, TeamColor::BLUE, {PatchColor::CYAN, PatchColor::GREEN});
+    InterfaceManager interface_manager(&gui, &blob_calibrator, &color_calibrator, &camera_calibrator, &app_data, &detector, &coordinates);
 
     cv::Mat image;
     int delay = 1;
@@ -175,7 +179,9 @@ int main() {
 
         gui.upload_frame(image);
 
-        detector.update();
+        std::pair<std::vector<RobotPatch>, std::optional<BallPatch>> detections = detector.update();
+        tracker.update(detections.first, detections.second);
+        tracker.display_debug_image(1500 / 2, 1300 / 2);
 
         interface_manager.draw_interface();
 

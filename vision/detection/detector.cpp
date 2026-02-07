@@ -84,7 +84,7 @@ namespace {
 		for (const auto& patch : patches) {
 			if (patch->id == center->id) continue;
 			if (patch->parent) continue;
-			if (distance(center->centroid, patch->centroid) <= 30) candidates.push_back(patch);
+			if (distance(center->centroid, patch->centroid) <= 20) candidates.push_back(patch);
 		}
 
 		return candidates;
@@ -327,7 +327,7 @@ std::optional<BallPatch> Detector::get_ball_patch(const std::vector<std::shared_
 		for (const auto& p2 : patches) {
 			if (p1->id == p2->id) continue;
 
-			if (distance(p1->centroid, p2->centroid) <= 30) {
+			if (distance(p1->centroid, p2->centroid) <= 20) {
 				is_isolated = false;
 				break;
 			}
@@ -371,10 +371,12 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 		}
 
 		if (parents.empty()) {
+			// std::cout << "[ERROR] No parent found" << std::endl;
 			return {};
 		}
 
 		if ((parents.size() * 2) != children.size()) {
+			// std::cout << "[ERROR] Invalid proportion" << std::endl;
 			return {};
 		}
 
@@ -430,6 +432,28 @@ void Detector::get_robot_data(std::vector<RobotPatch>& robot_patches) {
 		double dy = midpoint_y - robot_patch.center.y;
 
 		robot_patch.facing = std::atan2(dy, dx);
+
+		cv::Point2d forward(dx, dy);
+
+		cv::Point2d v0 = robot_patch.children[0]->centroid - robot_patch.center;
+
+		double cross = forward.x * v0.y - forward.y * v0.x;
+
+		unsigned char left_color, right_color;
+
+		if (cross > 0) {
+			left_color  = static_cast<unsigned char>(robot_patch.children[0]->color);
+			right_color = static_cast<unsigned char>(robot_patch.children[1]->color);
+		} else {
+			left_color  = static_cast<unsigned char>(robot_patch.children[1]->color);
+			right_color = static_cast<unsigned char>(robot_patch.children[0]->color);
+		}
+
+		robot_patch.id = RobotIdentities::get_id(
+			static_cast<unsigned char>(robot_patch.parent->color),
+			left_color,
+			right_color
+		);
 	}
 }
 
@@ -447,17 +471,17 @@ void Detector::display_debug(cv::Mat& label_map, const std::vector<std::shared_p
 
         float angle = robot.facing;
 
-        int px = static_cast<int>(robot.center.x - 10 * std::cos(angle));
-        int py = static_cast<int>(robot.center.y - 10 * std::sin(angle));
+        int px = static_cast<int>(robot.parent->centroid.x);
+        int py = static_cast<int>(robot.parent->centroid.y);
 
         float angle_left = angle - 0.6f;
         float angle_right = angle + 0.6f;
 
-        int c1x = static_cast<int>(robot.center.x + 12 * std::cos(angle_left));
-        int c1y = static_cast<int>(robot.center.y + 12 * std::sin(angle_left));
+        int c1x = static_cast<int>(robot.children.at(0)->centroid.x);
+        int c1y = static_cast<int>(robot.children.at(0)->centroid.y);
 
-        int c2x = static_cast<int>(robot.center.x + 12 * std::cos(angle_right));
-        int c2y = static_cast<int>(robot.center.y + 12 * std::sin(angle_right));
+        int c2x = static_cast<int>(robot.children.at(1)->centroid.x);
+        int c2y = static_cast<int>(robot.children.at(1)->centroid.y);
 
     	draw_rotated_rect(robot_view, { (float)px, (float)py }, cv::Size2f(10, 20), angle, get_debug_color(robot.parent->color));
    		draw_rotated_rect(robot_view, { (float)c1x, (float)c1y }, cv::Size2f(10, 10), angle, get_debug_color(robot.children[0]->color));
@@ -466,6 +490,8 @@ void Detector::display_debug(cv::Mat& label_map, const std::vector<std::shared_p
         int tip_x = static_cast<int>(robot.center.x + 20 * std::cos(angle));
         int tip_y = static_cast<int>(robot.center.y + 20 * std::sin(angle));
         cv::line(robot_view, robot.center, {tip_x, tip_y}, cv::Scalar(200, 200, 200), 2);
+    	cv::putText(robot_view, "id: " + std::to_string(robot.id), robot.center + cv::Point2d(10,-10),
+			cv::FONT_HERSHEY_PLAIN, 0.8, cv::Scalar(255,255,255), 1);
     }
 
     if (ball_patch.has_value()) {
@@ -483,7 +509,7 @@ void Detector::display_debug(cv::Mat& label_map, const std::vector<std::shared_p
     cv::imshow("Robot view", robot_view);
 }
 
-void Detector::update() {
+std::pair<std::vector<RobotPatch>, std::optional<BallPatch>> Detector::update() {
 	cv::Mat label_map = get_label_map();
 	std::vector<std::shared_ptr<Patch>> patches = get_patches(label_map);
 
@@ -506,6 +532,7 @@ void Detector::update() {
 		display_debug(label_map, patches, robot_patches, ball_patch);
 	#endif
 
+	return { robot_patches, ball_patch };
 }
 
 void Detector::upload_calibrations(const std::vector<ColorCalibration>& color_calibrations) {
@@ -555,7 +582,7 @@ std::vector<RobotPatch> Detector::get_isolated_robot_patches(std::vector<std::sh
 	for (const auto& parent : parents) {
 		std::vector<std::shared_ptr<Patch>> candidates;
 		for (const auto& child : children) {
-			if (distance(parent->centroid, child->centroid) <= 30) {
+			if (distance(parent->centroid, child->centroid) <= 20) {
 				candidates.emplace_back(child);
 			}
 		}
@@ -570,7 +597,7 @@ std::vector<RobotPatch> Detector::get_isolated_robot_patches(std::vector<std::sh
 						|| patch->id == candidates[0]->id
 						|| patch->id == candidates[1]->id) continue;
 
-					if (distance(child->centroid, patch->centroid) <= 30) accept_candidates = false;
+					if (distance(child->centroid, patch->centroid) <= 20) accept_candidates = false;
 				}
 			}
 

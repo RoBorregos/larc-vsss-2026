@@ -1,5 +1,4 @@
-#ifndef DETECTION_METHOD_H
-#define DETECTION_METHOD_H
+#pragma once
 
 #include <optional>
 #include <iostream>
@@ -15,6 +14,7 @@
 #include "gui.h"
 #include "blob_calibrator.h"
 #include "app_settings.h"
+#include "robot_identities.h"
 #include "color_segmentation.cuh"
 
 enum class TeamColor { NONE, BLUE, YELLOW };
@@ -47,33 +47,10 @@ struct DetectedPatch {
 	cv::Scalar std_dev_hsv;
 };
 
-struct Patch {
-	int id;
-	int color;
-	cv::Point2d centroid;
-	bool parent;
-	cv::Rect bounding_box{};
-	bool valid = true;
-};
-
 struct RobotRelationship {
 	int parent_id;
 	int child_1_id;
 	std::optional<int> child_2_id;
-};
-
-struct BallPatch {
-	std::shared_ptr<Patch> patch;
-	cv::Point2d center{};
-};
-
-struct RobotPatch {
-	std::vector<std::shared_ptr<Patch>> patches;
-
-	std::shared_ptr<Patch> parent;
-	std::vector<std::shared_ptr<Patch>> children;
-	cv::Point2d center{};
-	double facing{};
 };
 
 class Detector {
@@ -103,8 +80,6 @@ private:
 public:
 	Detector(GUI* gui, AppData* app_data, BlobCalibrator* blob_calibrator);
 
-	void update();
+	[[nodiscard]] std::pair<std::vector<RobotPatch>, std::optional<BallPatch>> update();
 	void upload_calibrations(const std::vector<ColorCalibration>& color_calibrations);
 };
-
-#endif //DETECTION_METHOD_H

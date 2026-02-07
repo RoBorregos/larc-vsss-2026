@@ -1,5 +1,4 @@
-#ifndef OPENCV_TOGGLE_H
-#define OPENCV_TOGGLE_H
+#pragma once
 
 #include <functional>
 #include <widget.h>
@@ -19,6 +18,3 @@ private:
     int knob_y{};
     int border_radius{};
 };
-
-
-#endif //OPENCV_TOGGLE_H

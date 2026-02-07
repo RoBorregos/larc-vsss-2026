@@ -1,5 +1,5 @@
-#ifndef GUI_H
-#define GUI_H
+#pragma once
+
 #include <string>
 #include <opencv4/opencv2/opencv.hpp>
 #include "drawer.h"
@@ -58,5 +58,3 @@ public:
 	void inverse_closed_polyline(const std::vector<cv::Point>& points, Drawer::Layer layer, const cv::Scalar& color = default_color);
 	cv::TickMeter fps_timer;
 };
-
-#endif //GUI_H

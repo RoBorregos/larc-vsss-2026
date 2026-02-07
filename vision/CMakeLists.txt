@@ -44,21 +44,18 @@ add_definitions(-DDEBUG_MODE)
 add_executable(opencv main.cpp
 		# Base Files
 		include/app_settings.h
+		include/robot_identities.h
 		include/json.hpp
 
 		# Image Processing Module
 		lib/image_preprocessing.cpp         include/image_preprocessing.h
 		lib/blob_detection.cpp              include/blob_detection.h
 
-		# Field/Game Module
-		field/kinematics.cpp                field/kinematics.h
-		field/field_object.cpp              field/field_object.h
-		# field/ball.cpp.bak                field/ball.h.bak
-		field/robot.cpp                     field/robot.h
-
 		# Detection Classes
 		detection/detector.cpp              detection/detector.h
 		detection/color_segmentation.cu     detection/color_segmentation.cuh
+		detection/tracker.cpp               detection/tracker.h
+		detection/coordinates.cpp           detection/coordinates.h
 
 		# Calibration Classes
 		calibration/blob_calibrator.cpp     calibration/blob_calibrator.h

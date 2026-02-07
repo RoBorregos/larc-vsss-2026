@@ -2,9 +2,16 @@
 
 #include "camera_calibrator.h"
 
-InterfaceManager::InterfaceManager(GUI* drawer, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, CameraCalibrator* camera_calibrator, AppData* app_data, Detector* detector)
-    : gui(drawer), blob_calibrator(blob_calibrator), color_calibrator(color_calibrator), camera_calibrator(camera_calibrator), app_data(app_data), detector(detector) {
-    init_widgets();
+InterfaceManager::InterfaceManager(GUI* gui, BlobCalibrator* blob_calibrator, ColorCalibrator* color_calibrator, CameraCalibrator* camera_calibrator, AppData* app_data, Detector* detector, Coordinates* coordinates) {
+    this->gui = gui;
+	this->blob_calibrator = blob_calibrator;
+	this->color_calibrator = color_calibrator;
+	this->camera_calibrator = camera_calibrator;
+	this->app_data = app_data;
+	this->detector = detector;
+	this->coordinates = coordinates;
+
+	init_widgets();
 }
 
 void InterfaceManager::init_widgets() {
@@ -135,6 +142,7 @@ void InterfaceManager::init_widgets() {
 		app_data->current_state = AppState::MAIN_MENU;
 		app_data->roi_points = color_calibrator->get_roi();
 		color_calibrator->save_calibration(app_data->calibration_filename);
+		coordinates->update_matrix();
 	}));
 }
 
@@ -178,7 +186,9 @@ void InterfaceManager::save_current_blob_calibration() {
 
 	std::cout << "--> Guardado: " << color << " con parametros propios." << std::endl;
 	app_data->current_state = AppState::BLOB_CALIBRATION_MENU;
-	blob_calibrator->save_calibration(app_data->calibration_filename);
+	const std::vector<ColorCalibration> calibrations = blob_calibrator->save_calibration(app_data->calibration_filename);
+
+	detector->upload_calibrations(calibrations);
 }
 
 

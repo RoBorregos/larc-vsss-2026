@@ -1,5 +1,4 @@
-#ifndef OPENCV_CAMERA_CALIBRATOR_H
-#define OPENCV_CAMERA_CALIBRATOR_H
+#pragma once
 
 #include <fstream>
 #include <opencv2/opencv.hpp>
@@ -28,6 +27,3 @@ public:
     void save_calibration(const std::string& filename);
     void load_calibration(const std::string& filename);
 };
-
-
-#endif //OPENCV_CAMERA_CALIBRATOR_H

@@ -1,5 +1,4 @@
-#ifndef WIDGET_H
-#define WIDGET_H
+#pragma once
 
 #include <string>
 #include <functional>
@@ -24,5 +23,3 @@ public:
 	void set_rowspace(int new_rowspace);
 	void attach_callback(std::function<void()> callback);
 };
-
-#endif //WIDGET_H

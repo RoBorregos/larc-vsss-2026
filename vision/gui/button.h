@@ -1,5 +1,4 @@
-#ifndef BUTTON_H
-#define BUTTON_H
+#pragma once
 
 #include <widget.h>
 #include <functional>
@@ -16,4 +15,3 @@ public:
 	bool handle_input(int mouse_x, int mouse_y, int event) override;
 };
 
-#endif //BUTTON_H

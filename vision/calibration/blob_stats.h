@@ -1,5 +1,4 @@
-#ifndef BLOB_STATS_H
-#define BLOB_STATS_H
+#pragma once
 
 struct BlobStats {
 	unsigned int count;
@@ -15,4 +14,3 @@ struct BlobStats {
 	unsigned int min_h_wrap, max_h_wrap;
 };
 
-#endif //BLOB_STATS_H

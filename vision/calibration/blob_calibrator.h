@@ -1,5 +1,4 @@
-#ifndef CALIBRATOR_H
-#define CALIBRATOR_H
+#pragma once
 
 #include <fstream>
 #include <cuda_runtime.h>
@@ -9,6 +8,7 @@
 #include <gui.h>
 #include "blob_kernels.h"
 #include "app_settings.h"
+#include "robot_identities.h"
 #include "json.hpp"
 using json = nlohmann::json;
 
@@ -34,8 +34,7 @@ public:
 	[[nodiscard]] std::optional<CalibrationResult> calibrate_individual();
 	[[nodiscard]] std::vector<cv::Point> get_points() const { return points; }
 
-	void save_calibration(const std::string& filename);
+	std::vector<ColorCalibration> save_calibration(const std::string& filename);
 	std::vector<ColorCalibration> load_calibration(const std::string& filename);
 };
 
-#endif //CALIBRATOR_H

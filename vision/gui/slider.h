@@ -1,5 +1,4 @@
-#ifndef SLIDER_H
-#define SLIDER_H
+#pragma once
 
 #include <functional>
 #include <widget.h>
@@ -16,5 +15,3 @@ public:
 	void draw() override;
 	bool handle_input(int mouse_x, int mouse_y, int event) override;
 };
-
-#endif //SLIDER_H

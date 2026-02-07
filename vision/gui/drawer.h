@@ -1,5 +1,4 @@
-#ifndef DRAWER_H
-#define DRAWER_H
+#pragma once
 
 #include <opencv2/opencv.hpp>
 #include <vector>
@@ -37,7 +36,3 @@ public:
 private:
 	std::map<Layer, std::vector<std::unique_ptr<DrawCommand>>> queues;
 };
-
-
-
-#endif //DRAWER_H

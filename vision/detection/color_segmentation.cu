@@ -201,7 +201,7 @@ cv::cuda::GpuMat launch_color_segmentation(const cv::cuda::GpuMat& hsv, const cv
 	   (hsv.rows + block.y - 1) / block.y
 	);
 
-	float max_dist = 70.0f;
+	float max_dist = 50.0f;
 	constexpr int k = 5;
 
 	fflush(stdout);

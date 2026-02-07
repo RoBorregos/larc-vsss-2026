@@ -82,7 +82,7 @@ void preprocessing::filters(const cv::cuda::GpuMat& bgr_image_src,
 
     cv::cuda::cvtColor(d_lab_filtered, bgr_image_out, cv::COLOR_Lab2BGR);
     cv::cuda::cvtColor(bgr_image_out, hsv_image_out, cv::COLOR_BGR2HSV);
-	manual_exposure(hsv_image_out);
+	// manual_exposure(hsv_image_out);
 
     static float last_gamma_v = -1.0f;
     static cv::cuda::GpuMat lut_v_data;

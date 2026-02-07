@@ -1,5 +1,4 @@
-#ifndef OPENCV_BLOB_DETECTION_H
-#define OPENCV_BLOB_DETECTION_H
+#pragma once
 
 #include <opencv4/opencv2/opencv.hpp>
 
@@ -25,4 +24,3 @@ public:
     [[maybe_unused]] void set_color_range(cv::Scalar lowerBound, cv::Scalar upperBound);
 };
 
-#endif //OPENCV_BLOB_DETECTION_H
