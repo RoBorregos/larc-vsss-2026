@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <robot name="robot">
     <webots>
-        <plugin type="omni_drive_sim.omni_robot_driver.RobotDriver"/>
+        <plugin type="omni_drive_sim.multi_robot_driver.MultiRobotDriver"/>
     </webots>
 
     <!--######-->
