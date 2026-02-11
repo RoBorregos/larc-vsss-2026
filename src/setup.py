@@ -1,3 +1,6 @@
+import os
+
+from glob import glob
 from setuptools import find_packages, setup
 
 package_name = 'omni_drive_sim'
@@ -6,9 +9,11 @@ data_files = []
 data_files.append(('share/ament_index/resource_index/packages', ['resource/' + package_name]))
 data_files.append(('share/' + package_name, ['package.xml']))
 ## Launch Files
-data_files.append(('share/' + package_name + '/launch', ['launch/robot_launch.py']))
+data_files.append(
+    (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*launch.[pxy][yma]*')))
+)
 ## Resource files
-data_files.append(('share/' + package_name + '/resource', ['resource/omni_robot.urdf']))
+data_files.append(('share/' + package_name + '/resource', ['resource/rosmasterx3_multi_robot.urdf']))
 data_files.append(('share/' + package_name + '/resource', ['resource/rviz_config.rviz']))
 data_files.append(('share/' + package_name + '/resource', ['resource/rviz_camera_config.rviz']))
 data_files.append(('share/' + package_name + '/resource', ['resource/slam_toolbox_params.yaml']))
