@@ -204,7 +204,7 @@ std::vector<std::shared_ptr<Patch>> Detector::get_patches(const cv::Mat& label_m
 		for (const auto& cnt : contours) {
 			const double area = cv::contourArea(cnt);
 
-			if (area > 15) {
+			if (area > 10) {
 				const cv::Moments m = cv::moments(cnt);
 				if (m.m00 == 0) continue;
 				cv::Rect bbox = cv::boundingRect(cnt);
@@ -416,46 +416,45 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 }
 
 void Detector::get_robot_data(std::vector<RobotPatch>& robot_patches) {
-	for (auto& robot_patch : robot_patches) {
-		robot_patch.center = find_geometric_median(robot_patch);
+    for (auto& robot_patch : robot_patches) {
+       robot_patch.center = find_geometric_median(robot_patch);
 
-		double midpoint_x = 0;
-		double midpoint_y = 0;
-		for (const auto& p : robot_patch.children) {
-			midpoint_x += p->centroid.x;
-			midpoint_y += p->centroid.y;
-		}
-		midpoint_x /= 2;
-		midpoint_y /= 2;
+       double midpoint_x = (robot_patch.children[0]->centroid.x + robot_patch.children[1]->centroid.x) / 2.0;
+       double midpoint_y = (robot_patch.children[0]->centroid.y + robot_patch.children[1]->centroid.y) / 2.0;
 
-		double dx = midpoint_x - robot_patch.center.x;
-		double dy = midpoint_y - robot_patch.center.y;
+       cv::Point2d forward_temp(midpoint_x - robot_patch.center.x, midpoint_y - robot_patch.center.y);
+       cv::Point2d v0 = robot_patch.children[0]->centroid - robot_patch.center;
 
-		robot_patch.facing = std::atan2(dy, dx);
+       double cross = forward_temp.x * v0.y - forward_temp.y * v0.x;
 
-		cv::Point2d forward(dx, dy);
+       cv::Point2d p_left, p_right;
+       unsigned char left_color, right_color;
 
-		cv::Point2d v0 = robot_patch.children[0]->centroid - robot_patch.center;
+       if (cross > 0) {
+          p_left = robot_patch.children[0]->centroid;
+          p_right = robot_patch.children[1]->centroid;
+          left_color  = static_cast<unsigned char>(robot_patch.children[0]->color);
+          right_color = static_cast<unsigned char>(robot_patch.children[1]->color);
+       } else {
+          p_left = robot_patch.children[1]->centroid;
+          p_right = robot_patch.children[0]->centroid;
+          left_color  = static_cast<unsigned char>(robot_patch.children[1]->color);
+          right_color = static_cast<unsigned char>(robot_patch.children[0]->color);
+       }
 
-		double cross = forward.x * v0.y - forward.y * v0.x;
+       double dx_LR = p_right.x - p_left.x;
+       double dy_LR = p_right.y - p_left.y;
 
-		unsigned char left_color, right_color;
+       robot_patch.facing = std::atan2(dx_LR, -dy_LR);
 
-		if (cross > 0) {
-			left_color  = static_cast<unsigned char>(robot_patch.children[0]->color);
-			right_color = static_cast<unsigned char>(robot_patch.children[1]->color);
-		} else {
-			left_color  = static_cast<unsigned char>(robot_patch.children[1]->color);
-			right_color = static_cast<unsigned char>(robot_patch.children[0]->color);
-		}
-
-		robot_patch.id = RobotIdentities::get_id(
-			static_cast<unsigned char>(robot_patch.parent->color),
-			left_color,
-			right_color
-		);
-	}
+       robot_patch.id = RobotIdentities::get_id(
+          static_cast<unsigned char>(robot_patch.parent->color),
+          left_color,
+          right_color
+       );
+    }
 }
+
 
 void Detector::display_debug(cv::Mat& label_map, const std::vector<std::shared_ptr<Patch>>& patches, const std::vector<RobotPatch>& robot_patches, std::optional<BallPatch>& ball_patch) {
     cv::Mat centroid_view = cv::Mat::zeros(label_map.size(), CV_8UC1);

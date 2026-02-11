@@ -3,11 +3,13 @@
 #include <optional>
 #include "app_settings.h"
 #include "coordinates.h"
+#include "gui.h"
 #include "robot_identities.h"
 
 class Tracker {
 private:
     Coordinates* coordinates;
+    GUI* gui;
     std::set<int> infield_objects;
 
     std::chrono::steady_clock::time_point last_prediction_time;
@@ -39,7 +41,7 @@ public:
         void update(std::optional<cv::Point2f> observed_pos, std::optional<double> observed_facing);
     };
 
-    explicit Tracker(Coordinates* coordinates);
+    Tracker(Coordinates* coordinates, GUI* gui);
     void upload_infield_objects(const std::set<int>& infield_objects);
     Entity ball;
     std::map<int, Entity> robots;

@@ -82,8 +82,9 @@ void Tracker::Entity::update(const std::optional<cv::Point2f> observed_pos, cons
 	}
 }
 
-Tracker::Tracker(Coordinates* coordinates) {
+Tracker::Tracker(Coordinates* coordinates, GUI* gui) {
 	this->coordinates = coordinates;
+	this->gui = gui;
 	ball.id = 20;
 }
 
@@ -152,194 +153,194 @@ void Tracker::display_debug_image(int width, int height) {
 	cv::Mat map = cv::Mat::zeros(height, width, CV_8UC3);
 
 	cv::Scalar grid_color(50, 50, 50);
-
-	cv::line(map,
-		coordinates->meter_to_minimap({0, 0.65}, width, height),
-		coordinates->meter_to_minimap({0, -0.65}, width, height),
-		grid_color,
-		2
-		);
-	cv::circle(map,
-		coordinates->meter_to_minimap({0, 0}, width, height),
-		coordinates->meter_to_pixel_scalar(0.4),
-		grid_color,
-		2
-		);
-
-	cv::line(map,
-		coordinates->meter_to_minimap({0.6, 0.35}, width, height),
-		coordinates->meter_to_minimap({0.6, -0.35}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({0.6, 0.35}, width, height),
-		coordinates->meter_to_minimap({0.75, 0.35}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({0.6, -0.35}, width, height),
-		coordinates->meter_to_minimap({0.75, -0.35}, width, height),
-		grid_color,
-		2
-		);
-	cv::ellipse(map,
-			coordinates->meter_to_minimap({0.6, 0}, width, height),
-			cv::Size(coordinates->meter_to_pixel_scalar(0.125), coordinates->meter_to_pixel_scalar(0.125)),
-			0,
-			270, 90,
+	{
+		cv::line(map,
+			coordinates->meter_to_minimap({0, 0.65}, width, height),
+			coordinates->meter_to_minimap({0, -0.65}, width, height),
 			grid_color,
 			2
 			);
-	cv::line(map,
-		coordinates->meter_to_minimap({0.375, -0.02}, width, height),
-		coordinates->meter_to_minimap({0.375, 0.02}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({0.395, 0.0}, width, height),
-		coordinates->meter_to_minimap({0.355, 0.0}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({0.375, -0.42}, width, height),
-		coordinates->meter_to_minimap({0.375, -0.38}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({0.395, -0.4}, width, height),
-		coordinates->meter_to_minimap({0.355, -0.4}, width, height),
-		grid_color,
-		2
-		);
-	cv::circle(map,
-		coordinates->meter_to_minimap({0.175, -0.4}, width, height),
-		coordinates->meter_to_pixel_scalar(0.02),
-		grid_color,
-		cv::FILLED
-		);
-	cv::circle(map,
-		coordinates->meter_to_minimap({0.575, -0.4}, width, height),
-		coordinates->meter_to_pixel_scalar(0.02),
-		grid_color,
-		cv::FILLED
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({0.375, 0.42}, width, height),
-		coordinates->meter_to_minimap({0.375, 0.38}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({0.395, 0.4}, width, height),
-		coordinates->meter_to_minimap({0.355, 0.4}, width, height),
-		grid_color,
-		2
-		);
-	cv::circle(map,
-		coordinates->meter_to_minimap({0.175, 0.4}, width, height),
-		coordinates->meter_to_pixel_scalar(0.02),
-		grid_color,
-		cv::FILLED
-		);
-	cv::circle(map,
-		coordinates->meter_to_minimap({0.575, 0.4}, width, height),
-		coordinates->meter_to_pixel_scalar(0.02),
-		grid_color,
-		cv::FILLED
-		);
-
-	cv::line(map,
-		coordinates->meter_to_minimap({-0.6, 0.35}, width, height),
-		coordinates->meter_to_minimap({-0.6, -0.35}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({-0.6, 0.35}, width, height),
-		coordinates->meter_to_minimap({-0.75, 0.35}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({-0.6, -0.35}, width, height),
-		coordinates->meter_to_minimap({-0.75, -0.35}, width, height),
-		grid_color,
-		2
-		);
-	cv::ellipse(map,
-			coordinates->meter_to_minimap({-0.6, 0}, width, height),
-			cv::Size(coordinates->meter_to_pixel_scalar(0.125), coordinates->meter_to_pixel_scalar(0.125)),
-			180,
-			90, 270,
+		cv::circle(map,
+			coordinates->meter_to_minimap({0, 0}, width, height),
+			coordinates->meter_to_pixel_scalar(0.4),
 			grid_color,
 			2
 			);
-	cv::line(map,
-		coordinates->meter_to_minimap({-0.375, -0.02}, width, height),
-		coordinates->meter_to_minimap({-0.375, 0.02}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({-0.395, 0.0}, width, height),
-		coordinates->meter_to_minimap({-0.355, 0.0}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({-0.375, -0.42}, width, height),
-		coordinates->meter_to_minimap({-0.375, -0.38}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({-0.395, -0.4}, width, height),
-		coordinates->meter_to_minimap({-0.355, -0.4}, width, height),
-		grid_color,
-		2
-		);
-	cv::circle(map,
-		coordinates->meter_to_minimap({-0.175, -0.4}, width, height),
-		coordinates->meter_to_pixel_scalar(0.02),
-		grid_color,
-		cv::FILLED
-		);
-	cv::circle(map,
-		coordinates->meter_to_minimap({-0.575, -0.4}, width, height),
-		coordinates->meter_to_pixel_scalar(0.02),
-		grid_color,
-		cv::FILLED
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({-0.375, 0.42}, width, height),
-		coordinates->meter_to_minimap({-0.375, 0.38}, width, height),
-		grid_color,
-		2
-		);
-	cv::line(map,
-		coordinates->meter_to_minimap({-0.395, 0.4}, width, height),
-		coordinates->meter_to_minimap({-0.355, 0.4}, width, height),
-		grid_color,
-		2
-		);
-	cv::circle(map,
-		coordinates->meter_to_minimap({-0.175, 0.4}, width, height),
-		coordinates->meter_to_pixel_scalar(0.02),
-		grid_color,
-		cv::FILLED
-		);
-	cv::circle(map,
-		coordinates->meter_to_minimap({-0.575, 0.4}, width, height),
-		coordinates->meter_to_pixel_scalar(0.02),
-		grid_color,
-		cv::FILLED
-		);
 
+		cv::line(map,
+			coordinates->meter_to_minimap({0.6, 0.35}, width, height),
+			coordinates->meter_to_minimap({0.6, -0.35}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({0.6, 0.35}, width, height),
+			coordinates->meter_to_minimap({0.75, 0.35}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({0.6, -0.35}, width, height),
+			coordinates->meter_to_minimap({0.75, -0.35}, width, height),
+			grid_color,
+			2
+			);
+		cv::ellipse(map,
+				coordinates->meter_to_minimap({0.6, 0}, width, height),
+				cv::Size(coordinates->meter_to_pixel_scalar(0.125), coordinates->meter_to_pixel_scalar(0.125)),
+				0,
+				270, 90,
+				grid_color,
+				2
+				);
+		cv::line(map,
+			coordinates->meter_to_minimap({0.375, -0.02}, width, height),
+			coordinates->meter_to_minimap({0.375, 0.02}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({0.395, 0.0}, width, height),
+			coordinates->meter_to_minimap({0.355, 0.0}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({0.375, -0.42}, width, height),
+			coordinates->meter_to_minimap({0.375, -0.38}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({0.395, -0.4}, width, height),
+			coordinates->meter_to_minimap({0.355, -0.4}, width, height),
+			grid_color,
+			2
+			);
+		cv::circle(map,
+			coordinates->meter_to_minimap({0.175, -0.4}, width, height),
+			coordinates->meter_to_pixel_scalar(0.02),
+			grid_color,
+			cv::FILLED
+			);
+		cv::circle(map,
+			coordinates->meter_to_minimap({0.575, -0.4}, width, height),
+			coordinates->meter_to_pixel_scalar(0.02),
+			grid_color,
+			cv::FILLED
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({0.375, 0.42}, width, height),
+			coordinates->meter_to_minimap({0.375, 0.38}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({0.395, 0.4}, width, height),
+			coordinates->meter_to_minimap({0.355, 0.4}, width, height),
+			grid_color,
+			2
+			);
+		cv::circle(map,
+			coordinates->meter_to_minimap({0.175, 0.4}, width, height),
+			coordinates->meter_to_pixel_scalar(0.02),
+			grid_color,
+			cv::FILLED
+			);
+		cv::circle(map,
+			coordinates->meter_to_minimap({0.575, 0.4}, width, height),
+			coordinates->meter_to_pixel_scalar(0.02),
+			grid_color,
+			cv::FILLED
+			);
+
+		cv::line(map,
+			coordinates->meter_to_minimap({-0.6, 0.35}, width, height),
+			coordinates->meter_to_minimap({-0.6, -0.35}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({-0.6, 0.35}, width, height),
+			coordinates->meter_to_minimap({-0.75, 0.35}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({-0.6, -0.35}, width, height),
+			coordinates->meter_to_minimap({-0.75, -0.35}, width, height),
+			grid_color,
+			2
+			);
+		cv::ellipse(map,
+				coordinates->meter_to_minimap({-0.6, 0}, width, height),
+				cv::Size(coordinates->meter_to_pixel_scalar(0.125), coordinates->meter_to_pixel_scalar(0.125)),
+				180,
+				90, 270,
+				grid_color,
+				2
+				);
+		cv::line(map,
+			coordinates->meter_to_minimap({-0.375, -0.02}, width, height),
+			coordinates->meter_to_minimap({-0.375, 0.02}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({-0.395, 0.0}, width, height),
+			coordinates->meter_to_minimap({-0.355, 0.0}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({-0.375, -0.42}, width, height),
+			coordinates->meter_to_minimap({-0.375, -0.38}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({-0.395, -0.4}, width, height),
+			coordinates->meter_to_minimap({-0.355, -0.4}, width, height),
+			grid_color,
+			2
+			);
+		cv::circle(map,
+			coordinates->meter_to_minimap({-0.175, -0.4}, width, height),
+			coordinates->meter_to_pixel_scalar(0.02),
+			grid_color,
+			cv::FILLED
+			);
+		cv::circle(map,
+			coordinates->meter_to_minimap({-0.575, -0.4}, width, height),
+			coordinates->meter_to_pixel_scalar(0.02),
+			grid_color,
+			cv::FILLED
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({-0.375, 0.42}, width, height),
+			coordinates->meter_to_minimap({-0.375, 0.38}, width, height),
+			grid_color,
+			2
+			);
+		cv::line(map,
+			coordinates->meter_to_minimap({-0.395, 0.4}, width, height),
+			coordinates->meter_to_minimap({-0.355, 0.4}, width, height),
+			grid_color,
+			2
+			);
+		cv::circle(map,
+			coordinates->meter_to_minimap({-0.175, 0.4}, width, height),
+			coordinates->meter_to_pixel_scalar(0.02),
+			grid_color,
+			cv::FILLED
+			);
+		cv::circle(map,
+			coordinates->meter_to_minimap({-0.575, 0.4}, width, height),
+			coordinates->meter_to_pixel_scalar(0.02),
+			grid_color,
+			cv::FILLED
+			);
+	}
     for (auto& pair : robots) {
         Entity& r = pair.second;
         if (!r.initialized) continue;
@@ -387,7 +388,19 @@ void Tracker::display_debug_image(int width, int height) {
 			cv::line(map, ball_px, future_px, cv::Scalar(80, 80, 80), 1, cv::LINE_4);
 		}
 	}
+
 	#ifdef DEBUG_MODE
-		cv::imshow("Kalman view", map);
+		cv::cuda::GpuMat gpu_image = gui->get_image();
+
+		cv::Mat image;
+		gpu_image.download(image);
+		cv::Mat overlay = coordinates->get_warped_image(image);
+
+		cv::Mat result;
+		double alpha = 0.6;
+		double beta = 1.0 - alpha;
+		double gamma = 0.0;
+		cv::addWeighted(map, beta, overlay, alpha, gamma, result);
+		cv::imshow("Kalman view", result);
 	#endif
 }

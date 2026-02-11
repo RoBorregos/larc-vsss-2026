@@ -65,6 +65,7 @@ std::string get_timestamped_filename(std::string prefix) {
 int main() {
     std::cout << "[INFO] OPENCV VERSION: " << CV_VERSION << std::endl;
     std::cout << "[INFO] CUDA DEVICES: " << cv::cuda::getCudaEnabledDeviceCount() << std::endl;
+    std::cout << "[INFO] OPENCV BUILD:" << cv::getBuildInformation() << std::endl;
 
     const std::string window_name = "VSSS";
     cv::namedWindow(window_name);
@@ -76,7 +77,7 @@ int main() {
     AppData app_data;
     GUI gui(&app_data, window_name);
     Coordinates coordinates(&app_data);
-    Tracker tracker(&coordinates);
+    Tracker tracker(&coordinates, &gui);
     BlobCalibrator blob_calibrator(&gui, &app_data);
     ColorCalibrator color_calibrator(&gui, &app_data);
     CameraCalibrator camera_calibrator(&app_data, &cap, &use_camera);
@@ -181,7 +182,7 @@ int main() {
 
         std::pair<std::vector<RobotPatch>, std::optional<BallPatch>> detections = detector.update();
         tracker.update(detections.first, detections.second);
-        tracker.display_debug_image(1500 / 2, 1300 / 2);
+        tracker.display_debug_image(image.cols, image.rows);
 
         interface_manager.draw_interface();
 

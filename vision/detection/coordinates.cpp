@@ -89,3 +89,33 @@ double Coordinates::meter_to_pixel_scalar(double meter) {
 
 	return cv::norm(dst_pixels[0] - dst_pixels[1]);
 }
+
+cv::Mat Coordinates::get_warped_image(const cv::Mat& input_image) const {
+	if (!is_calibrated || homography_matrix.empty()) {
+		return input_image.clone();
+	}
+
+	int width = input_image.cols;
+	int height = input_image.rows;
+	cv::Size output_size(width, height);
+
+	cv::Mat warped_image;
+
+	cv::Mat shift = cv::Mat::eye(3, 3, CV_64F);
+	shift.at<double>(0, 2) = FieldConstants::FIELD_WIDTH_M / 2.0;
+	shift.at<double>(1, 2) = FieldConstants::FIELD_HEIGHT_M / 2.0;
+
+	cv::Mat scale = cv::Mat::eye(3, 3, CV_64F);
+	scale.at<double>(0, 0) = width / FieldConstants::FIELD_WIDTH_M;
+	scale.at<double>(1, 1) = height / FieldConstants::FIELD_HEIGHT_M;
+
+	cv::Mat flip_y = cv::Mat::eye(3, 3, CV_64F);
+	flip_y.at<double>(1, 1) = -1.0;
+	flip_y.at<double>(1, 2) = height;
+
+	cv::Mat final_h = flip_y * scale * shift * homography_matrix;
+
+	cv::warpPerspective(input_image, warped_image, final_h, output_size);
+
+	return warped_image;
+}
