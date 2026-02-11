@@ -14,6 +14,29 @@
 
 using namespace std::chrono_literals;
 
+class PIDController
+{
+    public:
+    PIDController(double kp, double ki, double kd)
+    : kp_(kp), ki_(ki), kd_(kd), prev_error_(0.0), integral_(0.0) {}
+
+    double compute(double error, double dt)
+    {
+        double error = setpoint - measured;
+        integral_ += error * dt;
+        double derivative = (error - prev_error_) / dt;
+        prev_error_ = error;
+        return kp_ * error + ki_ * integral_ + kd_ * derivative;
+    }
+
+    private:
+    double kp_;
+    double ki_;
+    double kd_;
+    double prev_error_;
+    double integral_;
+}
+
 class ControlNode : public rclcpp::Node
 {
     public:
@@ -67,10 +90,13 @@ class ControlNode : public rclcpp::Node
 
         tf2::getYaw(t.pose.orientation);
 
+        e_theta = tf2::getYaw(t.pose.orientation);
+        e_x = t.pose.position.x;
+        e_y = t.pose.position.y;
         
-        cmd.angular.z = tf2::getYaw(t.pose.orientation);
-        cmd.linear.x = t.pose.position.x;
-        cmd.linear.y = t.pose.position.y;
+        cmd.angular.z = pid_theta_.compute(e_theta, sampling_time_);
+        cmd.linear.x = pid_x_.compute(e_x, sampling_time_);
+        cmd.linear.y = pid_y_.compute(e_y, sampling_time_);
         
         RCLCPP_INFO(this->get_logger(), "Publishing cmd: linear_x=%.2f, linear_y=%.2f, angular_z=%.2f", cmd.linear.x, cmd.linear.y, cmd.angular.z);
         cmdPub_->publish(cmd);
@@ -81,6 +107,12 @@ class ControlNode : public rclcpp::Node
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
     rclcpp::TimerBase::SharedPtr timer_;
+
+    PIDController pid_x_{1.0, 0.0, 0.1};
+    PIDController pid_y_{1.0, 0.0, 0.1};
+    PIDController pid_theta_{1.0, 0.0, 0.1};
+
+    float sampling_time_ = 100ms;
 };
 
 int main(int argc, char * argv[])
