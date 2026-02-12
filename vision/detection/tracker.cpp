@@ -397,7 +397,7 @@ void Tracker::display_debug_image(int width, int height) {
 		cv::Mat overlay = coordinates->get_warped_image(image);
 
 		cv::Mat result;
-		double alpha = 0.6;
+		double alpha = 0.3;
 		double beta = 1.0 - alpha;
 		double gamma = 0.0;
 		cv::addWeighted(map, beta, overlay, alpha, gamma, result);
