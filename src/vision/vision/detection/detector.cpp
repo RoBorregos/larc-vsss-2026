@@ -173,6 +173,7 @@ cv::cuda::GpuMat Detector::get_blob_mask(const cv::cuda::GpuMat &hsv_image) {
 
 	#ifdef DEBUG_MODE
 		cv::Mat mask_host;
+		cudaDeviceSynchronize();
 		mask.download(mask_host);
 		cv::imshow("Mask S+V: ", mask_host);
 	#endif
@@ -186,6 +187,7 @@ cv::Mat Detector::get_label_map() {
 	const cv::cuda::GpuMat label_map = launch_color_segmentation(hsv_image, blob_mask);
 
 	cv::Mat label_map_host;
+	cudaDeviceSynchronize();
 	label_map.download(label_map_host);
 	return label_map_host;
 }

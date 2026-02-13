@@ -1,5 +1,6 @@
 #pragma once
 #include <opencv2/core.hpp>
+#include <opencv2/core/cuda.hpp>
 #include <optional>
 #include "app_settings.h"
 #include "coordinates.h"

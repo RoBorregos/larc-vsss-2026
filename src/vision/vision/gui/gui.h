@@ -2,6 +2,9 @@
 
 #include <string>
 #include <opencv4/opencv2/opencv.hpp>
+#include <cuda_runtime.h>
+#include <image_preprocessing.h>
+#include <opencv2/core/cuda.hpp>
 #include "drawer.h"
 #include "app_settings.h"
 

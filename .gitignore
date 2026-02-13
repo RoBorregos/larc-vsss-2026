@@ -1,10 +1,6 @@
-vision/cmake-build-debug/
-vision/build/
-vision/.idea
-
-media/log/
-
-.idea
+.idea/
+install/
+log/
 build/
 cmake-build-debug/
-*.user
+src/vision/media/log

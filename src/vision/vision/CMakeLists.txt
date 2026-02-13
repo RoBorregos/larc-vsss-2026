@@ -13,10 +13,10 @@ set(CMAKE_CUDA_HOST_COMPILER g++-13)
 # --- 3. LEGACY POLICY FIX ---
 # OpenCV config uses the deprecated "FindCUDA" module.
 # We must explicitly tell CMake to allow this to prevent the "CMP0146" warning/error.
-cmake_policy(SET CMP0146 OLD)
+#cmake_policy(SET CMP0146 OLD)
 
 # --- 4. PROJECT DEFINITION ---
-project(opencv LANGUAGES CXX CUDA)
+project(vsss_vision LANGUAGES CXX CUDA)
 
 # --- 5. STANDARD & ARCHITECTURE ---
 set(CMAKE_CXX_STANDARD 17)
@@ -41,7 +41,7 @@ include_directories(field)
 add_definitions(-DDEBUG_MODE)
 
 # --- 9. EXECUTABLE ---
-add_executable(opencv main.cpp
+add_executable(vsss_vision main.cpp
 		# Base Files
 		include/app_settings.h
 		include/robot_identities.h
@@ -78,4 +78,9 @@ add_executable(opencv main.cpp
 )
 
 # --- 10. LINKING ---
-target_link_libraries(opencv ${OpenCV_LIBS} CUDA::cudart)
+target_link_libraries(vsss_vision ${OpenCV_LIBS} CUDA::cudart)
+find_package(rclcpp REQUIRED)
+target_link_libraries(vsss_vision ${OpenCV_LIBS} CUDA::cudart rclcpp::rclcpp)
+install(TARGETS vsss_vision
+		DESTINATION lib/vsss
+)

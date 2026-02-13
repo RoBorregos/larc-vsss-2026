@@ -1,6 +1,8 @@
 #include <filesystem>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core/cuda.hpp>
 #include <algorithm>
+#include <cuda_runtime.h>
 #include <string>
 #include <chrono>
 #include <ctime>
@@ -188,6 +190,7 @@ int main() {
 
         if (processed_writer.isOpened()) {
             cv::cuda::GpuMat gpu_result = gui.get_image();
+            cudaDeviceSynchronize();
             gpu_result.download(processed_frame_cpu);
 
             if (processed_frame_cpu.size() != cv::Size(frame_width, frame_height)) {

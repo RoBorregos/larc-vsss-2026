@@ -274,6 +274,7 @@ void InterfaceManager::handle_input(int event, int x, int y) {
 			const cv::cuda::GpuMat gpu_pixel_region(img, roi);
 
 			cv::Mat cpu_pixel_1x1;
+			cudaDeviceSynchronize();
 			gpu_pixel_region.download(cpu_pixel_1x1);
 
 			const cv::Vec3b hsv_pixel = cpu_pixel_1x1.at<cv::Vec3b>(0, 0);

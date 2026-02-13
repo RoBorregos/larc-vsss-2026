@@ -1,5 +1,4 @@
 #include "gui.h"
-#include <image_preprocessing.h>
 
 GUI::GUI(AppData* app_data): app_data(app_data) {
 	this->window_name = "default";
@@ -168,6 +167,7 @@ void GUI::display_frame() {
 	cv::Mat display_buffer = cv::Mat::zeros(total_height, total_width, image_with_gui.type());
 
 	cv::Mat cpu_image_bgr;
+	cudaDeviceSynchronize();
 	image_bgr.download(cpu_image_bgr);
 
 	drawer.render(cpu_image_bgr, Drawer::Layer::MARKINGS);

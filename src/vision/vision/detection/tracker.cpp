@@ -393,6 +393,7 @@ void Tracker::display_debug_image(int width, int height) {
 		cv::cuda::GpuMat gpu_image = gui->get_image();
 
 		cv::Mat image;
+		cudaDeviceSynchronize();
 		gpu_image.download(image);
 		cv::Mat overlay = coordinates->get_warped_image(image);
 

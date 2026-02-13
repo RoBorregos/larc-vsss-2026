@@ -7,6 +7,8 @@
 #include <vector>
 #include <unordered_map>
 #include <opencv4/opencv2/opencv.hpp>
+#include <cuda_runtime.h>
+#include <opencv2/core/cuda.hpp>
 #include <opencv2/cudaarithm.hpp>
 #include <opencv2/cudafilters.hpp>
 #include <opencv2/cudaimgproc.hpp>

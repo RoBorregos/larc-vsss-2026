@@ -46,7 +46,8 @@ RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
     -D WITH_TBB=ON \
     -D OPENCV_DNN_CUDA=ON \
     -D OPENCV_ENABLE_NONFREE=ON \
-    -D CUDA_ARCH_BIN=12.0 \
+    -D CUDA_ARCH_BIN="8.9 10.0" \
+    -D CUDA_ARCH_PTX="10.0" \
     -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
     -D BUILD_EXAMPLES=OFF \
     -D HAVE_opencv_python3=ON \
@@ -61,20 +62,10 @@ RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
     make install && \
     ldconfig
 
-RUN apt-get update && \
-    apt-get install -y software-properties-common && \
+RUN apt update && \
+    apt install -y software-properties-common && \
     add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
-    apt-get update && \
-    apt-get install -y g++-13
-
-RUN apt-get update && apt-get install -y \
-    python3-pip \
-    && apt-get remove -y cmake \
-    && pip3 install cmake --upgrade
-
-COPY . /ros2_ws/larc-vsss-2026-vision/
-
-RUN hash -r
-RUN ln -s /usr/local/bin/cmake /usr/bin/cmake
+    apt update && \
+    apt install -y gcc-13 g++-13
 
 WORKDIR /ros2_ws

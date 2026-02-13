@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  vsss_vision:
+    image: ikercsv/vsss-vision-full:v2
+    container_name: vsss_container
+    stdin_open: true # -i
+    tty: true        # -t
+    privileged: true # --privileged
+    network_mode: host # Recomendado para ROS 2 (comunicación entre nodos)
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    environment:
+      - DISPLAY=${DISPLAY}
+      - NVIDIA_DRIVER_CAPABILITIES=all
+
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev:/dev
+      - .:/ros2_ws/vsss
+    devices:
+      - /dev/video0:/dev/video0
+      - /dev/bus/usb:/dev/bus/usb
+
+    command: /bin/bash

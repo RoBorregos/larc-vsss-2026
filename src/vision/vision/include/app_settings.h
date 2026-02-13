@@ -75,7 +75,7 @@ struct MatchCalibration {
 struct AppData {
 	AppState current_state = AppState::MAIN_MENU;
 	std::string current_color = "None";
-	std::string calibration_filename = "/media/ikercsv/Files/Projects/larc-vsss-2026-vision/vision/vsss_calibration.json";
+	std::string calibration_filename = "/ros2_ws/vsss/src/vision/vision/vsss_calibration.json";
 	VisionParams color_params;
 	CameraParams camera_params;
 	MaskParams mask_params;
