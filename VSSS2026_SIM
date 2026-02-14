@@ -25,9 +25,8 @@
 const canvas = document.getElementById("field");
 const ctx = canvas.getContext("2d");
 
-// ===============================
 // MEDIDAS REALES (en cm)
-// ===============================
+
 const FIELD_LENGTH = 150;
 const FIELD_WIDTH  = 130;
 
@@ -40,18 +39,17 @@ const SCALE = 5;
 canvas.width  = FIELD_LENGTH * SCALE;
 canvas.height = FIELD_WIDTH  * SCALE;
 
-// ===============================
 // FÍSICAS
-// ===============================
+
 const DT = 0.016;
 const FRICTION = 0.995;
 
 const ROBOT_RADIUS = 3.75; // 7.5 cm diámetro
 const BALL_RADIUS = 2.135; // golf real
 
-// ===============================
+
 // DIBUJAR ELEMENTOS VISUALES
-// ===============================
+
 
 function drawVisualCircle(x_cm, y_cm, color) {
     ctx.beginPath();
@@ -76,9 +74,8 @@ function drawVisualCross(x_cm, y_cm, color) {
     ctx.stroke();
 }
 
-// ===============================
+
 // CANCHA
-// ===============================
 
 function drawField() {
 
@@ -133,9 +130,8 @@ function drawField() {
     drawVisualCross(112,25,"white");
 }
 
-// ===============================
 // ROBOT OMNI 3 RUEDAS
-// ===============================
+
 
 class OmniRobot {
 
@@ -179,9 +175,7 @@ class OmniRobot {
     }
 }
 
-// ===============================
 //  PELOTA
-// ===============================
 
 const ball = {
     x:75,
@@ -211,29 +205,25 @@ const ball = {
     }
 };
 
-// ===============================
+
 // CREAR ROBOTS
-// ===============================
+
 
 const robot1 = new OmniRobot(30,40);
 const robot2 = new OmniRobot(120,40);
 const robot3 = new OmniRobot(75,100);
 
-// ===============================
 // POSICIONAR FÁCIL
-// ===============================
+
 
 function placeRobot(robot,x,y){
     robot.x = x;
     robot.y = y;
 }
 
-// Ejemplo:
-// placeRobot(robot1, 50, 60);
 
-// ===============================
 // COLISIÓN ROBOT-PELOTA
-// ===============================
+
 
 function collision(robot){
     const dx = ball.x - robot.x;
@@ -249,9 +239,9 @@ function collision(robot){
     }
 }
 
-// ===============================
+
 // LOOP PRINCIPAL
-// ===============================
+
 
 const MAX_LIN_SPEED = 150;   // cm/s
 const MAX_ROT_SPEED = 10;    // rad/s
@@ -375,7 +365,7 @@ function update(){
 
     drawField();
 
-    applyStrategy();   // ← AQUI ESTÁ LA MAGIA
+    applyStrategy();   // 
 
     robot1.update();
     robot2.update();
