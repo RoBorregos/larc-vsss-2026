@@ -84,7 +84,7 @@ namespace {
 		for (const auto& patch : patches) {
 			if (patch->id == center->id) continue;
 			if (patch->parent) continue;
-			if (distance(center->centroid, patch->centroid) <= 20) candidates.push_back(patch);
+			if (distance(center->centroid, patch->centroid) <= MINIMUM_DISTANCE) candidates.push_back(patch);
 		}
 
 		return candidates;
@@ -329,7 +329,7 @@ std::optional<BallPatch> Detector::get_ball_patch(const std::vector<std::shared_
 		for (const auto& p2 : patches) {
 			if (p1->id == p2->id) continue;
 
-			if (distance(p1->centroid, p2->centroid) <= 20) {
+			if (distance(p1->centroid, p2->centroid) <= MINIMUM_DISTANCE) {
 				is_isolated = false;
 				break;
 			}
@@ -350,10 +350,9 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 	std::vector<RobotPatch> robot_candidates;
 	std::vector<RobotRelationship> relationship;
 	int iterations = 0;
-	constexpr int max_iterations = 1000;
 
 	while (!patches.empty()) {
-		if ((iterations++) > max_iterations) return {};
+		if ((iterations++) > MAX_ITERATIONS) return {};
 		std::vector<std::shared_ptr<Patch>> parents;
 		std::vector<std::shared_ptr<Patch>> children;
 
@@ -373,7 +372,6 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 		}
 
 		if (parents.empty()) {
-			// std::cout << "[ERROR] No parent found" << std::endl;
 			return {};
 		}
 
@@ -582,7 +580,7 @@ std::vector<RobotPatch> Detector::get_isolated_robot_patches(std::vector<std::sh
 	for (const auto& parent : parents) {
 		std::vector<std::shared_ptr<Patch>> candidates;
 		for (const auto& child : children) {
-			if (distance(parent->centroid, child->centroid) <= 20) {
+			if (distance(parent->centroid, child->centroid) <= MINIMUM_DISTANCE) {
 				candidates.emplace_back(child);
 			}
 		}
@@ -597,7 +595,7 @@ std::vector<RobotPatch> Detector::get_isolated_robot_patches(std::vector<std::sh
 						|| patch->id == candidates[0]->id
 						|| patch->id == candidates[1]->id) continue;
 
-					if (distance(child->centroid, patch->centroid) <= 20) accept_candidates = false;
+					if (distance(child->centroid, patch->centroid) <= MINIMUM_DISTANCE) accept_candidates = false;
 				}
 			}
 

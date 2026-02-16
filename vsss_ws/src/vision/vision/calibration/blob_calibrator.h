@@ -10,6 +10,8 @@
 #include "app_settings.h"
 #include "robot_identities.h"
 #include "json.hpp"
+#include "cuda_utils.h"
+
 using json = nlohmann::json;
 
 class BlobCalibrator {

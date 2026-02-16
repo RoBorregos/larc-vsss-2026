@@ -44,7 +44,9 @@ void ColorCalibrator::calibrate_roi() {
 
 
 void ColorCalibrator::remove_last_point() {
-	roi_points.pop_back();
+	if (!roi_points.empty()) {
+		roi_points.pop_back();
+	}
 }
 
 std::vector<cv::Point> ColorCalibrator::get_roi() const {

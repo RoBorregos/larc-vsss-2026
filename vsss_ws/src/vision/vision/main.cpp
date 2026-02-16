@@ -44,14 +44,15 @@ int get_camera_index(const std::string& path) {
 }
 
 std::string get_timestamped_filename(std::string prefix) {
-    std::string base_path = "/media/ikercsv/Files/Projects/larc-vsss-2026/media/log/";
+    const char* env_path = std::getenv("VSSS_SAVE_PATH");
+    std::string base_path = (env_path != nullptr) ? std::string(env_path) : "./media/log/";
 
     try {
         if (!std::filesystem::exists(base_path)) {
             std::filesystem::create_directories(base_path);
         }
     } catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        std::cerr << "[ERROR] Filesystem: " << e.what() << std::endl;
     }
 
     auto now = std::chrono::system_clock::now();
@@ -75,6 +76,8 @@ int main() {
     std::set<int> infield_objects = {1, 3, 4, 12, 17, 18, 20};
 
     cv::VideoCapture cap;
+    cv::VideoWriter raw_writer;
+    cv::VideoWriter processed_writer;
 
     AppData app_data;
     GUI gui(&app_data, window_name);
@@ -97,9 +100,6 @@ int main() {
 
     cv::Mat image;
     int delay = 1;
-
-    cv::VideoWriter raw_writer;
-    cv::VideoWriter processed_writer;
     int frame_width = 1920;
     int frame_height = 1080;
     double fps = 60;
@@ -113,8 +113,10 @@ int main() {
         }
 
         if (!cap.isOpened()) {
+            std::cerr << "[ERROR] Could not open camera" << std::endl;
             return -1;
         }
+
         cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
         cap.set(cv::CAP_PROP_FRAME_WIDTH, frame_width);
         cap.set(cv::CAP_PROP_FRAME_HEIGHT, frame_height);
@@ -205,8 +207,11 @@ int main() {
         if (cv::waitKey(delay) == KEY_ESC) break;
     }
 
-    raw_writer.release();
-    processed_writer.release();
+    std::cout << "[INFO] Closing resources..." << std::endl;
+    if (cap.isOpened()) cap.release();
+    if (raw_writer.isOpened()) raw_writer.release();
+    if (processed_writer.isOpened()) processed_writer.release();
+    cv::destroyAllWindows();
 
     return 0;
 }

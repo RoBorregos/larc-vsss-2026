@@ -79,6 +79,9 @@ private:
 
 	void display_debug(cv::Mat& label_map, const std::vector<std::shared_ptr<Patch>>& patches, const std::vector<RobotPatch>& robot_patches, std
 	                   ::optional<BallPatch>& ball_patch);
+
+	constexpr int MINIMUM_DISTANCE = 20;
+	constexpr int MAX_ITERATIONS = 1000;
 public:
 	Detector(GUI* gui, AppData* app_data, BlobCalibrator* blob_calibrator);
 

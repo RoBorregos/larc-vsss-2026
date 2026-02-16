@@ -182,9 +182,9 @@ void upload_calibrations_to_gpu(const std::vector<ColorCalibration>& data) {
 
 	}
 
-	cudaMemcpyToSymbol(c_ids, h_ids.data(), n * sizeof(uchar));
-	cudaMemcpyToSymbol(c_means, h_means.data(), n * sizeof(float3));
-	cudaMemcpyToSymbol(c_num_colors, &n, sizeof(int));
+	gpuErrchk(cudaMemcpyToSymbol(c_ids, h_ids.data(), n * sizeof(uchar)));
+	gpuErrchk(cudaMemcpyToSymbol(c_means, h_means.data(), n * sizeof(float3)));
+	gpuErrchk(cudaMemcpyToSymbol(c_num_colors, &n, sizeof(int)));
 }
 
 cv::cuda::GpuMat launch_color_segmentation(const cv::cuda::GpuMat& hsv, const cv::cuda::GpuMat& mask) {

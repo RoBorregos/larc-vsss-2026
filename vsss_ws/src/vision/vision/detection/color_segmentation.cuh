@@ -5,6 +5,7 @@
 #include <vector>
 #include "app_settings.h"
 #include "robot_identities.h"
+#include "cuda_utils.h"
 
 void upload_calibrations_to_gpu(const std::vector<ColorCalibration>& data);
 

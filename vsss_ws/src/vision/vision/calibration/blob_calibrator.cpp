@@ -113,12 +113,12 @@ std::optional<CalibrationResult> BlobCalibrator::calibrate_individual() {
 	d_mask.upload(computation_mask);
 
 	BlobStats* d_stats = nullptr;
-	cudaMalloc(&d_stats, sizeof(BlobStats));
+	gpuErrchk(cudaMalloc(&d_stats, sizeof(BlobStats)));
 
 	launchBlobKernel(d_cropped_hsv, d_mask, d_stats);
 
 	BlobStats h_stats;
-	cudaMemcpy(&h_stats, d_stats, sizeof(BlobStats), cudaMemcpyDeviceToHost);
+	gpuErrchk(cudaMemcpy(&h_stats, d_stats, sizeof(BlobStats), cudaMemcpyDeviceToHost));
 	cudaFree(d_stats);
 
 	if (h_stats.count == 0) return std::nullopt;
