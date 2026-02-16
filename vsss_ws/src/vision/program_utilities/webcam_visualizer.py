@@ -1,5 +1,6 @@
 import cv2
 import os
+import sys
 from datetime import datetime
 
 def nothing(x):
@@ -11,8 +12,13 @@ timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 file_name = f"vsss_capture_{timestamp}.mp4"
 full_path = os.path.join(save_path, file_name)
 
-if not os.path.exists(save_path):
-	os.makedirs(save_path)
+try:
+	if not os.path.exists(save_path):
+		os.makedirs(save_path)
+		print(f"Directory created successfully: {save_path}")
+except OSError as e:
+	print(f"FATAL ERROR: Could not create directory {save_path}. {e}", file=sys.stderr)
+	sys.exit(1)
 
 # 2. Configuración de la cámara
 cap = cv2.VideoCapture(2, cv2.CAP_V4L2)
