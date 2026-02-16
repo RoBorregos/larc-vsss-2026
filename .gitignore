@@ -1,12 +1,12 @@
-<<<<<<< HEAD
-.idea/
-cmake-build-debug/
+####################################
+# ROS 2 & VSSS Workspace
+####################################
+vsss_ws/build/
 vsss_ws/install/
 vsss_ws/log/
-vsss_ws/build/
 vsss_ws/cmake-build-debug/
 vsss_ws/src/vision/media/log
-=======
+
 ####################################
 # ROS 2 build artifacts
 ####################################
@@ -29,21 +29,12 @@ log/
 **/action/*.action.autogen
 
 ####################################
-# Devcontainer / VS Code
+# IDEs & Build tools
 ####################################
-.devcontainer/
+*.iml
 .vscode/
+.devcontainer/
 *.code-workspace
-
-####################################
-# Docker
-####################################
-Dockerfile
-docker-compose.yml
-
-####################################
-# IDE / Editor junk
-####################################
 *.swp
 *.swo
 *.tmp
@@ -66,6 +57,7 @@ venv/
 ####################################
 # CMake / build system leftovers
 ####################################
+cmake-build-debug/
 CMakeFiles/
 CMakeCache.txt
 cmake_install.cmake
@@ -75,4 +67,3 @@ Makefile
 # Logs
 ####################################
 *.log
->>>>>>> 8a97d39054d5b69b818305b22c090e2171f8b4fa
