@@ -1,6 +1,7 @@
 FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV LANG=en_US.UTF-8
 
 RUN apt-get update && apt-get install -y \
     locales \
@@ -15,12 +16,13 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     python3-numpy \
     git \
-    && locale-gen en_US.UTF-8
-
-ENV LANG=en_US.UTF-8
-
-RUN apt-get update && apt-get install -y software-properties-common curl gnupg2 lsb-release \
+    software-properties-common \
+    curl \
+    gnupg2 \
+    lsb-release \
+    && locale-gen en_US.UTF-8 \
     && add-apt-repository universe \
+    && add-apt-repository -y ppa:ubuntu-toolchain-r/test \
     && curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/ros2.list > /dev/null \
     && apt-get update && apt-get install -y \
@@ -29,6 +31,8 @@ RUN apt-get update && apt-get install -y software-properties-common curl gnupg2 
     python3-colcon-common-extensions \
     build-essential \
     cmake \
+    gcc-13 \
+    g++-13 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt
@@ -62,10 +66,6 @@ RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
     make install && \
     ldconfig
 
-RUN apt update && \
-    apt install -y software-properties-common && \
-    add-apt-repository -y ppa:ubuntu-toolchain-r/test && \
-    apt update && \
-    apt install -y gcc-13 g++-13
-
 WORKDIR /ros2_ws
+
+RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc

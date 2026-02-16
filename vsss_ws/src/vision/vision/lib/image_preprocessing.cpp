@@ -26,7 +26,6 @@ static void update_lut_if_needed(float gamma, float& last_gamma,
 }
 
 void preprocessing::manual_exposure(cv::cuda::GpuMat& hsv_image) {
-	// std::cout << "exposure manual" << std::endl;
 	std::vector<cv::cuda::GpuMat> channels;
 	cv::cuda::split(hsv_image, channels);
 
@@ -38,8 +37,6 @@ void preprocessing::manual_exposure(cv::cuda::GpuMat& hsv_image) {
 
 	const double mean_s = mean_s_scalar[0];
 	const double mean_v = mean_v_scalar[0];
-
-	// std::cout << "mean_s: " << mean_s << " - mean_v: " << mean_v << std::endl;
 
 	constexpr double target_s = 30;
 	constexpr double target_v = 43;
@@ -82,6 +79,7 @@ void preprocessing::filters(const cv::cuda::GpuMat& bgr_image_src,
 
     cv::cuda::cvtColor(d_lab_filtered, bgr_image_out, cv::COLOR_Lab2BGR);
     cv::cuda::cvtColor(bgr_image_out, hsv_image_out, cv::COLOR_BGR2HSV);
+	// If exposure changes rapidly within a short period of time this line should be uncommented:
 	// manual_exposure(hsv_image_out);
 
     static float last_gamma_v = -1.0f;

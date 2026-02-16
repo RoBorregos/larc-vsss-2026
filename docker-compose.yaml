@@ -3,7 +3,7 @@ version: '3.8'
 services:
   vsss_vision:
     image: ikercsv/vsss-vision-full:v2
-    container_name: vsss_container
+    container_name: vsss-vision
     stdin_open: true
     tty: true
     privileged: true
