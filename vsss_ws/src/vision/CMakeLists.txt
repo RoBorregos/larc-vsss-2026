@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(vsss LANGUAGES CXX CUDA)
+project(vsss_vision LANGUAGES CXX CUDA)
 
 # --- 1. CONFIGURACIÓN CRÍTICA DE COMPILADORES ---
 set(CMAKE_CUDA_COMPILER /usr/local/cuda/bin/nvcc)
@@ -19,6 +19,7 @@ set(CMAKE_CUDA_ARCHITECTURES 89)
 # --- 3. BUSCAR DEPENDENCIAS (ROS 2 + VISIÓN) ---
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -28,7 +29,7 @@ find_package(CUDAToolkit REQUIRED)
 add_definitions(-DDEBUG_MODE)
 
 # Ajustamos las rutas para que apunten a la carpeta 'vision'
-set(VISION_DIR src/vision/vision/)
+set(VISION_DIR vision/)
 include_directories(
         ${VISION_DIR}/include
         ${VISION_DIR}/lib
@@ -39,7 +40,6 @@ include_directories(
 )
 
 # --- 5. EJECUTABLE DE VISIÓN ---
-# Nota: He añadido el prefijo ${VISION_DIR}/ a cada archivo
 add_executable(vision_node
         ${VISION_DIR}/main.cpp
         # Base Files
