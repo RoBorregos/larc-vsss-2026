@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .idea/
 cmake-build-debug/
 vsss_ws/install/
@@ -5,3 +6,73 @@ vsss_ws/log/
 vsss_ws/build/
 vsss_ws/cmake-build-debug/
 vsss_ws/src/vision/media/log
+=======
+####################################
+# ROS 2 build artifacts
+####################################
+build/
+install/
+log/
+
+####################################
+# Colcon / ament
+####################################
+.colcon/
+**/*.pyc
+**/__pycache__/
+
+####################################
+# ROS 2 generated files
+####################################
+**/msg/*.msg.autogen
+**/srv/*.srv.autogen
+**/action/*.action.autogen
+
+####################################
+# Devcontainer / VS Code
+####################################
+.devcontainer/
+.vscode/
+*.code-workspace
+
+####################################
+# Docker
+####################################
+Dockerfile
+docker-compose.yml
+
+####################################
+# IDE / Editor junk
+####################################
+*.swp
+*.swo
+*.tmp
+*~
+.idea/
+*.iml
+
+####################################
+# OS files
+####################################
+.DS_Store
+Thumbs.db
+
+####################################
+# Python virtual environments
+####################################
+.venv/
+venv/
+
+####################################
+# CMake / build system leftovers
+####################################
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+####################################
+# Logs
+####################################
+*.log
+>>>>>>> 8a97d39054d5b69b818305b22c090e2171f8b4fa
