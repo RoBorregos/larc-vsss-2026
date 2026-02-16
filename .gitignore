@@ -1,4 +1,5 @@
 .idea/
+cmake-build-debug/
 vsss_ws/install/
 vsss_ws/log/
 vsss_ws/build/
