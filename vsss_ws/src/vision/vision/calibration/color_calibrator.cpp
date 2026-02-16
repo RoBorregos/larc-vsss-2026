@@ -85,8 +85,8 @@ void ColorCalibrator::save_calibration(const std::string &filename) {
 
 			std::string backupName = filename + ".corrupt";
 
-			std::cerr << "[WARN]: Moviendo archivo corrupto a '" << backupName
-					  << "' y generando configuración nueva." << std::endl;
+			std::cerr << "[WARN]: Moving corrupt file to '" << backupName
+					  << "' and generating new file." << std::endl;
 
 			try {
 				std::filesystem::rename(filename, backupName);
@@ -127,9 +127,9 @@ void ColorCalibrator::save_calibration(const std::string &filename) {
 	if (outfile.is_open()) {
 		outfile << root.dump(4);
 		outfile.close();
-		std::cout << "[INFO] ColorCalibrator guardado en: " << filename << std::endl;
+		std::cout << "[INFO] ColorCalibrator saved in: " << filename << std::endl;
 	} else {
-		std::cerr << "[ERROR]: Fallo al intentar escribir en: " << filename << std::endl;
+		std::cerr << "[ERROR]: Failed to write in: " << filename << std::endl;
 		std::cerr << "[SYSTEM] " << std::strerror(errno) << std::endl;
 		std::cerr << "[FATAL] Cannot create output file. Check directory permissions or disk space." << std::endl;
 
@@ -138,18 +138,18 @@ void ColorCalibrator::save_calibration(const std::string &filename) {
 }
 
 void ColorCalibrator::load_calibration(const std::string &filename) {
-	std::cout << "[DEBUG] Abriendo archivo: "
+	std::cout << "[DEBUG] Opening file: "
 		  << filename << std::endl;
 
 	std::ifstream file(filename);
 
 	if (!file.is_open()) {
-		std::cerr << "[Warn] No se pudo abrir el archivo (No existe o permisos)." << std::endl;
+		std::cerr << "[Warn] Could not open file" << std::endl;
 		return;
 	}
 
 	if (file.peek() == std::ifstream::traits_type::eof()) {
-		std::cerr << "[ERROR] El archivo existe pero está vacío (posible corrupción): " << filename << std::endl;
+		std::cerr << "[ERROR] File exists but its empty: " << filename << std::endl;
 		std::cerr << "[FATAL] Configuration file '" << filename << "' is empty/corrupt. Delete it to regenerate defaults or fix manually." << std::endl;
 		exit(EX_CONFIG);
 	}
@@ -159,7 +159,7 @@ void ColorCalibrator::load_calibration(const std::string &filename) {
 	try {
 		file >> root;
 	} catch (json::parse_error& e) {
-		std::cerr << "[ERROR] JSON corrupto: " << e.what() << std::endl;
+		std::cerr << "[ERROR] Corrupt JSON: " << e.what() << std::endl;
 		std::cerr << "[FATAL] Configuration file '" << filename
 				  << "' contains invalid syntax. Verify structure or delete the file to reset." << std::endl;
 		exit(EX_CONFIG);

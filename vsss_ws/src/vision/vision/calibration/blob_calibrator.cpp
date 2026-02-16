@@ -192,7 +192,7 @@ std::vector<ColorCalibration> BlobCalibrator::save_calibration(const std::string
         try {
             infile >> root;
         } catch (json::parse_error& e) {
-            std::cerr << "[WARN] JSON corrupto al guardar, se sobrescribirá: " << e.what() << std::endl;
+            std::cerr << "[WARN] Corrupt JSON, will be overwritten: " << e.what() << std::endl;
             root = json::object();
         }
     }
@@ -233,9 +233,9 @@ std::vector<ColorCalibration> BlobCalibrator::save_calibration(const std::string
     if (outfile.is_open()) {
        outfile << root.dump(4);
        outfile.close();
-       std::cout << "[INFO] BlobCalibrator guardado en: " << filename << std::endl;
+       std::cout << "[INFO] BlobCalibrator saved in: " << filename << std::endl;
     } else {
-       std::cerr << "[ERROR] No se pudo crear el archivo: " << filename << std::endl;
+       std::cerr << "[ERROR] Could not create file: " << filename << std::endl;
     }
 
 	return color_calibrations;
@@ -248,12 +248,12 @@ std::vector<ColorCalibration> BlobCalibrator::load_calibration(const std::string
 	std::ifstream file(filename);
 
 	if (!file.is_open()) {
-		std::cerr << "[WARN] No se pudo abrir el archivo (No existe o permisos)." << std::endl;
+		std::cerr << "[WARN] Could not open file (Doesn't exists or not enough permissions)." << std::endl;
 		return {};
 	}
 
 	if (file.peek() == std::ifstream::traits_type::eof()) {
-		std::cerr << "[ERROR] El archivo existe pero ESTÁ VACÍO (0 bytes)." << std::endl;
+		std::cerr << "[ERROR] File exists but its empty (0 bytes)." << std::endl;
 		return {};
 	}
 
@@ -262,7 +262,7 @@ std::vector<ColorCalibration> BlobCalibrator::load_calibration(const std::string
 	try {
 		file >> root;
 	} catch (json::parse_error& e) {
-		std::cerr << "[ERROR] JSON corrupto: " << e.what() << std::endl;
+		std::cerr << "[ERROR] Corrupt JSON: " << e.what() << std::endl;
 		return {};
 	}
 
@@ -303,7 +303,7 @@ std::vector<ColorCalibration> BlobCalibrator::load_calibration(const std::string
 	deserialize_list("green", Color_ID::GREEN,    app_data->match_calibration.green);
 	deserialize_list("orange", Color_ID::ORANGE,  app_data->match_calibration.orange);
 
-	std::cout << "[INFO] Calibración cargada exitosamente." << std::endl;
+	std::cout << "[INFO] Calibrations loaded correctly." << std::endl;
 
 	return color_calibrations;
 }

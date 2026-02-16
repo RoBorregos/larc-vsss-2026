@@ -376,7 +376,6 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 		}
 
 		if ((parents.size() * 2) != children.size()) {
-			// std::cout << "[ERROR] Invalid proportion" << std::endl;
 			return {};
 		}
 

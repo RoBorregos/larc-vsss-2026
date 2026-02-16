@@ -1,53 +1,50 @@
 import json
 import os
 
-def procesar_archivo_colores():
+def process_file():
     filename = input("Enter calibration's file: ")
 
     if not os.path.exists(filename):
-        print(f"Error: No se encuentra el archivo '{filename}'.")
+        print(f"Error: {filename} not found.")
         return
 
     try:
         with open(filename, 'r', encoding='utf-8') as f:
             data = json.load(f)
     except json.JSONDecodeError:
-        print("Error: El archivo no es un JSON válido.")
+        print("Error: Invalid JSON.")
         return
 
-    # Definimos explícitamente qué llaves son colores
     colores_objetivo = [
         "blue", "cyan", "green", "magenta",
         "orange", "red", "yellow"
     ]
 
-    modificado = False
+    modified = False
 
-    print("\n--- Revisión de Capas de Color ---")
 
     for color in colores_objetivo:
-        # Verificamos si el color existe en el JSON y si tiene datos
         if color in data and isinstance(data[color], list) and len(data[color]) > 0:
-            confirmar = input(f"¿Vaciar datos de '{color}'? ({len(data[color])} registros) [s/n]: ").lower()
+            confirmation = input(f"¿Clear color '{color}'? ({len(data[color])} occurrences) [y/n]: ").lower()
 
-            if confirmar == 's':
+            if confirmation == 'y':
                 data[color] = []
-                modificado = True
-                print(f"✓ '{color}' limpiado.")
+                modified = True
+                print(f"✓ '{color}' cleared.")
             else:
-                print(f"- '{color}' mantenido.")
+                print(f"- '{color}' maintained.")
         elif color in data:
-            print(f"i '{color}' ya está vacío o no es una lista.")
+            print(f"i '{color}' no action is available.")
 
-    if modificado:
+    if modified:
         try:
             with open(filename, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=4)
-            print(f"\nArchivo '{filename}' actualizado correctamente.")
+            print(f"\nFile '{filename}' updated.")
         except Exception as e:
-            print(f"Error al guardar el archivo: {e}")
+            print(f"Error when saving the file: {e}")
     else:
-        print("\nNo se realizaron cambios.")
+        print("\nNo changes were made.")
 
 if __name__ == "__main__":
-    procesar_archivo_colores()
+    process_file()
