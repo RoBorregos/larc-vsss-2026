@@ -411,7 +411,6 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 		remove_patch_by_id(patches, parent->id);
 		remove_patch_by_id(patches, child_1->id);
 		remove_patch_by_id(patches, child_2->id);
-		int debug_dummy = 0;
 	}
 
 	return robot_candidates;

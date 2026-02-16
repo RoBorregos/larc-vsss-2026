@@ -29,10 +29,10 @@ def convertir_webm_a_mp4(archivo_entrada, archivo_salida):
 
 if __name__ == "__main__":
 	# --- CONFIGURACIÓN ---
-	nombre_entrada = "/home/iker/Documents/RoboticProjects/VSSS/Vision/media/robot_display.webm"  # Cambia esto por el
+	nombre_entrada = input("Ruta de entrada: .webm: ")
 	# nombre
 	# de tu archivo
-	nombre_salida = "/home/iker/Documents/RoboticProjects/VSSS/Vision/media/robot_display.mp4"
+	nombre_salida = input("Ruta de salida: .mp4: ")
 	# ---------------------
 
 	convertir_webm_a_mp4(nombre_entrada, nombre_salida)

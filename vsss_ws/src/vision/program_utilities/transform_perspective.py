@@ -3,7 +3,8 @@ import numpy as np
 
 # 1. Configuración de entrada
 # Nota: Verifica que la ruta sea correcta
-video_path = '/vsss_video.mp4'
+video_path = input("Input video path: ")
+output_path = input("Output video path: ")
 cap = cv2.VideoCapture(video_path)
 
 if not cap.isOpened():
@@ -37,7 +38,7 @@ M = cv2.getPerspectiveTransform(pts1, pts2)
 
 # 4. Configurar VideoWriter
 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-out = cv2.VideoWriter('../media/video_salida.mp4', fourcc, fps, (output_width, output_height))
+out = cv2.VideoWriter(output_path, fourcc, fps, (output_width, output_height))
 
 print(f"Procesando video con escala {scale_factor}... Presiona 'q' para salir.")
 

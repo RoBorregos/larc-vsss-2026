@@ -6,7 +6,7 @@ def nothing(x):
 	pass
 
 # 1. Ruta y nombre de archivo dinámico
-save_path = "/home/iker/Documents/RoboticProjects/VSSS/media/test_recordings"
+save_path = input("Enter test recording media directory: ");
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 file_name = f"vsss_capture_{timestamp}.mp4"
 full_path = os.path.join(save_path, file_name)

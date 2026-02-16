@@ -2,7 +2,7 @@ import json
 import os
 
 def procesar_archivo_colores():
-    filename = "/media/ikercsv/Files/Projects/larc-vsss-2026/vision/vsss_calibration.json"
+    filename = input("Enter calibration's file: ")
 
     if not os.path.exists(filename):
         print(f"Error: No se encuentra el archivo '{filename}'.")
