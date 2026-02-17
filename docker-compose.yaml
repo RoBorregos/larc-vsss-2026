@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  vsss_vision:
+    image: roborregos/vsss:vision
+    container_name: vsss-vision
+    stdin_open: true
+    tty: true
+    privileged: true
+    network_mode: host
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    environment:
+      - DISPLAY=${DISPLAY}
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - VSSS_CALIBRATION_PATH=/ros2_ws/vsss/src/vision/vision/vsss_calibration.json
+      - VSSS_SAVE_PATH=/ros2_ws/vsss/src/vision/media/log/
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /dev:/dev
+      - .:/ros2_ws/vsss
+    devices:
+      - /dev/video0:/dev/video0
+      - /dev/bus/usb:/dev/bus/usb
+
+    command: /bin/bash
