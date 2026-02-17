@@ -25,10 +25,18 @@
 const canvas = document.getElementById("field");
 const ctx = canvas.getContext("2d");
 
+
 // MEDIDAS REALES (en cm)
 
 const FIELD_LENGTH = 150;
 const FIELD_WIDTH  = 130;
+
+const MID_X = FIELD_LENGTH / 2;
+
+const DEFENDER_OFFSET_X = 25;  
+const DEFENDER_OFFSET_Y = 0;   
+
+const DEFENDER_MAX_FORWARD = MID_X + 5;
 
 const VISUAL_CIRCLE_DIAMETER = 2.5;
 const VISUAL_CIRCLE_RADIUS = VISUAL_CIRCLE_DIAMETER/2;
@@ -38,6 +46,7 @@ const SCALE = 5;
 
 canvas.width  = FIELD_LENGTH * SCALE;
 canvas.height = FIELD_WIDTH  * SCALE;
+
 
 // FÍSICAS
 
@@ -76,6 +85,7 @@ function drawVisualCross(x_cm, y_cm, color) {
 
 
 // CANCHA
+
 
 function drawField() {
 
@@ -130,6 +140,7 @@ function drawField() {
     drawVisualCross(112,25,"white");
 }
 
+
 // ROBOT OMNI 3 RUEDAS
 
 
@@ -175,7 +186,9 @@ class OmniRobot {
     }
 }
 
+
 //  PELOTA
+
 
 const ball = {
     x:75,
@@ -213,6 +226,7 @@ const robot1 = new OmniRobot(30,40);
 const robot2 = new OmniRobot(120,40);
 const robot3 = new OmniRobot(75,100);
 
+
 // POSICIONAR FÁCIL
 
 
@@ -223,7 +237,6 @@ function placeRobot(robot,x,y){
 
 
 // COLISIÓN ROBOT-PELOTA
-
 
 function collision(robot){
     const dx = ball.x - robot.x;
@@ -289,29 +302,30 @@ function calculateTimeToAction(robot){
 function applyStrategy(){
 
     const robots = [robot1, robot2, robot3];
+    const GOALIE_INDEX = 0;
 
-    // ===== SELECT ATTACKER =====
-    let bestCost = 1e9;
-    let attacker = currentAttacker;
+    //SELECT ATTACKER
+    let costs=[];
+    
 
-    for(let i=0;i<3;i++){
+    for(let i=1;i<3;i++){
         let cost = calculateTimeToAction(robots[i]);
 
         if(i === currentAttacker)
             cost -= HYSTERESIS_BONUS;
-
-        if(cost < bestCost){
-            bestCost = cost;
-            attacker = i;
-        }
+        
+            costs.push({index:i,cost:cost});
     }
+    //orden de menor  Mayor costo
 
+    costs.sort((a,b)=>a.cost-b.cost);
+    
+    const attacker=costs[0].index;
+    const defender = costs[1].index;
+    const goalie   = GOALIE_INDEX;
     currentAttacker = attacker;
 
-    const defender = (attacker+1)%3;
-    const goalie   = (attacker+2)%3;
-
-    // ===== ATTACKER TARGET =====
+    //ATTACKER TARGET
     const enemyGoal = {x:65, y:150};
     const dirx = enemyGoal.x - ball.x;
     const diry = enemyGoal.y - ball.y;
@@ -324,7 +338,7 @@ function applyStrategy(){
 
     moveRobotToGoal(robots[attacker], attackPoint.x, attackPoint.y);
 
-    // ===== DEFENDER TARGET =====
+    //DEFENDER TARGET
     const defGoal = {
         x:(ball.x+65)/2,
         y:(ball.y+0)/2
@@ -332,10 +346,10 @@ function applyStrategy(){
 
     moveRobotToGoal(robots[defender], defGoal.x, defGoal.y);
 
-    // ===== GOALIE TARGET =====
+    //GOALIE TARGET 
     const gk = {
-        x: Math.max(45, Math.min(85, ball.x)),
-        y: 8
+        x: 8,
+        y: Math.max(45, Math.min(85, ball.x)),
     };
 
     moveRobotToGoal(robots[goalie], gk.x, gk.y);
@@ -365,7 +379,7 @@ function update(){
 
     drawField();
 
-    applyStrategy();   // 
+    applyStrategy();   
 
     robot1.update();
     robot2.update();
@@ -386,9 +400,9 @@ function update(){
 }
 
 
-placeRobot(robot1, 12, 65);
-placeRobot(robot2, 38, 25);
-placeRobot(robot3,  38, 105);
+placeRobot(robot1, 10, 65);
+placeRobot(robot2, 45, 25);
+placeRobot(robot3,  28, 105);
 
 
 
