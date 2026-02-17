@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   vsss_vision:
-    image: ikercsv/vsss-vision-full:v2
+    image: roborregos/vsss:vision
     container_name: vsss-vision
     stdin_open: true
     tty: true
