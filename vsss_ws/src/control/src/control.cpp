@@ -22,7 +22,6 @@ class PIDController
 
     double compute(double error, double dt)
     {
-        double error = setpoint - measured;
         integral_ += error * dt;
         double derivative = (error - prev_error_) / dt;
         prev_error_ = error;
@@ -35,7 +34,7 @@ class PIDController
     double kd_;
     double prev_error_;
     double integral_;
-}
+};
 
 class ControlNode : public rclcpp::Node
 {
@@ -90,9 +89,9 @@ class ControlNode : public rclcpp::Node
 
         tf2::getYaw(t.pose.orientation);
 
-        e_theta = tf2::getYaw(t.pose.orientation);
-        e_x = t.pose.position.x;
-        e_y = t.pose.position.y;
+        double e_theta = tf2::getYaw(t.pose.orientation);
+        double e_x = t.pose.position.x;
+        double e_y = t.pose.position.y;
         
         cmd.angular.z = pid_theta_.compute(e_theta, sampling_time_);
         cmd.linear.x = pid_x_.compute(e_x, sampling_time_);
@@ -112,7 +111,7 @@ class ControlNode : public rclcpp::Node
     PIDController pid_y_{1.0, 0.0, 0.1};
     PIDController pid_theta_{1.0, 0.0, 0.1};
 
-    float sampling_time_ = 100ms;
+    float sampling_time_ = 0.1; // 100ms
 };
 
 int main(int argc, char * argv[])

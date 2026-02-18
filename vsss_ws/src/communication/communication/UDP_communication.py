@@ -104,11 +104,11 @@ class SingleRobotUDPNode(Node):
         self.client = RobotUDPClient(ip, port)
 
         self.get_logger().info(f"Waiting to Start")
-        topic = f'/{name}/cmd_vel'
+        topic = 'cmd_vel'
         self.create_subscription(Twist, topic, self.cmd_vel_callback, 10)
         self.get_logger().info(f"Subscribed to {topic} for {name} ({ip}:{port})")
         
-        self.telemetry_pub = self.create_publisher(Quaternion, f'/{name}/telemetry', 10)
+        self.telemetry_pub = self.create_publisher(Quaternion, 'telemetry', 10)
         self.get_logger().info(f"Publishing telemetry to /{name}/telemetry")
         
         self.create_timer(0.02, self.receive_timer_callback)  # 50 Hz receive timer
