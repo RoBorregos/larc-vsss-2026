@@ -112,7 +112,10 @@ void Publisher::publish_legacy_messages() const {
 	}
 }
 
-
+/* simulate realistic circular and linear movements for the ball and robots
+ *
+ * Useful if strategy or control needs random values in order to test a feature
+ */
 void Publisher::generate_random_data() {
 	static double angle = 0.0;
 	angle += 0.05;
