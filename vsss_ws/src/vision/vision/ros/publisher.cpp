@@ -115,10 +115,9 @@ void Publisher::publish_legacy_messages() const {
 
 void Publisher::generate_random_data() {
 	static double angle = 0.0;
-	angle += 0.05; // Velocidad de la animación
+	angle += 0.05;
 
-	// 1. Simular la Pelota (movimiento circular)
-	tracker->ball.pos.x = 0.8 * cos(angle); // 0.8 metros de radio
+	tracker->ball.pos.x = 0.8 * cos(angle);
 	tracker->ball.pos.y = 0.4 * sin(angle);
 	tracker->ball.vel.x = -0.8 * sin(angle);
 	tracker->ball.vel.y = 0.4 * cos(angle);
