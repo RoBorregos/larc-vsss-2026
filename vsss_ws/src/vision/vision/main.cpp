@@ -19,8 +19,8 @@
 bool use_camera = true;
 const auto camera_id = "/dev/vsss_cam";
 // const std::string file_path = "/media/ikercsv/Files/Projects/larc-vsss-2026/media/image.jpeg";
-const std::string file_path = "/media/ikercsv/Files/Projects/larc-vsss-2026/media/log/raw_2026-01-28_18-43-53.avi";
-const bool record_video = false;
+const std::string file_path = "/ros2_ws/vsss/vsss_ws/src/vision/media/log/rawvideo.mp4";
+const bool record_video = true;
 
 bool is_video_file(const std::string& path) {
     std::string p = path;
@@ -91,6 +91,9 @@ int main(int argc, char * argv[]) {
     CameraCalibrator camera_calibrator(&app_data, &cap, &use_camera);
     Detector detector(&gui, &app_data, &blob_calibrator);
     auto publisher = std::make_shared<Publisher>(&app_data, &tracker);
+
+    rclcpp::executors::SingleThreadedExecutor executor;
+    executor.add_node(publisher);
 
     std::vector<ColorCalibration> calibrations = blob_calibrator.load_calibration(app_data.calibration_filename);
     color_calibrator.load_calibration(app_data.calibration_filename);
@@ -208,7 +211,7 @@ int main(int argc, char * argv[]) {
 
         gui.display_frame();
         publisher->publish_objects();
-        rclcpp::spin_some(publisher);
+        executor.spin_some();
         if (cv::waitKey(delay) == KEY_ESC) break;
     }
 

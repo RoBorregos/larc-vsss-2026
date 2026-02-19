@@ -20,7 +20,10 @@ find_package(sensor_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(CUDAToolkit REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(visualization_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 add_definitions(-DDEBUG_MODE)
@@ -61,7 +64,7 @@ add_executable(vision_node
 )
 
 # --- 6. DIRECTORIOS DE INCLUSIÓN (Scope por Target) ---
-# Usamos target_include_directories para que CLion sepa exactamente qué pertenece a qué
+# Usamos target_    include_directories para que CLion sepa exactamente qué pertenece a qué
 target_include_directories(vision_node PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${VISION_DIR}/include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${VISION_DIR}/lib>
@@ -80,10 +83,15 @@ rosidl_get_typesupport_target(cpp_typesupport_target "${PROJECT_NAME}" "rosidl_t
 target_link_libraries(vision_node
         rclcpp::rclcpp
         cv_bridge::cv_bridge
+        tf2::tf2
+        tf2_ros::tf2_ros
+        visualization_msgs::visualization_msgs__rosidl_typesupport_cpp
         ${OpenCV_LIBS}
         CUDA::cudart
         "${cpp_typesupport_target}"
 )
+
+
 
 # Garantiza que los archivos .hpp existan antes de compilar el código fuente
 add_dependencies(vision_node ${PROJECT_NAME}__rosidl_typesupport_cpp)
