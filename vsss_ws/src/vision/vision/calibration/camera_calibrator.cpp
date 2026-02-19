@@ -83,7 +83,7 @@ void CameraCalibrator::save_calibration(const std::string& filename) {
 }
 
 void CameraCalibrator::load_calibration(const std::string& filename) {
-    std::cout << "[DEBUG] Abriendo archivo: " << filename << std::endl;
+    std::cout << "[DEBUG] Opening file: " << filename << std::endl;
 
     std::ifstream file(filename);
 

@@ -1,3 +1,3 @@
 source /opt/ros/humble/setup.bash && \
 cd vsss_ws && \
-colcon build
+colcon build --packages-select vsss_vision

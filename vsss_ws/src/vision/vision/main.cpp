@@ -12,6 +12,7 @@
 #include "app_settings.h"
 #include "coordinates.h"
 #include "tracker.h"
+#include "publisher.h"
 
 #define KEY_ESC 27
 
@@ -65,10 +66,12 @@ std::string get_timestamped_filename(std::string prefix) {
     return base_path + prefix + "_" + std::string(buffer) + ".avi";
 }
 
-int main() {
+int main(int argc, char * argv[]) {
     std::cout << "[INFO] OPENCV VERSION: " << CV_VERSION << std::endl;
     std::cout << "[INFO] CUDA DEVICES: " << cv::cuda::getCudaEnabledDeviceCount() << std::endl;
     std::cout << "[INFO] OPENCV BUILD:" << cv::getBuildInformation() << std::endl;
+
+    rclcpp::init(argc, argv);
 
     const std::string window_name = "VSSS";
     cv::namedWindow(window_name);
@@ -87,6 +90,7 @@ int main() {
     ColorCalibrator color_calibrator(&gui, &app_data);
     CameraCalibrator camera_calibrator(&app_data, &cap, &use_camera);
     Detector detector(&gui, &app_data, &blob_calibrator);
+    auto publisher = std::make_shared<Publisher>(&app_data, &tracker);
 
     std::vector<ColorCalibration> calibrations = blob_calibrator.load_calibration(app_data.calibration_filename);
     color_calibrator.load_calibration(app_data.calibration_filename);
@@ -159,7 +163,7 @@ int main() {
 
     cv::Mat processed_frame_cpu;
 
-    while (true) {
+    while (rclcpp::ok()) {
 	    gui.fps_timer.start();
 
         if (use_camera) {
@@ -203,7 +207,8 @@ int main() {
         }
 
         gui.display_frame();
-
+        publisher->publish_objects();
+        rclcpp::spin_some(publisher);
         if (cv::waitKey(delay) == KEY_ESC) break;
     }
 
@@ -212,6 +217,7 @@ int main() {
     if (raw_writer.isOpened()) raw_writer.release();
     if (processed_writer.isOpened()) processed_writer.release();
     cv::destroyAllWindows();
+    rclcpp::shutdown();
 
     return 0;
 }
