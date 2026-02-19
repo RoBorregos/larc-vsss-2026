@@ -12,6 +12,8 @@ namespace Color_ID {
     constexpr unsigned char ORANGE  = 7;
 }
 
+enum class Team { Yellow, Blue, Ball, None };
+
 struct Patch {
     int id;
     int color;

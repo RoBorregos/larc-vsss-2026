@@ -31,6 +31,16 @@ void Tracker::Entity::init(const cv::Point2f start_pos, const double start_facin
 	initialized = true;
 }
 
+Team Tracker::Entity::team() const {
+	if (!initialized) return Team::None;
+
+	if (id >= 0 && id <= 9) return Team::Yellow;
+	if (id >= 10 && id <= 19) return Team::Blue;
+	if (id == 20) return Team::Ball;
+
+	return Team::None;
+}
+
 void Tracker::Entity::update(const std::optional<cv::Point2f> observed_pos, const std::optional<double> observed_facing) {
 	if (!initialized && observed_pos.has_value()) {
 		init(observed_pos.value(), observed_facing.value_or(0.0));

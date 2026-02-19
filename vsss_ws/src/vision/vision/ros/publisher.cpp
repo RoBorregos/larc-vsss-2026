@@ -74,7 +74,13 @@ void Publisher::publish_markers(const rclcpp::Time & now) {
         m.pose.orientation.z = sin(robot.facing / 2.0);
         m.pose.orientation.w = cos(robot.facing / 2.0);
         m.scale.x = 0.075; m.scale.y = 0.075; m.scale.z = 0.070;
-        m.color.r = 0.0; m.color.g = 0.2; m.color.b = 0.8; m.color.a = 1.0;
+
+    	if (robot.team() == Team::Yellow) {
+	    	m.color.r = 8.0; m.color.g = 8.0; m.color.b = 0.0; m.color.a = 1.0;
+    	} else {
+	    	m.color.r = 0.0; m.color.g = 0.2; m.color.b = 0.8; m.color.a = 1.0;
+    	}
+
         marker_array.markers.push_back(m);
     }
     marker_pub->publish(marker_array);
