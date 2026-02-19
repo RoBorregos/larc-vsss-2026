@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   vsss_vision:
     image: roborregos/vsss:vision
@@ -20,7 +18,7 @@ services:
     environment:
       - DISPLAY=${DISPLAY}
       - NVIDIA_DRIVER_CAPABILITIES=all
-      - VSSS_CALIBRATION_PATH=/ros2_ws/vsss/src/vision/vision/vsss_calibration.json
+      - VSSS_CALIBRATION_PATH=/ros2_ws/vsss/vsss_ws/src/vision/vision/vsss_calibration.json
       - VSSS_SAVE_PATH=/ros2_ws/vsss/src/vision/media/log/
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix

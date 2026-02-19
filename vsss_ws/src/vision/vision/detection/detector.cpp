@@ -78,7 +78,8 @@ namespace {
 
 	std::vector<std::shared_ptr<Patch>> find_all_candidates(
 		const std::shared_ptr<Patch>& center,
-		const std::vector<std::shared_ptr<Patch>>& patches
+		const std::vector<std::shared_ptr<Patch>>& patches,
+		int MINIMUM_DISTANCE
 	) {
 		std::vector<std::shared_ptr<Patch>> candidates;
 		for (const auto& patch : patches) {
@@ -93,9 +94,10 @@ namespace {
 	std::vector<std::shared_ptr<Patch>> find_child_1_candidates(
 		const std::shared_ptr<Patch>& parent,
 		const std::vector<std::shared_ptr<Patch>>& patches,
-		const std::vector<RobotRelationship>& relationship
+		const std::vector<RobotRelationship>& relationship,
+		const int MINIMUM_DISTANCE
 	) {
-		const std::vector<std::shared_ptr<Patch>> candidates = find_all_candidates(parent, patches);
+		const std::vector<std::shared_ptr<Patch>> candidates = find_all_candidates(parent, patches, MINIMUM_DISTANCE);
 		std::vector<std::shared_ptr<Patch>> child_1_candidates;
 
 		for (const auto& candidate : candidates) {
@@ -113,9 +115,10 @@ namespace {
 		const std::shared_ptr<Patch>& parent,
 		const std::shared_ptr<Patch>& child_1,
 		const std::vector<std::shared_ptr<Patch>>& patches,
-		const std::vector<RobotRelationship>& relationship
+		const std::vector<RobotRelationship>& relationship,
+		const int MINIMUM_DISTANCE
 	) {
-		const std::vector<std::shared_ptr<Patch>> candidates = find_all_candidates(parent, patches);
+		const std::vector<std::shared_ptr<Patch>> candidates = find_all_candidates(parent, patches, MINIMUM_DISTANCE);
 		std::vector<std::shared_ptr<Patch>> child_2_candidates;
 
 		for (const auto& candidate : candidates) {
@@ -381,7 +384,7 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 
 		parent = parents.front();
 
-		child_1_candidates = find_child_1_candidates(parent, patches, relationship);
+		child_1_candidates = find_child_1_candidates(parent, patches, relationship, MINIMUM_DISTANCE);
 		if (child_1_candidates.empty()) {
 			patches = clustered_patches;
 			robot_candidates.clear();
@@ -389,7 +392,7 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 		}
 		child_1 = child_1_candidates.front();
 
-		child_2_candidates = find_child_2_candidates(parent, child_1, patches, relationship);
+		child_2_candidates = find_child_2_candidates(parent, child_1, patches, relationship, MINIMUM_DISTANCE);
 		if (child_2_candidates.empty()) {
 			patches = clustered_patches;
 			robot_candidates.clear();

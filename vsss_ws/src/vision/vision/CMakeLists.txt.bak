@@ -71,10 +71,11 @@ add_executable(vsss_vision main.cpp
 		gui/slider.cpp                      gui/slider.h
 		gui/interface_manager.cpp           gui/interface_manager.h
 		gui/drawer.cpp                      gui/drawer.h
-		calibration/camera_calibrator.cpp
-		calibration/camera_calibrator.h
-		gui/toggle.cpp
-		gui/toggle.h
+		calibration/camera_calibrator.cpp   calibration/camera_calibrator.h
+		gui/toggle.cpp                  	gui/toggle.h
+
+		# ROS
+		ros/publisher.cpp                   ros/publisher.h
 )
 
 # --- 10. LINKING ---

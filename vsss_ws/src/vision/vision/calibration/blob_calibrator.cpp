@@ -242,7 +242,7 @@ std::vector<ColorCalibration> BlobCalibrator::save_calibration(const std::string
 }
 
 std::vector<ColorCalibration> BlobCalibrator::load_calibration(const std::string &filename) {
-	std::cout << "[DEBUG] Abriendo archivo: "
+	std::cout << "[DEBUG] Opening file: "
 			  << filename << std::endl;
 
 	std::ifstream file(filename);
