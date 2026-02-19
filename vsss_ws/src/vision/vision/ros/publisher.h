@@ -21,6 +21,7 @@ private:
 	void publish_legacy_messages() const;
 	void publish_tfs(const rclcpp::Time & now);
 	void publish_markers(const rclcpp::Time & now);
+	void publish_field_markers(const rclcpp::Time & now);
 public:
 	Publisher(AppData * app_data, Tracker* tracker);
 	void generate_random_data();

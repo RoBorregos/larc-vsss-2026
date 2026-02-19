@@ -15,6 +15,8 @@ void Publisher::publish_objects() {
 
     publish_markers(now);
 
+	publish_field_markers(now);
+
     publish_legacy_messages();
 }
 
@@ -84,6 +86,78 @@ void Publisher::publish_markers(const rclcpp::Time & now) {
         marker_array.markers.push_back(m);
     }
     marker_pub->publish(marker_array);
+}
+
+void Publisher::publish_field_markers(const rclcpp::Time & now) {
+    visualization_msgs::msg::MarkerArray field_array;
+
+    visualization_msgs::msg::Marker lines;
+    lines.header.frame_id = "field";
+    lines.header.stamp = now;
+    lines.ns = "field_layout";
+    lines.id = 0;
+    lines.type = visualization_msgs::msg::Marker::LINE_LIST;
+    lines.action = visualization_msgs::msg::Marker::ADD;
+    lines.scale.x = 0.01;
+    lines.color.r = 1.0; lines.color.g = 1.0; lines.color.b = 1.0; lines.color.a = 1.0;
+
+    auto add_line = [&](double x1, double y1, double x2, double y2) {
+        geometry_msgs::msg::Point p1, p2;
+        p1.x = x1; p1.y = y1; p1.z = 0;
+        p2.x = x2; p2.y = y2; p2.z = 0;
+        lines.points.push_back(p1);
+        lines.points.push_back(p2);
+    };
+
+    add_line(-0.75,  0.65,  0.75,  0.65);
+    add_line(-0.75, -0.65,  0.75, -0.65);
+    add_line(-0.75, -0.65, -0.75,  0.65);
+    add_line( 0.75, -0.65,  0.75,  0.65);
+
+    add_line(0.0, 0.65, 0.0, -0.65);
+
+    add_line(0.6,  0.35, 0.6, -0.35);
+    add_line(0.6,  0.35, 0.75, 0.35);
+    add_line(0.6, -0.35, 0.75, -0.35);
+
+    add_line(-0.6,  0.35, -0.6, -0.35);
+    add_line(-0.6,  0.35, -0.75, 0.35);
+    add_line(-0.6, -0.35, -0.75, -0.35);
+
+    double cross_size = 0.02;
+    auto add_cross = [&](double x, double y) {
+        add_line(x - cross_size, y, x + cross_size, y);
+        add_line(x, y - cross_size, x, y + cross_size);
+    };
+
+    add_cross(0.375, 0.0);
+    add_cross(-0.375, 0.0);
+    add_cross(0.375, 0.4);
+    add_cross(0.375, -0.4);
+    add_cross(-0.375, 0.4);
+    add_cross(-0.375, -0.4);
+
+    field_array.markers.push_back(lines);
+
+    // 5. Círculo Central (Radio 0.4 según tu código)
+    visualization_msgs::msg::Marker circle;
+    circle.header = lines.header;
+    circle.type = visualization_msgs::msg::Marker::LINE_STRIP;
+    circle.ns = "field_circle";
+    circle.id = 1;
+    circle.scale.x = 0.01;
+    circle.color = lines.color;
+
+    for (int i = 0; i <= 64; ++i) {
+        double angle = i * (2.0 * M_PI / 64.0);
+        geometry_msgs::msg::Point p;
+        p.x = 0.2 * cos(angle);
+        p.y = 0.2 * sin(angle);
+        circle.points.push_back(p);
+    }
+    field_array.markers.push_back(circle);
+
+    marker_pub->publish(field_array);
 }
 
 void Publisher::publish_legacy_messages() const {
