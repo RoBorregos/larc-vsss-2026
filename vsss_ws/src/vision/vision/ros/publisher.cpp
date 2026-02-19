@@ -57,9 +57,9 @@ void Publisher::publish_markers(const rclcpp::Time & now) {
     ball_marker.action = visualization_msgs::msg::Marker::ADD;
     ball_marker.pose.position.x = tracker->ball.pos.x;
     ball_marker.pose.position.y = tracker->ball.pos.y;
-    ball_marker.pose.position.z = 0.02135; // Radio (42.7mm / 2)
+    ball_marker.pose.position.z = 0.02135;
     ball_marker.scale.x = 0.0427; ball_marker.scale.y = 0.0427; ball_marker.scale.z = 0.0427;
-    ball_marker.color.r = 1.0; ball_marker.color.g = 0.5; ball_marker.color.b = 0.0; ball_marker.color.a = 1.0;
+    ball_marker.color.r = 1.0; ball_marker.color.g = 0.5 - (tracker->ball.visible ? 0 : 0.5); ball_marker.color.b = 0.0; ball_marker.color.a = 1.0;
     marker_array.markers.push_back(ball_marker);
 
     for (const auto& [id, robot] : tracker->robots) {
@@ -78,9 +78,9 @@ void Publisher::publish_markers(const rclcpp::Time & now) {
         m.scale.x = 0.075; m.scale.y = 0.075; m.scale.z = 0.070;
 
     	if (robot.team() == Team::Yellow) {
-	    	m.color.r = 8.0; m.color.g = 8.0; m.color.b = 0.0; m.color.a = 1.0;
+	    	m.color.r = 0.8 - (robot.visible ? 0 : 0.2); m.color.g = 0.8; m.color.b = 0.0; m.color.a = 1.0;
     	} else {
-	    	m.color.r = 0.0; m.color.g = 0.2; m.color.b = 0.8; m.color.a = 1.0;
+	    	m.color.r = 0.0; m.color.g = 0.2  + (robot.visible ? 0 : 0.2); m.color.b = 0.8; m.color.a = 1.0;
     	}
 
         marker_array.markers.push_back(m);
