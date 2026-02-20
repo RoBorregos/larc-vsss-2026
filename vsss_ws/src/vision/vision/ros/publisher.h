@@ -1,5 +1,6 @@
 #include "app_settings.h"
 #include "tracker.h"
+#include "field_sizes.h"
 #include "rclcpp/rclcpp.hpp"
 #include "vsss_vision/msg/entity_state.hpp"
 #include <tf2_ros/transform_broadcaster.h>

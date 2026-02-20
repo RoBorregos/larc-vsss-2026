@@ -11,6 +11,8 @@ Publisher::Publisher(AppData* app_data, Tracker* tracker) : Node("vision_publish
 void Publisher::publish_objects() {
     const rclcpp::Time now = this->get_clock()->now();
 
+	generate_random_data();
+
     publish_tfs(now);
 
     publish_markers(now);
@@ -59,7 +61,10 @@ void Publisher::publish_markers(const rclcpp::Time & now) {
     ball_marker.pose.position.y = tracker->ball.pos.y;
     ball_marker.pose.position.z = 0.02135;
     ball_marker.scale.x = 0.0427; ball_marker.scale.y = 0.0427; ball_marker.scale.z = 0.0427;
-    ball_marker.color.r = 1.0; ball_marker.color.g = 0.5 - (tracker->ball.visible ? 0 : 0.5); ball_marker.color.b = 0.0; ball_marker.color.a = 1.0;
+    ball_marker.color.r = 1.0;
+	ball_marker.color.g = tracker->ball.visible ? 0.5 : 0;
+	ball_marker.color.b = 0.0;
+	ball_marker.color.a = 1.0;
     marker_array.markers.push_back(ball_marker);
 
     for (const auto& [id, robot] : tracker->robots) {
@@ -77,10 +82,16 @@ void Publisher::publish_markers(const rclcpp::Time & now) {
         m.pose.orientation.w = cos(robot.facing / 2.0);
         m.scale.x = 0.075; m.scale.y = 0.075; m.scale.z = 0.070;
 
-    	if (robot.team() == Team::Yellow) {
-	    	m.color.r = 0.8 - (robot.visible ? 0 : 0.2); m.color.g = 0.8; m.color.b = 0.0; m.color.a = 1.0;
+    	if (robot.team() == ObjectType::Yellow) {
+	    	m.color.r = robot.visible ? 0.8 : 0.6;
+    		m.color.g = 0.8;
+    		m.color.b = 0.0;
+    		m.color.a = 1.0;
     	} else {
-	    	m.color.r = 0.0; m.color.g = 0.2  + (robot.visible ? 0 : 0.2); m.color.b = 0.8; m.color.a = 1.0;
+	    	m.color.r = 0.0;
+    		m.color.g = robot.visible ? 0.2 : 0.4;
+    		m.color.b = 0.8;
+    		m.color.a = 1.0;
     	}
 
         marker_array.markers.push_back(m);
@@ -90,16 +101,19 @@ void Publisher::publish_markers(const rclcpp::Time & now) {
 
 void Publisher::publish_field_markers(const rclcpp::Time & now) {
     visualization_msgs::msg::MarkerArray field_array;
-
     visualization_msgs::msg::Marker lines;
+
     lines.header.frame_id = "field";
     lines.header.stamp = now;
     lines.ns = "field_layout";
     lines.id = 0;
     lines.type = visualization_msgs::msg::Marker::LINE_LIST;
     lines.action = visualization_msgs::msg::Marker::ADD;
-    lines.scale.x = 0.01;
-    lines.color.r = 1.0; lines.color.g = 1.0; lines.color.b = 1.0; lines.color.a = 1.0;
+	lines.scale.x = FieldSizes::LINE_THICKNESS;
+	lines.color.r = 1.0;
+	lines.color.g = 1.0;
+	lines.color.b = 1.0;
+	lines.color.a = 1.0;
 
     auto add_line = [&](double x1, double y1, double x2, double y2) {
         geometry_msgs::msg::Point p1, p2;
@@ -109,37 +123,35 @@ void Publisher::publish_field_markers(const rclcpp::Time & now) {
         lines.points.push_back(p2);
     };
 
-    add_line(-0.75,  0.65,  0.75,  0.65);
-    add_line(-0.75, -0.65,  0.75, -0.65);
-    add_line(-0.75, -0.65, -0.75,  0.65);
-    add_line( 0.75, -0.65,  0.75,  0.65);
+	add_line(-FieldSizes::HALF_LENGTH,  FieldSizes::HALF_WIDTH,  FieldSizes::HALF_LENGTH,  FieldSizes::HALF_WIDTH);
+	add_line(-FieldSizes::HALF_LENGTH, -FieldSizes::HALF_WIDTH,  FieldSizes::HALF_LENGTH, -FieldSizes::HALF_WIDTH);
+	add_line(-FieldSizes::HALF_LENGTH, -FieldSizes::HALF_WIDTH, -FieldSizes::HALF_LENGTH,  FieldSizes::HALF_WIDTH);
+	add_line( FieldSizes::HALF_LENGTH, -FieldSizes::HALF_WIDTH,  FieldSizes::HALF_LENGTH,  FieldSizes::HALF_WIDTH);    add_line(0.0, 0.65, 0.0, -0.65);
 
-    add_line(0.0, 0.65, 0.0, -0.65);
+	add_line(0.0, FieldSizes::HALF_WIDTH, 0.0, -FieldSizes::HALF_WIDTH);
+	
+	add_line(FieldSizes::GOAL_AREA_X,  FieldSizes::GOAL_AREA_HALF_WIDTH, FieldSizes::GOAL_AREA_X, -FieldSizes::GOAL_AREA_HALF_WIDTH);
+	add_line(FieldSizes::GOAL_AREA_X,  FieldSizes::GOAL_AREA_HALF_WIDTH, FieldSizes::HALF_LENGTH,  FieldSizes::GOAL_AREA_HALF_WIDTH);
+	add_line(FieldSizes::GOAL_AREA_X, -FieldSizes::GOAL_AREA_HALF_WIDTH, FieldSizes::HALF_LENGTH, -FieldSizes::GOAL_AREA_HALF_WIDTH);
 
-    add_line(0.6,  0.35, 0.6, -0.35);
-    add_line(0.6,  0.35, 0.75, 0.35);
-    add_line(0.6, -0.35, 0.75, -0.35);
+	add_line(-FieldSizes::GOAL_AREA_X,  FieldSizes::GOAL_AREA_HALF_WIDTH, -FieldSizes::GOAL_AREA_X, -FieldSizes::GOAL_AREA_HALF_WIDTH);
+	add_line(-FieldSizes::GOAL_AREA_X,  FieldSizes::GOAL_AREA_HALF_WIDTH, -FieldSizes::HALF_LENGTH,  FieldSizes::GOAL_AREA_HALF_WIDTH);
+	add_line(-FieldSizes::GOAL_AREA_X, -FieldSizes::GOAL_AREA_HALF_WIDTH, -FieldSizes::HALF_LENGTH, -FieldSizes::GOAL_AREA_HALF_WIDTH);
 
-    add_line(-0.6,  0.35, -0.6, -0.35);
-    add_line(-0.6,  0.35, -0.75, 0.35);
-    add_line(-0.6, -0.35, -0.75, -0.35);
+	auto add_cross = [&](double x, double y) {
+		add_line(x - FieldSizes::CROSS_SIZE, y, x + FieldSizes::CROSS_SIZE, y);
+		add_line(x, y - FieldSizes::CROSS_SIZE, x, y + FieldSizes::CROSS_SIZE);
+	};
 
-    double cross_size = 0.02;
-    auto add_cross = [&](double x, double y) {
-        add_line(x - cross_size, y, x + cross_size, y);
-        add_line(x, y - cross_size, x, y + cross_size);
-    };
+	add_cross(FieldSizes::CENTER_CROSS_X, 0.0);
+	add_cross(FieldSizes::CROSS_X_POS,  FieldSizes::CROSS_Y_POS);
+	add_cross(FieldSizes::CROSS_X_POS, -FieldSizes::CROSS_Y_POS);
 
-    add_cross(0.375, 0.0);
-    add_cross(-0.375, 0.0);
-    add_cross(0.375, 0.4);
-    add_cross(0.375, -0.4);
-    add_cross(-0.375, 0.4);
-    add_cross(-0.375, -0.4);
-
+	add_cross(-FieldSizes::CENTER_CROSS_X, 0.0);
+	add_cross(-FieldSizes::CROSS_X_POS,  FieldSizes::CROSS_Y_POS);
+	add_cross(-FieldSizes::CROSS_X_POS, -FieldSizes::CROSS_Y_POS);
     field_array.markers.push_back(lines);
 
-    // 5. Círculo Central (Radio 0.4 según tu código)
     visualization_msgs::msg::Marker circle;
     circle.header = lines.header;
     circle.type = visualization_msgs::msg::Marker::LINE_STRIP;
@@ -151,8 +163,8 @@ void Publisher::publish_field_markers(const rclcpp::Time & now) {
     for (int i = 0; i <= 64; ++i) {
         double angle = i * (2.0 * M_PI / 64.0);
         geometry_msgs::msg::Point p;
-        p.x = 0.2 * cos(angle);
-        p.y = 0.2 * sin(angle);
+        p.x = FieldSizes::CENTER_CIRCLE_RADIUS * cos(angle);
+        p.y = FieldSizes::CENTER_CIRCLE_RADIUS * sin(angle);
         circle.points.push_back(p);
     }
     field_array.markers.push_back(circle);
