@@ -262,7 +262,7 @@ const MAX_ROT_SPEED = 10;    // rad/s
 const WEIGHT_TIME  = 1.0;
 const WEIGHT_ALIGN = 0.5;
 const PENALTY_NO_KICKER = 1.5;
-const HYSTERESIS_BONUS = 0.15;
+const HYSTERESIS_BONUS = 0.55;
 
 const ATTACK_OFFSET = 5.0;
 
@@ -304,55 +304,109 @@ function applyStrategy(){
     const robots = [robot1, robot2, robot3];
     const GOALIE_INDEX = 0;
 
-    //SELECT ATTACKER
-    let costs=[];
-    
+    // SELECCIÓN DE ROLES
 
-    for(let i=1;i<3;i++){
+    let costs = [];
+
+    for(let i = 1; i < 3; i++){
+
         let cost = calculateTimeToAction(robots[i]);
 
+        // Histéresis: favorece al actual atacante
         if(i === currentAttacker)
             cost -= HYSTERESIS_BONUS;
-        
-            costs.push({index:i,cost:cost});
+
+        costs.push({index: i, cost: cost});
     }
-    //orden de menor  Mayor costo
 
+    // Ordenar por menor costo
     costs.sort((a,b)=>a.cost-b.cost);
+
+    const bestIndex = costs[0].index;
+    const bestCost  = costs[0].cost;
+    const secondCost = costs[1].cost;
+
+    // Inicialización
+    if(currentAttacker === -1){
+        currentAttacker = bestIndex;
+    }
+    else{
+        const difference = secondCost - bestCost;
+
+        // Solo cambia si la mejora es REAL
+        if(bestIndex !== currentAttacker &&
+           difference > HYSTERESIS_BONUS){
+
+            currentAttacker = bestIndex;
+        }
+    }
+    const attackerIndex = currentAttacker;
+    const defenderIndex = (attackerIndex === 1) ? 2 : 1;
+
+    const attacker = robots[attackerIndex];
+    const defender = robots[defenderIndex];
+    const goalie   = robots[GOALIE_INDEX];
+
+    // LÓGICA TÁCTICA
+
+    const ballBehindAttacker = ball.x < attacker.x;
+    const MIDFIELD_X=75;
+    const ballPastMidfield = ball.x < MIDFIELD_X // ajusta según tu cancha
+
+    // ATAQUE
     
-    const attacker=costs[0].index;
-    const defender = costs[1].index;
-    const goalie   = GOALIE_INDEX;
-    currentAttacker = attacker;
 
-    //ATTACKER TARGET
-    const enemyGoal = {x:65, y:150};
-    const dirx = enemyGoal.x - ball.x;
-    const diry = enemyGoal.y - ball.y;
-    const norm = Math.hypot(dirx,diry) || 1;
+    if(!ballBehindAttacker){
 
-    const attackPoint = {
-        x: ball.x - (dirx/norm)*ATTACK_OFFSET,
-        y: ball.y - (diry/norm)*ATTACK_OFFSET
-    };
+        // Posicionarse detrás del balón
+        const dirx = ball.x - attacker.x;
+        const diry = ball.y - attacker.y;
+        const norm = Math.hypot(dirx, diry) || 1;
 
-    moveRobotToGoal(robots[attacker], attackPoint.x, attackPoint.y);
+        const targetX = ball.x - (dirx/norm) * ATTACK_OFFSET;
+        const targetY = ball.y - (diry/norm) * ATTACK_OFFSET;
 
-    //DEFENDER TARGET
-    const defGoal = {
-        x:(ball.x+65)/2,
-        y:(ball.y+0)/2
-    };
+        moveRobotToGoal(attacker, targetX, targetY);
 
-    moveRobotToGoal(robots[defender], defGoal.x, defGoal.y);
+    } 
+    else{
+        // No retrocede agresivamente
+        moveRobotToGoal(attacker, attacker.x + 3, attacker.y);
+    }
 
-    //GOALIE TARGET 
-    const gk = {
-        x: 8,
-        y: Math.max(45, Math.min(85, ball.x)),
-    };
+    // DEFENSA
 
-    moveRobotToGoal(robots[goalie], gk.x, gk.y);
+    if(ballBehindAttacker){
+
+        // Subir a apoyar tipo pase
+        moveRobotToGoal(defender, ball.x - 5, ball.y);
+
+    } 
+    else{
+
+        let followX = attacker.x - DEFENDER_OFFSET_X;
+        let followY = attacker.y + DEFENDER_OFFSET_Y;
+
+        followX = Math.min(followX, DEFENDER_MAX_FORWARD);
+
+        moveRobotToGoal(defender, followX, followY);
+    }
+
+    // EMERGENCIA DEFENSIVA
+
+    if(ballPastMidfield){
+
+        moveRobotToGoal(attacker, 20, ball.y);
+        moveRobotToGoal(defender, 15, ball.y);
+    }
+
+    // PORTERO
+
+    moveRobotToGoal(
+        goalie,
+        8,
+        Math.max(45, Math.min(85, ball.y))
+    );
 }
 
 function moveRobotToGoal(robot, gx, gy){
@@ -364,16 +418,31 @@ function moveRobotToGoal(robot, gx, gy){
     const desiredAngle = Math.atan2(dy,dx);
     const angleError = normalizeAngle(desiredAngle - robot.theta);
 
-    // Rotación
+    // -------- ROTACIÓN --------
     robot.w = Math.max(-MAX_ROT_SPEED,
-               Math.min(MAX_ROT_SPEED, angleError*5));
+               Math.min(MAX_ROT_SPEED, angleError * 4));
 
-    // Traslación
-    const speed = Math.min(MAX_LIN_SPEED, dist*2);
+    // -------- VELOCIDAD BASE --------
+    let speed = dist * 2;
 
-    robot.vx = Math.cos(robot.theta) * speed;
-    robot.vy = Math.sin(robot.theta) * speed;
+    // No permitir que se vuelva casi cero si está lejos
+    if(dist > 5)
+        speed = Math.max(speed, 5);
+
+    speed = Math.min(MAX_LIN_SPEED, speed);
+
+    // -------- REDUCCIÓN POR MALA ORIENTACIÓN --------
+    const angleFactor = Math.max(0, 1 - Math.abs(angleError));
+
+    speed *= angleFactor;
+
+    const dirx = dx / (dist || 1);
+    const diry = dy / (dist || 1);
+
+    robot.vx = dirx * speed;
+    robot.vy = diry * speed;
 }
+
 
 function update(){
 
@@ -401,8 +470,8 @@ function update(){
 
 
 placeRobot(robot1, 10, 65);
-placeRobot(robot2, 45, 25);
-placeRobot(robot3,  28, 105);
+placeRobot(robot2, 34, 25);
+placeRobot(robot3,  50, 105);
 
 
 
