@@ -42,8 +42,8 @@ cv::Point2f Coordinates::pixel_to_meter(const cv::Point2f pixel) const {
 std::vector<cv::Point2f> Coordinates::get_sorted_corners(const std::vector<cv::Point>& points) {
 	std::vector<cv::Point2f> corners(4);
 
-	// TL: x+y mínimo | BR: x+y máximo
-	// TR: x-y máximo | BL: x-y mínimo
+	// TL: x+y minimum | BR: x+y maximum
+	// TR: x-y maximum | BL: x-y minimum
 	float min_sum = 1e9, max_sum = -1e9;
 	float min_diff = 1e9, max_diff = -1e9;
 

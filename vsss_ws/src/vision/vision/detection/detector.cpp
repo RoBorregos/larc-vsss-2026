@@ -551,13 +551,13 @@ cv::Mat Detector::visualize_labels(const cv::Mat& label_map) {
 			if (id == 0) continue;
 
 			switch (id) {
-			case Color_ID::BLUE:    out_ptr[x] = cv::Vec3b(255, 0, 0);   break; // Azul
-			case Color_ID::YELLOW:  out_ptr[x] = cv::Vec3b(0, 255, 255); break; // Amarillo
-			case Color_ID::CYAN:    out_ptr[x] = cv::Vec3b(255, 255, 0); break; // Cyan
-			case Color_ID::GREEN:   out_ptr[x] = cv::Vec3b(0, 255, 0);   break; // Verde
-			case Color_ID::MAGENTA: out_ptr[x] = cv::Vec3b(255, 0, 255); break; // Magenta
-			case Color_ID::RED:     out_ptr[x] = cv::Vec3b(0, 0, 255);   break; // Rojo
-			case Color_ID::ORANGE:  out_ptr[x] = cv::Vec3b(0, 165, 255); break; // Naranja
+			case Color_ID::BLUE:    out_ptr[x] = cv::Vec3b(255, 0, 0);   break;
+			case Color_ID::YELLOW:  out_ptr[x] = cv::Vec3b(0, 255, 255); break;
+			case Color_ID::CYAN:    out_ptr[x] = cv::Vec3b(255, 255, 0); break;
+			case Color_ID::GREEN:   out_ptr[x] = cv::Vec3b(0, 255, 0);   break;
+			case Color_ID::MAGENTA: out_ptr[x] = cv::Vec3b(255, 0, 255); break;
+			case Color_ID::RED:     out_ptr[x] = cv::Vec3b(0, 0, 255);   break;
+			case Color_ID::ORANGE:  out_ptr[x] = cv::Vec3b(0, 165, 255); break;
 			default:
 				out_ptr[x] = cv::Vec3b(255, 255, 255);
 				break;

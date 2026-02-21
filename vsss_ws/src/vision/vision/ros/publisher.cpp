@@ -126,8 +126,9 @@ void Publisher::publish_field_markers(const rclcpp::Time & now) {
 	add_line(-FieldSizes::HALF_LENGTH,  FieldSizes::HALF_WIDTH,  FieldSizes::HALF_LENGTH,  FieldSizes::HALF_WIDTH);
 	add_line(-FieldSizes::HALF_LENGTH, -FieldSizes::HALF_WIDTH,  FieldSizes::HALF_LENGTH, -FieldSizes::HALF_WIDTH);
 	add_line(-FieldSizes::HALF_LENGTH, -FieldSizes::HALF_WIDTH, -FieldSizes::HALF_LENGTH,  FieldSizes::HALF_WIDTH);
-	add_line( FieldSizes::HALF_LENGTH, -FieldSizes::HALF_WIDTH,  FieldSizes::HALF_LENGTH,  FieldSizes::HALF_WIDTH);    add_line(0.0, 0.65, 0.0, -0.65);
+	add_line( FieldSizes::HALF_LENGTH, -FieldSizes::HALF_WIDTH,  FieldSizes::HALF_LENGTH,  FieldSizes::HALF_WIDTH);
 
+	add_line(0.0, 0.65, 0.0, -0.65);
 	add_line(0.0, FieldSizes::HALF_WIDTH, 0.0, -FieldSizes::HALF_WIDTH);
 	
 	add_line(FieldSizes::GOAL_AREA_X,  FieldSizes::GOAL_AREA_HALF_WIDTH, FieldSizes::GOAL_AREA_X, -FieldSizes::GOAL_AREA_HALF_WIDTH);
