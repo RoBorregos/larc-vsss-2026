@@ -1,51 +1,125 @@
 /** @typedef {import('./robot.js').Robot} Robot */
 /** @typedef {import('./ball.js').Ball} Ball */
 
-import {angle_between, distance_to_ball, distance_to_goal} from "./utils";
+import * as constants from './constants.js';
+import {angle_between, distance_to_ball, distance_to_goal} from "./utils.js";
 
 /**
  * @param {Robot[]} robots
  * @param {Ball} ball
  * @param {HTMLCanvasElement} canvas
  */
-export function strategy(robots, ball, canvas) {
-    select_roles(robots, ball, canvas);
+export function strategy(robots, ball, canvas, side) {
+    select_roles(robots, ball, canvas, side);
+
+    const attacker = get_attacker(robots);
+    const defender = get_defender(robots);
+
+    if (attacker) {
+        let move_angle = angle_between(attacker, ball) * 180 / 3.1416;
+
+        if (Math.abs(move_angle) >= 15) {
+            const negative = move_angle < 0;
+
+            move_angle += 40 * (negative ? -1 : 1);
+        }
+        attacker.move(15, move_angle);
+    }
+
+    if (defender) {
+        const { x, y } = defender.get_position()
+
+        const canvas_midpoint = (canvas.height / constants.SCALE) / 2;
+        console.log(x, y, canvas_midpoint);
+        if (x > 15) {
+            defender.move(10, 180)
+            console.log('going left');
+        }
+        else if (x < 7) {
+            console.log('going right');
+            defender.move(10, 0)
+        }
+        else if (y < (canvas_midpoint - 10)) {
+            defender.move(10, 90)
+            console.log('moving down');
+        }
+        else if (y > (canvas_midpoint + 10)) {
+            defender.move(10, 180)
+            console.log('moving up')
+        };
+
+    }
+}
+
+/**
+ * @param {Robot[]} robots
+ * @return {Robot | null}
+ */
+function get_attacker(robots) {
+    const attacker = robots.find(robot => robot.role === 'attacker');
+
+    return attacker || null;
+}
+
+/**
+ * @param {Robot[]} robots
+ * @return {Robot | null}
+ */
+function get_defender(robots) {
+    const defender = robots.find(robot => robot.role === 'defender');
+
+    return defender || null;
 }
 
 /**
  * @param {Robot[]} robots
  * @param {Ball} ball
  * @param {HTMLCanvasElement} canvas
+ * @param {'left' | 'right'} side
  */
-function select_roles (robots, ball, canvas) {
-
+function select_roles(robots, ball, canvas, side) {
     for (let robot of robots) {
-        robot.defender_cost = robot_defender_cost(robot, canvas);
-        robot.attacker_cost = robot_attacker_cost(robot, canvas);
+        robot.defender_cost = robot_defender_cost(robot, canvas, side);
+        robot.attacker_cost = robot_attacker_cost(robot, ball);
+    }
 
-        console.log(`Robot with id: ${robot.id}: attack: ${robot.attacker_cost} - defend: ${robot.defender_cost}`);
+    const sortedByAttacker = [...robots].sort((a, b) => b.attacker_cost - a.attacker_cost);
+
+    const attacker = sortedByAttacker[0];
+    attacker.role = 'attacker';
+
+    const remaining = sortedByAttacker.slice(1);
+
+    remaining.sort((a, b) => b.defender_cost - a.defender_cost);
+
+    if (remaining.length >= 2) {
+        remaining[0].role = 'defender';
+        remaining[1].role = 'helper';
+    } else if (remaining.length === 1) {
+        remaining[0].role = 'defender';
     }
 }
 
 /**
  * @param {Robot} robot
  * @param {HTMLCanvasElement} canvas
+ * @param {'left' | 'right'} side
  */
-function robot_defender_cost (robot, canvas) {
+function robot_defender_cost (robot, canvas, side) {
     const distance_to_goal_weight = 0.6;
     const hysteresis_weight = 0.4;
 
     // Distance to goal
     // < 5cm -> 100%
-    // > 100cm -> 0%
-    const distance = distance_to_goal(robot, canvas);
-    let distance_score = (distance - 5) / (100 - 5);
-    distance_score = Math.max(0, Math.min(1, distance_score));
+    // > 200cm -> 0%
+    const distance = distance_to_goal(robot, canvas, side);
+    let distance_score = (distance - 5) / (200 - 5);
+    distance_score = 1 - Math.max(0, Math.min(1, distance_score));
 
     // Hysteresis bonus
     // role == 'defender'
     // role != 'defender
-    const hysteresis_score = (robot.role === 'defender') ? 0 : 1;
+    const hysteresis_score = (robot.role === 'defender') ? 1 : 0;
 
     return (distance_score * distance_to_goal_weight) +
         (hysteresis_score * hysteresis_weight);
@@ -57,26 +131,26 @@ function robot_defender_cost (robot, canvas) {
  */
 function robot_attacker_cost (robot, ball) {
     const distance_to_ball_weight = 0.5;
-    const angle_to_ball_weight = 0.3;
-    const hysteresis_weight = 0.2;
+    const angle_to_ball_weight = 0.4;
+    const hysteresis_weight = 0.1;
 
     // Distance to ball
     // < 5cm -> 100%
-    // > 100 cm -> 0%
+    // > 200 cm -> 0%
     const distance = distance_to_ball(robot, ball);
-    let distance_score = (distance - 5) / (100 - 5);
-    distance_score = Math.max(0, Math.min(1, distance_score));
+    let distance_score = (distance - 5) / (200 - 5);
+    distance_score = 1 - Math.max(0, Math.min(1, distance_score));
 
     // Angle to ball
     // 0° -> 100%
     // 180/-180 -> 0%
     const angle = angle_between(robot, ball);
-    const angle_score = Math.abs(angle) / Math.PI;
+    const angle_score = 1 - Math.abs(angle) / Math.PI;
 
     // Hysteresis bonus
     // role == 'attacker' -> 100%
     // role != 'attacker' -> 0%;
-    const hysteresis_score = (robot.role === 'attacker') ? 0 : 1;
+    const hysteresis_score = (robot.role === 'attacker') ? 1 : 0;
 
     return (distance_score * distance_to_ball_weight) +
         (angle_score * angle_to_ball_weight) +

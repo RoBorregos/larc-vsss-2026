@@ -1,10 +1,11 @@
 import * as constants from './constants.js';
 
 export class Robot {
-    constructor(x, y, id) {
+    constructor(x, y, id, color) {
         this.id = id;
         this.x = x;
         this.y = y;
+        this.color = color;
         this.theta = 0;
         this.vx = 0;
         this.vy = 0;
@@ -52,7 +53,7 @@ export class Robot {
      * @param {CanvasRenderingContext2D} ctx - The drawing context.
      * @param {string} color - The fill color for the robot body.
      */
-    draw(ctx, color) {
+    draw(ctx) {
         ctx.save();
 
         ctx.translate(this.x * constants.SCALE, this.y * constants.SCALE);
@@ -61,7 +62,7 @@ export class Robot {
         const size = constants.ROBOT_RADIUS * 2 * constants.SCALE;
         const offset = -size / 2;
 
-        ctx.fillStyle = color;
+        ctx.fillStyle = this.color;
         ctx.fillRect(offset, offset, size, size);
 
         ctx.strokeStyle = "white";

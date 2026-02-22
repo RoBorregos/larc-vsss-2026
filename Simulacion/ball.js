@@ -6,6 +6,11 @@ export const ball = {
     vx: 0,
     vy: 0,
 
+    set_position (x, y) {
+        this.x = x;
+        this.y = y;
+    },
+
     get_position () {
         const x = this.x;
         const y = this.y;
