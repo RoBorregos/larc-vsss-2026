@@ -40,6 +40,7 @@ public:
 
         void init(cv::Point2f start_pos, double start_facing);
         void update(std::optional<cv::Point2f> observed_pos, std::optional<double> observed_facing);
+        [[nodiscard]] ObjectType team() const;
     };
 
     Tracker(Coordinates* coordinates, GUI* gui);

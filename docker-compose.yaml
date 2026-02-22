@@ -18,6 +18,7 @@ services:
     environment:
       - DISPLAY=${DISPLAY}
       - NVIDIA_DRIVER_CAPABILITIES=all
+      - QT_X11_NO_MITSHM=1
       - VSSS_CALIBRATION_PATH=/ros2_ws/vsss/vsss_ws/src/vision/vision/vsss_calibration.json
       - VSSS_SAVE_PATH=/ros2_ws/vsss/src/vision/media/log/
     volumes:
@@ -27,5 +28,6 @@ services:
     devices:
       - /dev/video0:/dev/video0
       - /dev/bus/usb:/dev/bus/usb
+      - /dev/dri:/dev/dri
 
     command: /bin/bash

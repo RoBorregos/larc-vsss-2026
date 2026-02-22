@@ -2,6 +2,8 @@ FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=en_US.UTF-8
+ENV QT_X11_NO_MITSHM=1
+ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ENV PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages
 ENV AMENT_PREFIX_PATH=/opt/ros/humble
 
@@ -36,7 +38,7 @@ RUN apt-get update && apt-get install -y \
     gcc-13 \
     g++-13 \
     binutils  \
-    build-essential \
+    ros-humble-rmw-cyclonedds-cpp \
     ros-humble-rosidl-adapter \
     && rm -rf /var/lib/apt/lists/*
 
@@ -73,7 +75,8 @@ RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
 
 WORKDIR /ros2_ws
 
-RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc
+RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc && \
+    echo "if [ -f /ros2_ws/vsss/vsss_ws/install/setup.bash ]; then source /ros2_ws/vsss/vsss_ws/install/setup.bash; fi" >> ~/.bashrc
 
 SHELL ["/bin/bash", "-c"]
 
