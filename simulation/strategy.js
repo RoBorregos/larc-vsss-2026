@@ -38,12 +38,14 @@ export function strategy(robots, ball, canvas, side) {
             } else if (x < constants.GOAL.LEFT_PADDING) {
                 defender.move(constants.BASE_SPEED, constants.RIGHT);
             }
-        } else {
+        } else if (side === 'right') {
             if (x < (field_width - constants.GOAL.RIGHT_PADDING)) {
                 defender.move(constants.BASE_SPEED, constants.RIGHT);
             } else if (x > (field_width - constants.GOAL.LEFT_PADDING)) {
                 defender.move(constants.BASE_SPEED, constants.LEFT);
             }
+        } else {
+            throw new Error(`Unknown side: ${side}`);
         }
 
         if (y < (canvas_midpoint - constants.GOAL.MIDPOINT_OFFSET)) {
