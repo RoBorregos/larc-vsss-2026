@@ -1,7 +1,9 @@
 import * as constants from './constants.js';
 
 export class Robot {
-    constructor(x, y, id, color) {
+    attacker_cost;
+    defender_cost;
+    constructor({x, y, id, color}) {
         this.id = id;
         this.x = x;
         this.y = y;
@@ -26,7 +28,7 @@ export class Robot {
      * @param {number} angle - Direction of movement in radians.
      */
     move(speed, angle) {
-        angle *= 3.14 / 180;
+        angle *= Math.PI/ 180;
         this.vx = speed * Math.cos(angle);
         this.vy = speed * Math.sin(angle);
     }

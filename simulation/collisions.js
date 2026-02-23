@@ -9,7 +9,7 @@ export function collision(robot, ball) {
         const nx = dx / dist;
         const ny = dy / dist;
 
-        ball.vx = nx * 60;
-        ball.vy = ny * 60;
+        ball.vx = nx * constants.PUSH_FORCE;
+        ball.vy = ny * constants.PUSH_FORCE;
     }
 }

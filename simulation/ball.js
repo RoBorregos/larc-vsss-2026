@@ -1,22 +1,24 @@
 import * as constants from './constants.js';
 
-export const ball = {
-    x: 75,
-    y: 65,
-    vx: 0,
-    vy: 0,
+export class Ball {
+    constructor({x, y}) {
+        this.x = x;
+        this.y = y;
+        this.vx = 0;
+        this.vy = 0;
+    }
 
     set_position (x, y) {
         this.x = x;
         this.y = y;
-    },
+    };
 
     get_position () {
         const x = this.x;
         const y = this.y;
 
         return {x, y};
-    },
+    };
 
     update() {
         this.x += this.vx * constants.DT;
@@ -34,7 +36,7 @@ export const ball = {
             this.vy *= -1;
             this.y = this.y < constants.BALL_RADIUS ? constants.BALL_RADIUS : constants.FIELD_WIDTH - constants.BALL_RADIUS;
         }
-    },
+    };
 
     draw(ctx) {
         ctx.beginPath();
@@ -48,5 +50,5 @@ export const ball = {
         ctx.fillStyle = "orange";
         ctx.fill();
         ctx.closePath();
-    }
-};
+    };
+}

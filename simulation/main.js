@@ -1,6 +1,6 @@
 import * as constants from './constants.js';
 import {Robot} from './robot.js';
-import {ball} from './ball.js'
+import {Ball} from './ball.js'
 import {drawField} from "./field.js";
 import {collision} from "./collisions.js";
 import {strategy} from "./strategy.js";
@@ -11,9 +11,10 @@ const ctx = canvas.getContext("2d");
 canvas.width  = constants.FIELD_LENGTH * constants.SCALE;
 canvas.height = constants.FIELD_WIDTH  * constants.SCALE;
 
-const robot1 = new Robot(10, 65, 0, 'blue');
-const robot2 = new Robot(34, 25, 1, 'green');
-const robot3 = new Robot(50, 105, 2, 'red');
+const robot1 = new Robot(constants.START_POSITION.robot1);
+const robot2 = new Robot(constants.START_POSITION.robot2);
+const robot3 = new Robot(constants.START_POSITION.robot3);
+const ball = new Ball(constants.START_POSITION.ball)
 
 canvas.addEventListener('mousedown', (event) => {
     const rect = canvas.getBoundingClientRect();
