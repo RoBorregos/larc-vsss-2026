@@ -30,6 +30,7 @@ export function get_defender(robots) {
  * @param {'left' | 'right'} side
  */
 export function select(robots, ball, canvas, side) {
+    if (robots.length !== 3) throw new Error('Robot\'s array must have a length of 3 elements');
     for (let robot of robots) {
         robot.defender_cost = robot_defender_cost(robot, canvas, side);
         robot.attacker_cost = robot_attacker_cost(robot, ball);
@@ -44,12 +45,8 @@ export function select(robots, ball, canvas, side) {
 
     remaining.sort((a, b) => b.defender_cost - a.defender_cost);
 
-    if (remaining.length >= 2) {
-        remaining[0].role = 'defender';
-        remaining[1].role = 'helper';
-    } else if (remaining.length === 1) {
-        remaining[0].role = 'defender';
-    }
+    remaining[0].role = 'defender';
+    remaining[1].role = 'helper';
 }
 
 /**
@@ -70,7 +67,7 @@ export function robot_defender_cost (robot, canvas, side) {
 
     // Hysteresis bonus
     // role == 'defender'
-    // role != 'defender
+    // role != 'defender'
     const hysteresis_score = (robot.role === 'defender') ? 1 : 0;
 
     return (distance_score * distance_to_goal_weight) +

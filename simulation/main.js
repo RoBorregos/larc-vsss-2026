@@ -27,10 +27,7 @@ canvas.addEventListener('mousedown', (event) => {
     ball.vy = 0;
 });
 
-let angle_direction = 0;
-let frame_id = 0;
 function loop() {
-    frame_id++;
     drawField(ctx, canvas);
 
     robot1.update();

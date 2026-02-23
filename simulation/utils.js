@@ -34,7 +34,7 @@ export function distance_to_goal(robot, canvas, side) {
     } else if (side === 'right') {
         targetX_cm = canvas.width / constants.SCALE;
     } else {
-        throw new Error('Unknown side');
+        throw new Error(`Unknown side: ${side}`);
     }
 
     const dx = targetX_cm - rx;

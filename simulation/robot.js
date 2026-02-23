@@ -25,7 +25,7 @@ export class Robot {
     /**
      * Sets the robot's velocity based on a speed and a direction angle.
      * @param {number} speed - Linear speed in cm/s.
-     * @param {number} angle - Direction of movement in radians.
+     * @param {number} angle - Direction of movement in degrees.
      */
     move(speed, angle) {
         angle *= Math.PI/ 180;
@@ -53,7 +53,6 @@ export class Robot {
     /**
      * Renders the robot as a square with a heading line.
      * @param {CanvasRenderingContext2D} ctx - The drawing context.
-     * @param {string} color - The fill color for the robot body.
      */
     draw(ctx) {
         ctx.save();
