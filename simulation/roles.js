@@ -30,7 +30,7 @@ export function get_defender(robots) {
  * @param {'left' | 'right'} side
  */
 export function select(robots, ball, canvas, side) {
-    if (robots.length !== 3) throw new Error('Robot\'s array must have a length of 3 elements');
+    if (robots.length !== 3) throw new Error('robots must be an array of length 3');
     for (let robot of robots) {
         robot.defender_cost = robot_defender_cost(robot, canvas, side);
         robot.attacker_cost = robot_attacker_cost(robot, ball);
