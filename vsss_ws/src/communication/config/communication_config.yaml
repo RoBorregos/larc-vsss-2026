@@ -1,0 +1,17 @@
+communication_node_robot1:
+  ros__parameters:
+    robot_name: 'robot1'
+    robot_ip: 1
+    communication_port: 5000
+
+communication_node_robot2:
+  ros__parameters:
+    robot_name: 'robot2'
+    robot_ip: 2
+    communication_port: 5000
+
+communication_node_robot3:
+  ros__parameters:
+    robot_name: 'robot3'
+    robot_ip: 3
+    communication_port: 5000

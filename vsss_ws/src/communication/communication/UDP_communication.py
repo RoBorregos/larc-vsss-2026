@@ -27,6 +27,8 @@ class RobotUDPClient:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.client_socket.setblocking(False)
             print(f"UDP socket ready for {self.robot_ip}:{self.robot_port}")
+            
+            self.client_socket.bind(('', 8081))
         except socket.error as e:
             print(f"Socket error: {e}")
             self.client_socket = None
@@ -38,7 +40,7 @@ class RobotUDPClient:
         try:
             data, _ = self.client_socket.recvfrom(buffer_size)
             
-            if len(data) < 16:
+            if len(data) < 16:  # Expecting at least 16 bytes for 4 floats
                 print("Received data is too short.")
                 return None
             unpacked_data = struct.unpack('<ffff', data)
@@ -48,6 +50,9 @@ class RobotUDPClient:
             msg.y = unpacked_data[1]
             msg.z = unpacked_data[2]
             msg.w = unpacked_data[3]
+            
+            print(f"Received data: {msg.x}, {msg.y}, {msg.z}, {msg.w}")
+            
             return msg
         except BlockingIOError:
             pass
@@ -63,6 +68,7 @@ class RobotUDPClient:
             # Pack both floats into a single UDP packet
             packed_data = struct.pack('<fff', float1, float2, float3)
             self.client_socket.sendto(packed_data, (self.robot_ip, self.robot_port))
+            
         except socket.error as e:
             print(f"Socket error during send: {e}")
             return False
@@ -92,7 +98,7 @@ class SingleRobotUDPNode(Node):
         
         self.get_logger().info(f"Waiting to Start")
         self.declare_parameter('robot_name', 'robot1')
-        self.declare_parameter('robot_ip', '192.168.0.188')
+        self.declare_parameter('robot_ip', '192.168.1.172')
         self.declare_parameter('robot_port', 8080)    
 
         name = self.get_parameter('robot_name').value
@@ -120,7 +126,7 @@ class SingleRobotUDPNode(Node):
         if data:
             # Publish received telemetry
             self.telemetry_pub.publish(data)
-            self.get_logger().info(f"Received telemetry: {data.data}")
+            self.get_logger().info(f"Received telemetry: {data.x:.2f}, {data.y:.2f}, {data.z:.2f}, {data.w:.2f}")
         
     def destroy_node(self):
         # Ensure the UDP client is closed when the node is destroyed

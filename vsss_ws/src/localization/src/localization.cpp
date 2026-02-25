@@ -14,6 +14,8 @@ class LocalizationNode : public rclcpp::Node
 public:
     LocalizationNode() : Node("localization_node")
     {
+        this->declare_parameter("frame_prefix", "robot1");
+
         tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
         orientation_.w = 1.0;
@@ -37,10 +39,12 @@ private:
     {
         geometry_msgs::msg::TransformStamped t;
 
-        t.header.stamp = this->get_clock()->now();
-        t.header.frame_id = "world";
-        t.child_frame_id = "robot";
+        std::string prefix = this->get_parameter("frame_prefix").as_string();
 
+        t.header.stamp = this->get_clock()->now();
+        t.header.frame_id = prefix + "/world";
+        t.child_frame_id = prefix + "/robot";
+        
         t.transform.translation.x = x_;
         t.transform.translation.y = y_;
         t.transform.translation.z = 0;
