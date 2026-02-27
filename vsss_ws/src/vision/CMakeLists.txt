@@ -22,6 +22,8 @@ find_package(tf2_ros REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(cv_bridge REQUIRED)
 
 add_definitions(-DDEBUG_MODE)
 
@@ -54,7 +56,7 @@ add_executable(vision_node
         ${VISION_DIR}/gui/toggle.cpp
         ${VISION_DIR}/gui/interface_manager.cpp
         ${VISION_DIR}/gui/drawer.cpp
-        ${VISION_DIR}/ros/publisher.cpp
+        ${VISION_DIR}/ros/ros_handler.cpp
 )
 
 target_include_directories(vision_node PUBLIC

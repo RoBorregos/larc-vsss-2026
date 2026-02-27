@@ -12,15 +12,15 @@
 #include "app_settings.h"
 #include "coordinates.h"
 #include "tracker.h"
-#include "publisher.h"
+#include "ros_handler.h"
 
 #define KEY_ESC 27
 
-bool use_camera = true;
+bool use_camera = false;
 const auto camera_id = "/dev/vsss_cam";
 // const std::string file_path = "/media/ikercsv/Files/Projects/larc-vsss-2026/media/image.jpeg";
-const std::string file_path = "/ros2_ws/vsss/vsss_ws/src/vision/media/log/rawvideo.mp4";
-const bool record_video = true;
+const std::string file_path = "/ros2_ws/vsss/vsss_ws/src/vision/media/log/raw_2026-02-24_04-18-37.avi";
+const bool record_video = false;
 
 bool is_video_file(const std::string& path) {
     std::string p = path;
@@ -90,10 +90,10 @@ int main(int argc, char * argv[]) {
     ColorCalibrator color_calibrator(&gui, &app_data);
     CameraCalibrator camera_calibrator(&app_data, &cap, &use_camera);
     Detector detector(&gui, &app_data, &blob_calibrator);
-    auto publisher = std::make_shared<Publisher>(&app_data, &tracker);
+    auto ros_handler = std::make_shared<RosHandler>(&app_data, &tracker);
 
     rclcpp::executors::SingleThreadedExecutor executor;
-    executor.add_node(publisher);
+    executor.add_node(ros_handler);
 
     std::vector<ColorCalibration> calibrations = blob_calibrator.load_calibration(app_data.calibration_filename);
     color_calibrator.load_calibration(app_data.calibration_filename);
@@ -135,6 +135,11 @@ int main(int argc, char * argv[]) {
 
         std::cout << "fps from camera: " << fps << std::endl;
 
+    } else if (app_data.simulator) {
+        cv::Mat sim_frame = ros_handler->get_latest_frame();
+        if (!sim_frame.empty()) {
+            image = sim_frame;
+        }
     } else {
         if (is_video_file(file_path)) {
             cap.open(file_path);
@@ -174,6 +179,13 @@ int main(int argc, char * argv[]) {
             cap >> temp;
             if (temp.empty()) break;
             image = temp;
+        } else if (app_data.simulator) {
+            cv::Mat sim_frame = ros_handler->get_latest_frame();
+            if (!sim_frame.empty()) {
+                image = sim_frame;
+                frame_width = image.cols;
+                frame_height = image.rows;
+            }
         } else if (cap.isOpened() && !app_data.paused) {
             cv::Mat temp;
             cap >> temp;
@@ -181,7 +193,13 @@ int main(int argc, char * argv[]) {
             else { cap.set(cv::CAP_PROP_POS_FRAMES, 0); cap >> image; }
         }
 
-        if (image.empty()) break;
+        if (image.empty()) {
+            if (app_data.simulator) {
+                executor.spin_some();
+                continue;
+            }
+            break;
+        };
 
         if (raw_writer.isOpened()) {
             if (image.size() == cv::Size(frame_width, frame_height)) {
@@ -210,7 +228,7 @@ int main(int argc, char * argv[]) {
         }
 
         gui.display_frame();
-        publisher->publish_objects();
+        ros_handler->publish_objects();
         executor.spin_some();
         if (cv::waitKey(delay) == KEY_ESC) break;
     }

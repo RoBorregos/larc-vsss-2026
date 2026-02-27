@@ -3,7 +3,6 @@ FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV LANG=en_US.UTF-8
 ENV QT_X11_NO_MITSHM=1
-ENV RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 ENV PYTHONPATH=/opt/ros/humble/lib/python3.10/site-packages
 ENV AMENT_PREFIX_PATH=/opt/ros/humble
 
@@ -38,8 +37,8 @@ RUN apt-get update && apt-get install -y \
     gcc-13 \
     g++-13 \
     binutils  \
-    ros-humble-rmw-cyclonedds-cpp \
     ros-humble-rosidl-adapter \
+    ros-humble-rosbridge-suite \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt
@@ -47,7 +46,16 @@ RUN git clone --branch 4.13.0 --depth 1 https://github.com/opencv/opencv.git && 
     git clone --branch 4.13.0 --depth 1 https://github.com/opencv/opencv_contrib.git
 
 WORKDIR /opt/opencv/build
-RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
+
+ARG GPU_MODEL=ALL
+RUN if [ "$GPU_MODEL" = "4050" ]; then \
+        export ARCH_BIN="8.9"; \
+    elif [ "$GPU_MODEL" = "5050" ]; then \
+        export ARCH_BIN="10.0"; \
+    else \
+        export ARCH_BIN="8.9 10.0"; \
+    fi && \
+    cmake -D CMAKE_BUILD_TYPE=RELEASE \
     -D CMAKE_INSTALL_PREFIX=/usr/local \
     -D INSTALL_C_EXAMPLES=OFF \
     -D INSTALL_PYTHON_EXAMPLES=OFF \
@@ -57,7 +65,7 @@ RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
     -D WITH_TBB=ON \
     -D OPENCV_DNN_CUDA=ON \
     -D OPENCV_ENABLE_NONFREE=ON \
-    -D CUDA_ARCH_BIN="8.9 10.0" \
+    -D CUDA_ARCH_BIN="$ARCH_BIN" \
     -D CUDA_ARCH_PTX="10.0" \
     -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
     -D BUILD_EXAMPLES=OFF \
@@ -73,10 +81,28 @@ RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
     make install && \
     ldconfig
 
+# If this needs to change, do it after building opencv to avoid reinstalling
+ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+
+WORKDIR /opt/ros_deps_ws/src
+
+RUN git clone https://github.com/ros-perception/vision_opencv.git -b humble
+
+WORKDIR /opt/ros_deps_ws
+
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
+    colcon build --cmake-args \
+    -DOpenCV_DIR=/usr/local/lib/cmake/opencv4 \
+    -DCMAKE_BUILD_TYPE=Release \
+    --packages-select cv_bridge"
+
+RUN echo "source /opt/ros_deps_ws/install/setup.bash" >> ~/.bashrc
+
 WORKDIR /ros2_ws
 
 RUN echo "source /opt/ros/humble/setup.bash" >> ~/.bashrc && \
-    echo "if [ -f /ros2_ws/vsss/vsss_ws/install/setup.bash ]; then source /ros2_ws/vsss/vsss_ws/install/setup.bash; fi" >> ~/.bashrc
+    echo "if [ -f /ros2_ws/vsss/vsss_ws/install/setup.bash ]; then source /ros2_ws/vsss/vsss_ws/install/setup.bash; fi" >> ~/.bashrc && \
+    echo "unset RMW_IMPLEMENTATION" >> ~/.bashrc
 
 SHELL ["/bin/bash", "-c"]
 

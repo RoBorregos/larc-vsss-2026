@@ -75,13 +75,20 @@ struct MatchCalibration {
 struct AppData {
 	AppState current_state = AppState::MAIN_MENU;
 	std::string current_color = "None";
+	bool simulator = true;
 
-	std::string get_calibration_path() {
-		const char* env_path = std::getenv("VSSS_CALIBRATION_PATH");
-		return (env_path != nullptr) ? std::string(env_path) : "/ros2_ws/vsss/src/vision/vision/vsss_calibration.json";
+	std::string get_calibration_path(bool simulator) {
+		char* env_path = std::getenv("VSSS_CALIBRATION_PATH");
+
+		if (simulator) {
+			env_path = std::getenv("VSSS_SIM_CALIBRATION_PATH");
+		return (env_path != nullptr) ? std::string(env_path) : "/ros2_ws/vsss/vsss_ws/src/vision/vision/sim_calibration.json";
+		}
+
+		return (env_path != nullptr) ? std::string(env_path) : "/ros2_ws/vsss/vsss_ws/src/vision/vision/vsss_calibration.json";
 	}
 
-	std::string calibration_filename = get_calibration_path();
+	std::string calibration_filename = get_calibration_path(simulator);
 
 	VisionParams color_params;
 	CameraParams camera_params;

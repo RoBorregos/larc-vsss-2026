@@ -1,0 +1,80 @@
+DT = 0.016
+FRICTION = 0.880
+PUSH_FORCE = 60.0
+RESTITUTION = 0
+
+ROBOT_RADIUS = 3.75
+BALL_RADIUS = 2.135
+
+CANVAS_WIDTH = 240
+CANVAS_HEIGHT = 135
+FIELD_WIDTH = 150
+FIELD_HEIGHT = 130
+MID_X = FIELD_WIDTH / 2
+
+SCALE = 7
+
+LEFT_PADDING = SCALE * (CANVAS_WIDTH - FIELD_WIDTH) / 2
+UPPER_PADDING = SCALE * (CANVAS_HEIGHT - FIELD_HEIGHT) / 2
+
+
+VISUAL_CIRCLE_DIAMETER = 2.5
+VISUAL_CIRCLE_RADIUS = VISUAL_CIRCLE_DIAMETER / 2
+VISUAL_CROSS_SIZE = 3.5
+
+DEFENDER_OFFSET_X = 25
+DEFENDER_OFFSET_Y = 0
+DEFENDER_MAX_FORWARD = MID_X + 5
+
+ANGLE_THRESHOLD = 15
+ANGLE_OFFSET = 40
+BASE_SPEED = 0.10
+
+LEFT = 180
+RIGHT = 0
+DOWN = 90
+UP = 270
+
+GOAL = {
+    "x": FIELD_WIDTH / 100 / 2,
+    "y": 0,
+    "LEFT_PADDING": 0.07,
+    "RIGHT_PADDING": 0.15,
+    "MIDPOINT_OFFSET": 0.10
+}
+
+class Color_ID:
+    YELLOW = "#dedb38"
+    BLUE = "#3b2ad1"
+    RED = "#c91223"
+    GREEN = "#4bb557"
+    CYAN = "#1abeff"
+    MAGENTA = "#ca0fd1"
+    ORANGE = "#d1860f"
+    NONE = None
+
+ROBOT_DATABASE = {
+    0:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.GREEN],
+    1:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.CYAN],
+    2:  [Color_ID.YELLOW, Color_ID.GREEN,   Color_ID.RED],
+    3:  [Color_ID.YELLOW, Color_ID.GREEN,   Color_ID.CYAN],
+    4:  [Color_ID.YELLOW, Color_ID.GREEN,   Color_ID.MAGENTA],
+    5:  [Color_ID.YELLOW, Color_ID.CYAN,    Color_ID.RED],
+    6:  [Color_ID.YELLOW, Color_ID.CYAN,    Color_ID.GREEN],
+    7:  [Color_ID.YELLOW, Color_ID.CYAN,    Color_ID.MAGENTA],
+    8:  [Color_ID.YELLOW, Color_ID.MAGENTA, Color_ID.GREEN],
+    9:  [Color_ID.YELLOW, Color_ID.MAGENTA, Color_ID.CYAN],
+
+    10: [Color_ID.BLUE, Color_ID.RED,     Color_ID.GREEN],
+    11: [Color_ID.BLUE, Color_ID.RED,     Color_ID.CYAN],
+    12: [Color_ID.BLUE, Color_ID.GREEN,   Color_ID.RED],
+    13: [Color_ID.BLUE, Color_ID.GREEN,   Color_ID.CYAN],
+    14: [Color_ID.BLUE, Color_ID.GREEN,   Color_ID.MAGENTA],
+    15: [Color_ID.BLUE, Color_ID.CYAN,    Color_ID.RED],
+    16: [Color_ID.BLUE, Color_ID.CYAN,    Color_ID.GREEN],
+    17: [Color_ID.BLUE, Color_ID.CYAN,    Color_ID.MAGENTA],
+    18: [Color_ID.BLUE, Color_ID.MAGENTA, Color_ID.GREEN],
+    19: [Color_ID.BLUE, Color_ID.MAGENTA, Color_ID.CYAN],
+
+    20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
+}
