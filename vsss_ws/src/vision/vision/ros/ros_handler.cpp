@@ -1,28 +1,61 @@
-#include "publisher.h"
+#include "ros_handler.h"
 
-Publisher::Publisher(AppData* app_data, Tracker* tracker) : Node("vision_publisher_node") {
+RosHandler::RosHandler(AppData* app_data, Tracker* tracker) : Node("vision_publisher_node") {
     this->app_data = app_data;
     this->tracker = tracker;
     tf_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(this);
-    publisher = this->create_publisher<vsss_vision::msg::EntityState>("/vision/detection", 10);
+
+    auto qos_profile = rclcpp::SensorDataQoS();
+    qos_profile.keep_last(10);
+
+    publisher = this->create_publisher<vsss_vision::msg::EntityState>(
+        "/vision/detection",
+        qos_profile
+    );
+
+	image_subscription = this->create_subscription<sensor_msgs::msg::Image>(
+			"/vision/sim_image",
+			10,
+			std::bind(&RosHandler::image_callback, this, std::placeholders::_1)
+		);
+
     marker_pub = this->create_publisher<visualization_msgs::msg::MarkerArray>("/vision/markers", 10);
 }
 
-void Publisher::publish_objects() {
-    const rclcpp::Time now = this->get_clock()->now();
-
-	generate_random_data();
-
-    publish_tfs(now);
-
-    publish_markers(now);
-
-	publish_field_markers(now);
-
-    publish_legacy_messages();
+long long RosHandler::millis() {
+	static const auto start_time = std::chrono::steady_clock::now();
+	auto current_time = std::chrono::steady_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(current_time - start_time);
+	return duration.count();
 }
 
-void Publisher::publish_tfs(const rclcpp::Time & now) {
+void RosHandler::image_callback(sensor_msgs::msg::Image::SharedPtr msg) {
+	std::lock_guard<std::mutex> lock(frame_mutex_);
+	latest_frame_ = cv_bridge::toCvCopy(msg, "bgr8")->image;
+}
+
+cv::Mat RosHandler::get_latest_frame() {
+	std::lock_guard<std::mutex> lock(frame_mutex_);
+	return latest_frame_.clone();
+}
+
+void RosHandler::publish_objects() {
+    const rclcpp::Time now = this->get_clock()->now();
+
+	if (millis() - previous_millis >= (1000 / publish_hz)) {
+		// generate_random_data();
+
+		publish_tfs(now);
+
+		publish_markers(now);
+
+		publish_field_markers(now);
+
+		publish_legacy_messages();
+	}
+}
+
+void RosHandler::publish_tfs(const rclcpp::Time & now) {
     geometry_msgs::msg::TransformStamped t_ball;
     t_ball.header.stamp = now;
     t_ball.header.frame_id = "field";
@@ -32,6 +65,7 @@ void Publisher::publish_tfs(const rclcpp::Time & now) {
     t_ball.transform.translation.z = 0.0;
     t_ball.transform.rotation.w = 1.0;
     tf_broadcaster->sendTransform(t_ball);
+	std::cout << now.seconds() << ": sending ball with x: " << tracker->ball.pos.x << " - y: " << tracker->ball.pos.y << std::endl;
 
     for (const auto& [id, robot] : tracker->robots) {
        geometry_msgs::msg::TransformStamped t_robot;
@@ -47,7 +81,7 @@ void Publisher::publish_tfs(const rclcpp::Time & now) {
     }
 }
 
-void Publisher::publish_markers(const rclcpp::Time & now) {
+void RosHandler::publish_markers(const rclcpp::Time & now) {
     visualization_msgs::msg::MarkerArray marker_array;
 
     visualization_msgs::msg::Marker ball_marker;
@@ -99,7 +133,7 @@ void Publisher::publish_markers(const rclcpp::Time & now) {
     marker_pub->publish(marker_array);
 }
 
-void Publisher::publish_field_markers(const rclcpp::Time & now) {
+void RosHandler::publish_field_markers(const rclcpp::Time & now) {
     visualization_msgs::msg::MarkerArray field_array;
     visualization_msgs::msg::Marker lines;
 
@@ -173,7 +207,7 @@ void Publisher::publish_field_markers(const rclcpp::Time & now) {
     marker_pub->publish(field_array);
 }
 
-void Publisher::publish_legacy_messages() const {
+void RosHandler::publish_legacy_messages() const {
 	auto ball_message = vsss_vision::msg::EntityState();
 	ball_message.id = 20;
 	ball_message.position.position.x = tracker->ball.pos.x;
@@ -209,7 +243,7 @@ void Publisher::publish_legacy_messages() const {
  *
  * Useful if strategy or control needs random values in order to test a feature
  */
-void Publisher::generate_random_data() {
+void RosHandler::generate_random_data() {
 	static double angle = 0.0;
 	angle += 0.05;
 

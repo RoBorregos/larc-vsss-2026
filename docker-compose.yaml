@@ -17,12 +17,16 @@ services:
 
     environment:
       - DISPLAY=${DISPLAY}
-      - NVIDIA_DRIVER_CAPABILITIES=all
+      - TERM=xterm-256color
       - QT_X11_NO_MITSHM=1
+      - QT_DEBUG_PLUGINS=1
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - VSSS_SIM_CALIBRATION_PATH=/ros2_ws/vsss/vsss_ws/src/vision/vision/sim_calibration.json
       - VSSS_CALIBRATION_PATH=/ros2_ws/vsss/vsss_ws/src/vision/vision/vsss_calibration.json
-      - VSSS_SAVE_PATH=/ros2_ws/vsss/src/vision/media/log/
+      - VSSS_SAVE_PATH=/ros2_ws/vsss/vsss_ws/src/vision/media/log/
     volumes:
       - /tmp/.X11-unix:/tmp/.X11-unix
+      - $HOME/.Xauthority:/root/.Xauthority:rw
       - /dev:/dev
       - .:/ros2_ws/vsss
     devices:
