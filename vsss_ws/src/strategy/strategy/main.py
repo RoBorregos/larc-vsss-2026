@@ -1,7 +1,7 @@
 import rclpy
 import tkinter as tk
 import math
-import threading  # Necesario para el hilo de ROS
+import threading
 from . import constants
 from strategy.field import field
 from PIL import Image, ImageDraw
@@ -15,10 +15,7 @@ team = "YELLOW"
 
 
 def on_canvas_click(event, ball):
-    # Asegúrate de que world_to_pixel o la lógica de conversión sea correcta
     x, y = ball.world_to_pixel(event.x, event.y)
-    print(f"Clic detectado en Canvas: x={event.x}, y={event.y}")
-    print(f"Coordenadas reales: x={x}, y={y}")
     ball.real_x = x
     ball.real_y = y
     ball.real_vx = 0
@@ -92,8 +89,6 @@ def main():
 
     loop()
     root.mainloop()
-
-    # Al cerrar la ventana
     rclpy.shutdown()
 
 
