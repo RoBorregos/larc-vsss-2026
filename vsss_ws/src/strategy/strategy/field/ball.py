@@ -23,13 +23,12 @@ class Ball(Entity):
 
     def draw(self, canvas, draw_context):
         screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)
-        radius = constants.BALL_RADIUS * constants.SCALE
 
         bbox = [
-            screen_x - radius,
-            screen_y - radius,
-            screen_x + radius,
-            screen_y + radius
+            screen_x - self.screen_radius,
+            screen_y - self.screen_radius,
+            screen_x + self.screen_radius,
+            screen_y + self.screen_radius
         ]
 
         if self.canvas_id:
