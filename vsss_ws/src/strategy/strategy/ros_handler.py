@@ -23,7 +23,7 @@ class RosHandler(Node):
 
     def _update_poses_callback(self):
         for obj in self.infield_objects:
-            frame_id = f"robot_{obj['id']}" if obj['id'] != 20 else "ball" # Ajusta según tus IDs
+            frame_id = f"robot_{obj['id']}" if obj['id'] != 20 else "ball" 
             pose = self._fetch_transform(frame_id)
             if pose:
                 self.current_poses[frame_id] = pose
