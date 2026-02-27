@@ -46,7 +46,16 @@ RUN git clone --branch 4.13.0 --depth 1 https://github.com/opencv/opencv.git && 
     git clone --branch 4.13.0 --depth 1 https://github.com/opencv/opencv_contrib.git
 
 WORKDIR /opt/opencv/build
-RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
+
+ARG GPU_MODEL=ALL
+RUN if [ "$GPU_MODEL" = "4050" ]; then \
+        export ARCH_BIN="8.9"; \
+    elif [ "$GPU_MODEL" = "5050" ]; then \
+        export ARCH_BIN="10.0"; \
+    else \
+        export ARCH_BIN="8.9 10.0"; \
+    fi && \
+    cmake -D CMAKE_BUILD_TYPE=RELEASE \
     -D CMAKE_INSTALL_PREFIX=/usr/local \
     -D INSTALL_C_EXAMPLES=OFF \
     -D INSTALL_PYTHON_EXAMPLES=OFF \
@@ -56,7 +65,7 @@ RUN cmake -D CMAKE_BUILD_TYPE=RELEASE \
     -D WITH_TBB=ON \
     -D OPENCV_DNN_CUDA=ON \
     -D OPENCV_ENABLE_NONFREE=ON \
-    -D CUDA_ARCH_BIN="8.9 10.0" \
+    -D CUDA_ARCH_BIN="$ARCH_BIN" \
     -D CUDA_ARCH_PTX="10.0" \
     -D OPENCV_EXTRA_MODULES_PATH=/opt/opencv_contrib/modules \
     -D BUILD_EXAMPLES=OFF \
