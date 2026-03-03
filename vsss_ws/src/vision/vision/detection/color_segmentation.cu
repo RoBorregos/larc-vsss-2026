@@ -220,8 +220,8 @@ cv::cuda::GpuMat launch_color_segmentation(
     gpuErrchk(cudaGetLastError());
 
     label_moore_neighborhood_raw<<<grid, block>>>(
-        internal_buffer.ptr<uchar>(), // Puntero crudo
-        internal_buffer.step,         // Step en bytes
+        internal_buffer.ptr<uchar>(),
+        internal_buffer.step,
         internal_buffer.rows,
         internal_buffer.cols,
         output_buffer.ptr<uchar>(),

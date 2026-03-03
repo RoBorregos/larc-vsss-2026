@@ -191,12 +191,7 @@ cv::Mat Detector::get_label_map() {
 
 	cv::Mat label_map_host;
 	cudaDeviceSynchronize();
-	std::cout << "Downloading label map from GPU..." << std::endl;
-	std::cout << "Label map empty: " << label_map.empty() << std::endl;
-	std::cout << "Label map size: " << label_map.cols << " x " << label_map.rows << std::endl;
-	std::cout << "Label map type: " << label_map.type() << std::endl;
 	label_map.download(label_map_host);
-	std::cout << "Label map downloaded. Size: " << label_map_host.cols << "x" << label_map_host.rows << std::endl;
 	return label_map_host;
 }
 
