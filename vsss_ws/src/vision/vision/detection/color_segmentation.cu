@@ -48,7 +48,7 @@ __global__ void knc_dynamic_k_kernel(
         best_ids[i] = Color_ID::NONE;
     }
 
-    for (int i = 0; i < c_num_colors; ++i) {
+    for (int i = 0; i < c_num_colors && i < MAX_COLORS; ++i) {
        const float3 mean = c_means[i];
 
        float diff_h = fabsf(pixel.x - mean.x);
@@ -106,44 +106,41 @@ __global__ void knc_dynamic_k_kernel(
     output(y, x) = final_id;
 }
 
-__global__ void label_moore_neighborhood(
-	const cv::cuda::PtrStepSz<uchar>& label_mask,
-	cv::cuda::PtrStepSz<uchar> object_mask,
-	int min_required
+__global__ void label_moore_neighborhood_raw(
+    const uchar* __restrict__ label_ptr,
+    size_t step,
+    int rows,
+    int cols,
+    uchar* __restrict__ object_ptr,
+    int min_required
 ) {
-	int x = blockIdx.x * blockDim.x + threadIdx.x;
-	int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
 
-	if (x >= label_mask.cols || y >= label_mask.rows) return;
+    if (x >= cols || y >= rows) return;
 
-	if (x == 0 || x == label_mask.cols - 1 || y == 0 || y == label_mask.rows - 1) {
-		object_mask(y, x) = Color_ID::NONE;
-		return;
-	}
+    if (x == 0 || x >= cols - 1 || y == 0 || y >= rows - 1) {
+        object_ptr[y * step + x] = 0;
+        return;
+    }
 
-	uchar color = label_mask(y, x);
+    uchar color = label_ptr[y * step + x];
+    if (color == 0) {
+        object_ptr[y * step + x] = 0;
+        return;
+    }
 
-	if (color == Color_ID::NONE) {
-		object_mask(y, x) = Color_ID::NONE;
-		return;
-	}
+    int count = 0;
+    for (int dy = -1; dy <= 1; ++dy) {
+        for (int dx = -1; dx <= 1; ++dx) {
+            if (dx == 0 && dy == 0) continue;
+            if (label_ptr[(y + dy) * step + (x + dx)] == color) {
+                count++;
+            }
+        }
+    }
 
-	int count = 0;
-	#pragma unroll
-	for (int dy = -1; dy <= 1; ++dy) {
-		#pragma unroll
-		for (int dx = -1; dx <= 1; ++dx) {
-			if (dx == 0 && dy == 0) continue;
-
-			if (label_mask(y + dy, x + dx) == color) ++count;
-		}
-	}
-
-	if (count >= min_required) {
-		object_mask(y, x) = color;
-	} else {
-		object_mask(y, x) = Color_ID::NONE;
-	}
+    object_ptr[y * step + x] = (count >= min_required) ? color : 0;
 }
 
 __global__ void map_group_to_color(
@@ -187,28 +184,51 @@ void upload_calibrations_to_gpu(const std::vector<ColorCalibration>& data) {
 	gpuErrchk(cudaMemcpyToSymbol(c_num_colors, &n, sizeof(int)));
 }
 
-cv::cuda::GpuMat launch_color_segmentation(const cv::cuda::GpuMat& hsv, const cv::cuda::GpuMat& mask) {
+cv::cuda::GpuMat launch_color_segmentation(
+    const cv::cuda::GpuMat& hsv,
+    const cv::cuda::GpuMat& mask
+) {
+    CV_Assert(!hsv.empty());
+    CV_Assert(!mask.empty());
+    CV_Assert(hsv.size() == mask.size());
+    CV_Assert(hsv.type() == CV_8UC3);
+    CV_Assert(mask.type() == CV_8UC1);
 
-	static cv::cuda::GpuMat internal_buffer;
-	static cv::cuda::GpuMat output_buffer;
+    cv::cuda::GpuMat internal_buffer;
+    internal_buffer.create(hsv.size(), CV_8UC1);
 
-	internal_buffer.create(hsv.size(), CV_8UC1);
-	output_buffer.create(hsv.size(), CV_8UC1);
+    cv::cuda::GpuMat output_buffer(hsv.size(), CV_8UC1);
 
-	dim3 block(32, 32);
-	dim3 grid(
-	   (hsv.cols + block.x - 1) / block.x,
-	   (hsv.rows + block.y - 1) / block.y
-	);
+    internal_buffer.setTo(cv::Scalar(0));
 
-	float max_dist = 50.0f;
-	constexpr int k = 5;
+    dim3 block(16, 16);
+    dim3 grid(
+        (hsv.cols + block.x - 1) / block.x,
+        (hsv.rows + block.y - 1) / block.y
+    );
 
-	fflush(stdout);
-	knc_dynamic_k_kernel<<<grid, block>>>(hsv, mask, internal_buffer, max_dist*max_dist, k);
-	label_moore_neighborhood<<<grid, block>>>(internal_buffer, output_buffer, 6);
-	cudaError_t error = cudaDeviceSynchronize();
+    float max_dist = 50.0f;
+    constexpr int k = 5;
 
-	return output_buffer;
+    knc_dynamic_k_kernel<<<grid, block>>>(
+        hsv,
+        mask,
+        internal_buffer,
+        max_dist * max_dist,
+        k
+    );
+    gpuErrchk(cudaGetLastError());
+
+    label_moore_neighborhood_raw<<<grid, block>>>(
+        internal_buffer.ptr<uchar>(),
+        internal_buffer.step,
+        internal_buffer.rows,
+        internal_buffer.cols,
+        output_buffer.ptr<uchar>(),
+        6
+    );
+
+    gpuErrchk(cudaGetLastError());
+
+    return output_buffer;
 }
-
