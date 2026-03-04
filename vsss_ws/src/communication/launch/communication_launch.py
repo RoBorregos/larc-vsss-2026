@@ -2,8 +2,13 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
+import os
 
 def generate_launch_description():
+    pkg_name = 'communication'
+    pkg_share = FindPackageShare(pkg_name).find(pkg_name)
+    params = PathJoinSubstitution([pkg_share, 'config', 'communication_config.yaml'])
+    robot_params = os.path.join(pkg_share, 'config', 'communication_config.yaml')
     return LaunchDescription([
         Node(
             package='communication',
@@ -12,20 +17,15 @@ def generate_launch_description():
             name='communication_node_robot1',
             parameters=[
                 PathJoinSubstitution([
-                    FindPackageShare('communication'), 'config', 'communication_config.yaml'
-                ])
-            ]
+                    FindPackageShare('communication'), 'config', 'communication_config.yaml']),
+            ],
         ),
         Node(
             package='communication',
             executable='communication_node',
             namespace='robot2',
             name='communication_node_robot2',
-            parameters = [
-                PathJoinSubstitution([
-                    FindPackageShare('communication'), 'config', 'communication_config.yaml'
-                ])
-            ]
+            parameters = [robot_params]
         ),
         Node(
             package='communication',
@@ -35,7 +35,7 @@ def generate_launch_description():
             parameters = [
                 PathJoinSubstitution([
                     FindPackageShare('communication'), 'config', 'communication_config.yaml'
-                ])
-            ]
-        )
+                ]),
+            ],
+        ),
     ])

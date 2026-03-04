@@ -8,17 +8,20 @@ def generate_launch_description():
             executable='control_node',
             namespace='robot1',
             name='control_node_robot1',
+            parameters=[{"frame_prefix": "robot1"}]
         ),
         Node(
             package='control',
             executable='control_node',
             namespace='robot2',
             name='control_node_robot2',
+            parameters=[{"frame_prefix": "robot2"}]
         ),
         Node(
             package='control',
             executable='control_node',
             namespace='robot3',
             name='control_node_robot3',
+            parameters=[{"frame_prefix": "robot3"}]
         )
     ])

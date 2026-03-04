@@ -42,6 +42,12 @@ class ControlNode : public rclcpp::Node
     ControlNode()
     : Node("control_node")
     {
+        this->declare_parameter("frame_prefix", "robot1");
+
+        frame_prefix_ = this->get_parameter("frame_prefix").as_string();
+
+        RCLCPP_INFO(this->get_logger(), "Using frame prefix: %s", frame_prefix_.c_str());
+        
         strategySub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
             "strategy",
             10,
@@ -78,7 +84,7 @@ class ControlNode : public rclcpp::Node
             tf_buffer_->transform(
                 setpoint_,
                 t,
-                "robot"
+                frame_prefix_ + "/local"
             );
         } catch (tf2::TransformException & ex) {
             RCLCPP_WARN(this->get_logger(), "Could not transform setpoint to robot frame: %s", ex.what());
@@ -100,6 +106,7 @@ class ControlNode : public rclcpp::Node
         RCLCPP_INFO(this->get_logger(), "Publishing cmd: linear_x=%.2f, linear_y=%.2f, angular_z=%.2f", cmd.linear.x, cmd.linear.y, cmd.angular.z);
         cmdPub_->publish(cmd);
     }
+    std::string frame_prefix_;
     geometry_msgs::msg::PoseStamped setpoint_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr strategySub;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmdPub_;

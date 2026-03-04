@@ -6,7 +6,7 @@
 
 // Replace with your server/router ,etc 
 const char* ssid = "vsss_r";
-const char* password = "vsss1234";
+const char* password = "vsss2025";
 
 // UDP Server
 WiFiUDP udp;
@@ -177,7 +177,6 @@ void taskCommunication(void *parameter) {
     }
   }
 }
-
 void taskReadGyro(void *parameter) {
   float w = 0, x = 0, y = 0, z = 0;
   for (;;) {
