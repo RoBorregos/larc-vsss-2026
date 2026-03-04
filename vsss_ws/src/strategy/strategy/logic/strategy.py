@@ -3,7 +3,7 @@ from typing import List
 from ..field.ball import Ball
 from ..field.robot import Robot
 from . import roles
-from .utils import distance_to_goal, distance_to_ball, angle_between
+from .utils import distance_to_goal, distance_between, angle_between
 from .. import constants
 
 def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
@@ -49,3 +49,23 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
             defender.move(constants.BASE_SPEED, move_angle)
         else:
             defender.move(0, 0)
+    
+     
+    if helper:
+
+    # Posición fija un poco después de media cancha
+        target_x = constants.MID_X + 10
+
+    # Que siga la altura de la pelota (pero no demasiado)
+        target_y = ball.y
+
+        move_dx = target_x - helper.x
+        move_dy = target_y - helper.y
+
+        distance = math.hypot(move_dx, move_dy)
+
+        if distance > 0.03:
+            move_angle = math.atan2(move_dy, move_dx)
+            helper.move(constants.BASE_SPEED, move_angle)
+        else:
+            helper.move(0, 0)
