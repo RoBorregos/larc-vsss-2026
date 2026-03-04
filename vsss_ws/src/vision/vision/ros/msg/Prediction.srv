@@ -1,0 +1,6 @@
+int32 id
+float64 seconds_in_future
+---
+std_msgs/Header header
+int32 id
+geometry_msgs/Pose predicted_position

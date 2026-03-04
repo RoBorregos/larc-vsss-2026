@@ -41,7 +41,7 @@ def robot_defender_score(robot, side):
     distance = distance_to_goal(robot, side)
 
     min_distance = 0.05
-    max_distance = constants.FIELD_WIDTH / 100
+    max_distance = constants.DISPLAY_FIELD_WIDTH / 100
 
     distance_score = (distance - min_distance) / (max_distance - min_distance)
     distance_score = 1 - max(0, min(1, distance_score))
@@ -60,7 +60,7 @@ def robot_attacker_score(robot, ball):
     distance = distance_to_ball(robot, ball)
 
     min_distance = 0.05
-    max_distance = constants.FIELD_WIDTH / 100
+    max_distance = constants.DISPLAY_FIELD_WIDTH / 100
 
     distance_score = (distance - min_distance) / (max_distance - min_distance)
     distance_score = 1 - max(0, min(1, distance_score))
