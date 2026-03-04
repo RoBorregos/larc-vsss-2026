@@ -20,12 +20,12 @@ def distance_to_goal(robot, side):
     rx = robot.x
     ry = robot.y
 
-    target_y = constants.CANVAS_HEIGHT / 2
+    target_y = constants.DISPLAY_CANVAS_HEIGHT / 2
     target_x = None
     if side == "LEFT":
         target_x = constants.LEFT_PADDING
     elif side == "RIGHT":
-        target_y = constants.CANVAS_WIDTH - constants.LEFT_PADDING
+        target_y = constants.DISPLAY_CANVAS_WIDTH - constants.LEFT_PADDING
     else:
         print("Unknown team color")
         exit(1)

@@ -2,9 +2,9 @@ from .. import constants
 
 
 def draw_visual_circle(canvas, draw_context, x_cm, y_cm, color):
-    x = constants.LEFT_PADDING + x_cm * constants.SCALE
-    y = constants.UPPER_PADDING + y_cm * constants.SCALE
-    r = constants.VISUAL_CIRCLE_RADIUS * constants.SCALE
+    x = constants.LEFT_PADDING + x_cm * constants.DISPLAY_SCALE
+    y = constants.UPPER_PADDING + y_cm * constants.DISPLAY_SCALE
+    r = constants.VISUAL_CIRCLE_RADIUS * constants.DISPLAY_SCALE
     bbox = [x - r, y - r, x + r, y + r]
 
     # Tkinter
@@ -14,9 +14,9 @@ def draw_visual_circle(canvas, draw_context, x_cm, y_cm, color):
 
 
 def draw_visual_cross(canvas, draw_context, x_cm, y_cm, color):
-    x = constants.LEFT_PADDING + x_cm * constants.SCALE
-    y = constants.UPPER_PADDING + y_cm * constants.SCALE
-    size = (constants.VISUAL_CROSS_SIZE * constants.SCALE) / 2
+    x = constants.LEFT_PADDING + x_cm * constants.DISPLAY_SCALE
+    y = constants.UPPER_PADDING + y_cm * constants.DISPLAY_SCALE
+    size = (constants.VISUAL_CROSS_SIZE * constants.DISPLAY_SCALE) / 2
     coords = [x - size, y - size, x + size, y + size]
     coords2 = [x + size, y - size, x - size, y + size]
 
@@ -50,7 +50,7 @@ def draw_field(canvas, draw_context, width, height):
     draw_context.line(line_center, fill="white", width=2)
 
     # Central circle
-    r_center = 20 * constants.SCALE
+    r_center = 20 * constants.DISPLAY_SCALE
     cx, cy = constants.LEFT_PADDING + width / 2, constants.UPPER_PADDING + height / 2
     bbox_center = [cx - r_center, cy - r_center, cx + r_center, cy + r_center]
 
@@ -58,8 +58,8 @@ def draw_field(canvas, draw_context, width, height):
     draw_context.ellipse(bbox_center, outline="white", width=2)
 
     # Areas
-    area_depth = 15 * constants.SCALE
-    area_height = 70 * constants.SCALE
+    area_depth = 15 * constants.DISPLAY_SCALE
+    area_height = 70 * constants.DISPLAY_SCALE
     y_start = constants.UPPER_PADDING + height / 2 - area_height / 2
     y_end = constants.UPPER_PADDING + height / 2 + area_height / 2
 

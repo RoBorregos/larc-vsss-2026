@@ -28,8 +28,8 @@ def main():
     root = tk.Tk()
     root.title("VSSS Simulator - Threaded ROS Mode")
 
-    canvas_w = constants.CANVAS_WIDTH * constants.SCALE
-    canvas_h = constants.CANVAS_HEIGHT * constants.SCALE
+    canvas_w = constants.DISPLAY_CANVAS_WIDTH * constants.DISPLAY_SCALE
+    canvas_h = constants.DISPLAY_CANVAS_HEIGHT * constants.DISPLAY_SCALE
 
     canvas = tk.Canvas(root, width=canvas_w, height=canvas_h, bg="black")
     canvas.pack()
@@ -68,8 +68,8 @@ def main():
         field.draw_field(
             canvas,
             draw_context,
-            constants.FIELD_WIDTH * constants.SCALE,
-            constants.FIELD_HEIGHT * constants.SCALE
+            constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE,
+            constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
         )
 
         team_robots = object_handler.get_yellow_robots() if team == "YELLOW" else object_handler.get_blue_robots()

@@ -24,17 +24,17 @@ class Entity:
     def pixel_to_world(self, x, y):
         screen_x = constants.LEFT_PADDING + self.map(
             x,
-            -(constants.FIELD_WIDTH / (2 * 100)),
-            constants.FIELD_WIDTH / (2 * 100),
+            -(constants.DISPLAY_FIELD_WIDTH / (2 * 100)),
+            constants.DISPLAY_FIELD_WIDTH / (2 * 100),
             0,
-            constants.FIELD_WIDTH * constants.SCALE
+            constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE
         )
         screen_y = constants.UPPER_PADDING + self.map(
             y * -1, # Don't know why but this fixes it
-            -(constants.FIELD_HEIGHT / (2 * 100)),
-            constants.FIELD_HEIGHT / (2 * 100),
+            -(constants.DISPLAY_FIELD_HEIGHT / (2 * 100)),
+            constants.DISPLAY_FIELD_HEIGHT / (2 * 100),
             0,
-            constants.FIELD_HEIGHT * constants.SCALE
+            constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
         )
         return screen_x, screen_y
 
@@ -42,17 +42,17 @@ class Entity:
         real_x = self.map(
             screen_x - constants.LEFT_PADDING,
             0,
-            constants.FIELD_WIDTH * constants.SCALE,
-            -(constants.FIELD_WIDTH / (2 * 100)),
-            constants.FIELD_WIDTH / (2 * 100)
+            constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE,
+            -(constants.DISPLAY_FIELD_WIDTH / (2 * 100)),
+            constants.DISPLAY_FIELD_WIDTH / (2 * 100)
         )
 
         real_y_mapped = self.map(
             screen_y - constants.UPPER_PADDING,
             0,
-            constants.FIELD_HEIGHT * constants.SCALE,
-            -(constants.FIELD_HEIGHT / (2 * 100)),
-            constants.FIELD_HEIGHT / (2 * 100)
+            constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE,
+            -(constants.DISPLAY_FIELD_HEIGHT / (2 * 100)),
+            constants.DISPLAY_FIELD_HEIGHT / (2 * 100)
         )
 
         real_y = real_y_mapped * -1

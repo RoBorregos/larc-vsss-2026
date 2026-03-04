@@ -6,8 +6,8 @@ def check_wall_collision(entity):
     field_bbox = [
         constants.LEFT_PADDING,
         constants.UPPER_PADDING,
-        constants.LEFT_PADDING + constants.FIELD_WIDTH * constants.SCALE,
-        constants.UPPER_PADDING + constants.FIELD_HEIGHT * constants.SCALE
+        constants.LEFT_PADDING + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE,
+        constants.UPPER_PADDING + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
     ]
     screen_x, screen_y = entity.pixel_to_world(entity.real_x, entity.real_y)
 

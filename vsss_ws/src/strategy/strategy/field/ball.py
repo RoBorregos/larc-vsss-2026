@@ -11,7 +11,7 @@ class Ball(Entity):
         super().__init__()
         self.id = 20
         self.weight = 48
-        self.screen_radius = constants.BALL_RADIUS * constants.SCALE
+        self.screen_radius = constants.BALL_RADIUS * constants.DISPLAY_SCALE
         self.real_radius = constants.BALL_RADIUS / 100
         self.real_x = start_x
         self.real_y = start_y

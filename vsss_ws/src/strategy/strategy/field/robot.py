@@ -12,7 +12,7 @@ class Robot(Entity):
         self.ros_handler = ros_handler
         self.simulation = simulation
         self.weight = 200
-        self.screen_radius = constants.ROBOT_RADIUS * constants.SCALE
+        self.screen_radius = constants.ROBOT_RADIUS * constants.DISPLAY_SCALE
         self.real_radius = constants.ROBOT_RADIUS / 100
 
         self.real_x = start_x
@@ -50,7 +50,7 @@ class Robot(Entity):
 
     def draw(self, canvas, draw_context):
         screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)
-        size = constants.ROBOT_RADIUS * 2 * constants.SCALE
+        size = constants.ROBOT_RADIUS * 2 * constants.DISPLAY_SCALE
 
         half_size = size / 2
         points = [
