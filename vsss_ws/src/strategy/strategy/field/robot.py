@@ -2,6 +2,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 from .entity import Entity
 from .. import constants
 
@@ -27,6 +28,7 @@ class Robot(Entity):
         self.mark_ids = []
 
         self.sub_cmd_vel = None
+        self.sub_stop = None
 
         if simulation:
             self.subscribe_to_topics()
@@ -38,14 +40,29 @@ class Robot(Entity):
             self._simulation_move,
             10
         )
+        self.sub_stop = self.ros_handler.create_subscription(
+            Bool,
+            f'/strategy/robot_{self.id}/stop',
+            self._simulation_stop,
+            10
+        )
 
     def _simulation_move(self, msg):
         self.real_vx = msg.linear.x
         self.real_vy = msg.linear.y
         self.real_theta_vel = msg.angular.z
 
+    def _simulation_stop(self, msg):
+        if msg.data:
+            print("Stop robot with id {}".format(self.id))
+            self.real_vx = 0
+            self.real_vy = 0
+
+    def stop(self):
+        self.ros_handler.publish_stop(self.id, True)
 
     def move(self, speed, angle):
+        self.ros_handler.publish_stop(self.id, False)
         self.ros_handler.publish_omni_move(self.id, speed, angle)
 
     def draw(self, canvas, draw_context):
