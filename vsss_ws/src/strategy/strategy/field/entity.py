@@ -2,7 +2,7 @@ import math
 from .. import constants
 
 class Entity:
-    def __init__(self):
+    def __init__(self, ros_handler, id):
         # --- GROUND TRUTH (Simulator/real-life) ---
         self.real_x = 0.0
         self.real_y = 0.0
@@ -17,6 +17,13 @@ class Entity:
         self.theta = 0.0
         self.vx = 0.0
         self.vy = 0.0
+
+        self.id = id
+        self.ros_handler = ros_handler
+        self.pred_x = 0.0
+        self.pred_y = 0.0
+
+        self.is_predicting = False
 
     def map(self, x, in_min, in_max, out_min, out_max):
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
@@ -79,3 +86,21 @@ class Entity:
 
         self.real_vx *= constants.FRICTION
         self.real_vy *= constants.FRICTION
+
+    def request_prediction(self, seconds_in_future):
+        if self.is_predicting:
+            return
+
+        self.is_predicting = True
+        future = self.ros_handler.get_prediction(self.id, seconds_in_future)
+        future.add_done_callback(self._on_prediction_received)
+
+    def _on_prediction_received(self, future):
+        try:
+            response = future.result()
+            self.pred_x = response.predicted_position.position.x
+            self.pred_y = response.predicted_position.position.y
+        except Exception as e:
+            print(f"Error prediciendo entidad {self.id}: {e}")
+        finally:
+            self.is_predicting = False
