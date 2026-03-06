@@ -23,7 +23,7 @@ class RosHandler(Node):
         self.create_timer(1.0 / 30.0, self._update_poses_callback)
 
         while not self.prediction_client.wait_for_service(timeout_sec=2.0):
-            self.get_logger().info('Esperando al servidor de predicción en C++...')
+            self.get_logger().info('Waiting for prediction server')
 
     def _update_poses_callback(self):
         for obj in self.infield_objects:
@@ -89,6 +89,5 @@ class RosHandler(Node):
     def _prediction_callback(self, future):
         try:
             response = future.result()
-            self.get_logger().info(f"Predicción recibida para ID {response.id}")
         except Exception as e:
-            self.get_logger().error(f"Fallo en la llamada al servicio: {e}")
+            self.get_logger().error(f"Failed to call service: {e}")
