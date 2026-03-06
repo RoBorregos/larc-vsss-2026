@@ -2,6 +2,8 @@ from .. import constants
 from ..field.ball import Ball
 import math
 
+ball_id = 20
+
 def check_wall_collision(entity):
     field_bbox = [
         constants.LEFT_PADDING,
@@ -35,7 +37,7 @@ def check_wall_collision(entity):
         entity.real_vy = 0
 
 def get_axes(entity):
-    if entity.id == 20:
+    if entity.id == ball_id:
         return []
 
     angle = entity.theta
@@ -45,11 +47,11 @@ def get_axes(entity):
     ]
 
 
-def project(entity, axis):
+def project_entity(entity, axis):
     ax, ay = axis
     cx, cy = entity.real_x, entity.real_y
 
-    if entity.id == 20:
+    if entity.id == ball_id:
         projection_center = cx * ax + cy * ay
         return [projection_center - entity.real_radius, projection_center + entity.real_radius]
 
@@ -68,8 +70,8 @@ def project(entity, axis):
         (cx - dx - ux, cy - dy - uy)
     ]
 
-    projs = [px * ax + py * ay for px, py in corners]
-    return [min(projs), max(projs)]
+    projections = [px * ax + py * ay for px, py in corners]
+    return [min(projections), max(projections)]
 
 
 def handle_collision(entity_a, entity_b):
@@ -82,15 +84,15 @@ def handle_collision(entity_a, entity_b):
     if dist_sq == 0: return
 
     dist = math.sqrt(dist_sq)
-    if entity_a.id == 20 or entity_b.id == 20:
+    if entity_a.id == ball_id or entity_b.id == ball_id:
         axes.append((dx / dist, dy / dist))
 
     overlap = float('inf')
     smallest_axis = (0, 0)
 
     for axis in axes:
-        min_a, max_a = project(entity_a, axis)
-        min_b, max_b = project(entity_b, axis)
+        min_a, max_a = project_entity(entity_a, axis)
+        min_b, max_b = project_entity(entity_b, axis)
 
         current_overlap = min(max_a, max_b) - max(min_a, min_b)
         if current_overlap <= 0:
