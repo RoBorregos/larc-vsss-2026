@@ -34,47 +34,94 @@ def check_wall_collision(entity):
         entity.real_y = new_real_y
         entity.real_vy = 0
 
+def get_axes(entity):
+    if entity.id == 20:
+        return []
+
+    angle = entity.theta
+    return [
+        (math.cos(angle), math.sin(angle)),
+        (-math.sin(angle), math.cos(angle))
+    ]
+
+
+def project(entity, axis):
+    ax, ay = axis
+    cx, cy = entity.real_x, entity.real_y
+
+    if entity.id == 20:
+        projection_center = cx * ax + cy * ay
+        return [projection_center - entity.real_radius, projection_center + entity.real_radius]
+
+    r = entity.real_radius
+    angle = entity.theta
+
+    dx = math.cos(angle) * r
+    dy = math.sin(angle) * r
+    ux = -math.sin(angle) * r
+    uy = math.cos(angle) * r
+
+    corners = [
+        (cx + dx + ux, cy + dy + uy),
+        (cx + dx - ux, cy + dy - uy),
+        (cx - dx + ux, cy - dy + uy),
+        (cx - dx - ux, cy - dy - uy)
+    ]
+
+    projs = [px * ax + py * ay for px, py in corners]
+    return [min(projs), max(projs)]
+
+
 def handle_collision(entity_a, entity_b):
+    axes = get_axes(entity_a) + get_axes(entity_b)
+
     dx = entity_b.real_x - entity_a.real_x
     dy = entity_b.real_y - entity_a.real_y
     dist_sq = dx ** 2 + dy ** 2
 
-    min_dist = entity_a.real_radius + entity_b.real_radius
-
-    if dist_sq > min_dist ** 2 or dist_sq == 0:
-        return
+    if dist_sq == 0: return
 
     dist = math.sqrt(dist_sq)
+    if entity_a.id == 20 or entity_b.id == 20:
+        axes.append((dx / dist, dy / dist))
 
-    nx = dx / dist
-    ny = dy / dist
-    overlap = min_dist - dist
+    overlap = float('inf')
+    smallest_axis = (0, 0)
 
-    total_weight = entity_a.weight + entity_b.weight
-    ratio_a = entity_b.weight / total_weight
-    ratio_b = entity_a.weight / total_weight
+    for axis in axes:
+        min_a, max_a = project(entity_a, axis)
+        min_b, max_b = project(entity_b, axis)
 
-    entity_a.real_x -= nx * (overlap * ratio_a)
-    entity_a.real_y -= ny * (overlap * ratio_a)
-    entity_b.real_x += nx * (overlap * ratio_b)
-    entity_b.real_y += ny * (overlap * ratio_b)
+        current_overlap = min(max_a, max_b) - max(min_a, min_b)
+        if current_overlap <= 0:
+            return
+
+        if current_overlap < overlap:
+            overlap = current_overlap
+            smallest_axis = axis
+
+    nx, ny = smallest_axis
+    if (dx * nx + dy * ny) < 0:
+        nx, ny = -nx, -ny
+
+    total_w = entity_a.weight + entity_b.weight
+    entity_a.real_x -= nx * (overlap * (entity_b.weight / total_w))
+    entity_a.real_y -= ny * (overlap * (entity_b.weight / total_w))
+    entity_b.real_x += nx * (overlap * (entity_a.weight / total_w))
+    entity_b.real_y += ny * (overlap * (entity_a.weight / total_w))
 
     rvx = entity_b.real_vx - entity_a.real_vx
     rvy = entity_b.real_vy - entity_a.real_vy
+    vel_normal = (rvx * nx + rvy * ny)
 
-    vel_along_normal = (rvx * nx + rvy * ny)
-
-    if vel_along_normal < 0:
-        e = constants.RESTITUTION
-
-        impulse = -(1 + e) * vel_along_normal
-        impulse /= (1 / entity_a.weight + 1 / entity_b.weight)
+    if vel_normal < 0:
+        e = 0.5
+        impulse = -(1 + e) * vel_normal / (1 / entity_a.weight + 1 / entity_b.weight)
 
         entity_a.real_vx -= (impulse / entity_a.weight) * nx
         entity_a.real_vy -= (impulse / entity_a.weight) * ny
         entity_b.real_vx += (impulse / entity_b.weight) * nx
         entity_b.real_vy += (impulse / entity_b.weight) * ny
-
 
 def resolve_physics(entities):
     num_entities = len(entities)
