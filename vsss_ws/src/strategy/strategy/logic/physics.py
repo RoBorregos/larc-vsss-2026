@@ -47,7 +47,7 @@ def get_axes(entity):
     ]
 
 
-def project_entity(entity, axis):
+def project_entity_axes(entity, axis):
     ax, ay = axis
     cx, cy = entity.real_x, entity.real_y
 
@@ -91,8 +91,8 @@ def handle_collision(entity_a, entity_b):
     smallest_axis = (0, 0)
 
     for axis in axes:
-        min_a, max_a = project_entity(entity_a, axis)
-        min_b, max_b = project_entity(entity_b, axis)
+        min_a, max_a = project_entity_axes(entity_a, axis)
+        min_b, max_b = project_entity_axes(entity_b, axis)
 
         current_overlap = min(max_a, max_b) - max(min_a, min_b)
         if current_overlap <= 0:
