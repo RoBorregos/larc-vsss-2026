@@ -81,8 +81,6 @@ void RosHandler::handle_prediction(
 		response->predicted_position.position.y = robot.pos.y + (robot.vel.y * dt);
 		response->predicted_position.orientation.w = 1.0;
 	}
-
-	RCLCPP_INFO(this->get_logger(), "Predicción enviada para ID: %d", target_id);
 }
 
 void RosHandler::publish_tfs(const rclcpp::Time & now) {
