@@ -3,49 +3,48 @@ from typing import List
 from ..field.ball import Ball
 from ..field.robot import Robot
 from . import roles
-from .utils import distance_to_goal, distance_to_ball, angle_between
 from .. import constants
+from .path_planning import *
+
 
 def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
+
     roles.select(team_robots, ball, 'LEFT')
 
     attacker = roles.get_attacker(team_robots)
     defender = roles.get_defender(team_robots)
     helper = roles.get_helper(team_robots)
 
+    attacking_right = True
+
     if attacker:
-        move_angle = angle_between(attacker, ball)
 
-        angle_deg = math.degrees(move_angle)
+        tx, ty = ball_target(ball, attacking_right)
 
-        if abs(angle_deg) >= constants.ANGLE_THRESHOLD:
-            negative = angle_deg < 0
-            offset = math.radians(constants.ANGLE_OFFSET)
-            move_angle += offset * (-1 if negative else 1)
+        fx, fy = field(attacker, tx, ty, enemy_robots, team_robots, ball, attacking_right)
 
-        attacker.move(constants.BASE_SPEED, move_angle)
+        speed, angle = resultant_vector(fx, fy, constants.BASE_SPEED)
+
+        attacker.move(speed, angle)
+
 
     if defender:
-        x, y = defender.x, defender.y
 
-        dx = 0
-        dy = 0
+        tx, ty = defender_target(ball, attacking_right)
 
-        side = 'LEFT'
+        fx, fy = field(defender, tx, ty, enemy_robots, team_robots, ball, attacking_right)
 
-        if side == 'LEFT':
-            if x > -constants.GOAL["x"] + constants.GOAL["RIGHT_PADDING"]:
-                dx = -1
-            elif x < constants.GOAL["x"] - constants.GOAL["LEFT_PADDING"]:
-                dx = 1
+        speed, angle = resultant_vector(fx, fy, constants.BASE_SPEED)
 
-        if y < constants.GOAL["y"] - constants.GOAL["MIDPOINT_OFFSET"]:
-            dy = 1
-        elif y > constants.GOAL["y"] + constants.GOAL["MIDPOINT_OFFSET"]:
-            dy = -1
+        defender.move(speed, angle)
 
-        if dx != 0 or dy != 0:
-            move_angle = math.atan2(dy, dx)
-            defender.move(constants.BASE_SPEED, move_angle)
-        else:
-            defender.move(0, 0)
+
+    if helper:
+
+        tx, ty = helper_target(ball, attacking_right)
+
+        fx, fy = field(helper, tx, ty, enemy_robots, team_robots, ball, attacking_right)
+
+        speed, angle = resultant_vector(fx, fy, constants.BASE_SPEED)
+
+        helper.move(speed, angle)
