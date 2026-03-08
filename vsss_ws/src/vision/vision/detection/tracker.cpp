@@ -94,9 +94,10 @@ void Tracker::Entity::update(const std::optional<cv::Point2f> observed_pos, cons
 	}
 }
 
-Tracker::Tracker(Coordinates* coordinates, GUI* gui) {
+Tracker::Tracker(Coordinates* coordinates, GUI* gui, Drawer* drawer) {
 	this->coordinates = coordinates;
 	this->gui = gui;
+	this->drawer = drawer;
 	ball.id = 20;
 }
 
@@ -243,14 +244,36 @@ void Tracker::display_debug_image(int width, int height) {
         };
         cv::Point tip_px = coordinates->meter_to_minimap(tip_m, width, height);
 
-        cv::circle(map, center_px, 10, color, 2);
-        cv::arrowedLine(map, center_px, tip_px, color, 2);
+        cv::circle(map, center_px, DRAW_RADIUS, color, DRAW_THICKNESS);
+        cv::arrowedLine(map, center_px, tip_px, color, DRAW_THICKNESS);
+
 
     	int acc_pct = static_cast<int>(r.accuracy * 100.0f);
     	std::string label = "ID:" + std::to_string(r.id) + " (" + std::to_string(acc_pct) + "%)";
 
-    	cv::putText(map, label, center_px + cv::Point(-10, -15),
-			cv::FONT_HERSHEY_SIMPLEX, 0.4, color, 1);
+    	cv::Point origin = center_px + cv::Point(DRAW_TEXT_X_OFFSET, DRAW_TEXT_Y_OFFSET);
+    	cv::putText(map, label, origin,
+			cv::FONT_HERSHEY_SIMPLEX, DRAW_FONT_SCALE, color, 1);
+
+    	drawer->circle(
+    		coordinates->warped_to_pixel(center_px, width, height),
+    		DRAW_RADIUS,
+    		DRAW_THICKNESS,
+    		color, Drawer::Layer::MARKINGS
+    		);
+    	drawer->line(
+    		coordinates->warped_to_pixel(center_px, width, height),
+    		coordinates->warped_to_pixel(tip_px, width, height),
+    		DRAW_THICKNESS,
+    		color,
+    		Drawer::Layer::MARKINGS
+    		);
+    	drawer->text(
+    		label,
+    		coordinates->warped_to_pixel(origin, width, height),
+    		DRAW_FONT_SCALE,
+    		Drawer::Layer::MARKINGS
+    		);
     }
 
 	if (ball.initialized) {

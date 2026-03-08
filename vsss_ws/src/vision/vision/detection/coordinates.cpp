@@ -119,3 +119,29 @@ cv::Mat Coordinates::get_warped_image(const cv::Mat& input_image) const {
 
 	return warped_image;
 }
+
+cv::Point2f Coordinates::warped_to_pixel(const cv::Point2f& warped_point, int width, int height) const {
+	if (!is_calibrated || homography_matrix.empty()) return {0.0f, 0.0f};
+
+	cv::Mat shift = cv::Mat::eye(3, 3, CV_64F);
+	shift.at<double>(0, 2) = FieldConstants::FIELD_WIDTH_M / 2.0;
+	shift.at<double>(1, 2) = FieldConstants::FIELD_HEIGHT_M / 2.0;
+
+	cv::Mat scale = cv::Mat::eye(3, 3, CV_64F);
+	scale.at<double>(0, 0) = (double)width / FieldConstants::FIELD_WIDTH_M;
+	scale.at<double>(1, 1) = (double)height / FieldConstants::FIELD_HEIGHT_M;
+
+	cv::Mat flip_y = cv::Mat::eye(3, 3, CV_64F);
+	flip_y.at<double>(1, 1) = -1.0;
+	flip_y.at<double>(1, 2) = (double)height;
+
+	cv::Mat final_homography = flip_y * scale * shift * homography_matrix;
+
+	cv::Mat inverse_final_homography = final_homography.inv();
+
+	std::vector<cv::Point2f> src = { warped_point };
+	std::vector<cv::Point2f> dst;
+	cv::perspectiveTransform(src, dst, inverse_final_homography);
+
+	return dst[0];
+}

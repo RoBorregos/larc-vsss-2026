@@ -83,9 +83,10 @@ int main(int argc, char * argv[]) {
     cv::VideoWriter processed_writer;
 
     AppData app_data;
-    GUI gui(&app_data, window_name);
+    Drawer drawer;
+    GUI gui(&app_data, &drawer, window_name);
     Coordinates coordinates(&app_data);
-    Tracker tracker(&coordinates, &gui);
+    Tracker tracker(&coordinates, &gui, &drawer);
     BlobCalibrator blob_calibrator(&gui, &app_data);
     ColorCalibrator color_calibrator(&gui, &app_data);
     CameraCalibrator camera_calibrator(&app_data, &cap, &use_camera);
