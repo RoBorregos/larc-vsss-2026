@@ -113,11 +113,11 @@ class Robot(Entity):
                     rotated_m_tk.extend([rx, ry])
                     rotated_m_pil.append((rx, ry))
 
-                color_with_illumination = self._change_color_illumination(base_color, intensity=constants.ILLUMIANTION_INTENSITY)
+                color_with_illumination = self._change_color_illumination(base_color, intensity=constants.ILLUMINATION_INTENSITY)
                 m = canvas.create_polygon(rotated_m_tk, fill=color_with_illumination, outline="black")
                 self.mark_ids.append(m)
 
-                texture = self._generate_noisy_texture(tex_w, tex_h, color_with_illumination, intensity=constants.ILLUMIANTION_INTENSITY)
+                texture = self._generate_noisy_texture(tex_w, tex_h, color_with_illumination, intensity=constants.ILLUMINATION_INTENSITY)
 
                 if texture:
                     temporal_image = Image.new('RGBA', texture.size, (0, 0, 0, 0))
