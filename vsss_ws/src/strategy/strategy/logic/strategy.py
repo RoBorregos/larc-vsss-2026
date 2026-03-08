@@ -18,33 +18,21 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
     attacking_right = True
 
     if attacker:
-
         tx, ty = ball_target(ball, attacking_right)
-
         fx, fy = field(attacker, tx, ty, enemy_robots, team_robots, ball, attacking_right)
-
         speed, angle = resultant_vector(fx, fy, constants.BASE_SPEED)
-
         attacker.move(speed, angle)
 
 
     if defender:
-
         tx, ty = defender_target(ball, attacking_right)
-
         fx, fy = field(defender, tx, ty, enemy_robots, team_robots, ball, attacking_right)
-
         speed, angle = resultant_vector(fx, fy, constants.BASE_SPEED)
-
         defender.move(speed, angle)
 
 
     if helper:
-
         tx, ty = helper_target(ball, attacking_right)
-
         fx, fy = field(helper, tx, ty, enemy_robots, team_robots, ball, attacking_right)
-
         speed, angle = resultant_vector(fx, fy, constants.BASE_SPEED)
-
         helper.move(speed, angle)
