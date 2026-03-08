@@ -2,6 +2,8 @@ from .. import constants
 from ..field.ball import Ball
 import math
 
+ball_id = 20
+
 def check_wall_collision(entity):
     field_bbox = [
         constants.LEFT_PADDING,
@@ -9,6 +11,13 @@ def check_wall_collision(entity):
         constants.LEFT_PADDING + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE,
         constants.UPPER_PADDING + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
     ]
+
+    field_height_px = constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
+    goal_half_width = (constants.DISPLAY_GOAL_WIDTH / 2)
+
+    goal_top = (field_height_px / 2) - goal_half_width + constants.UPPER_PADDING
+    goal_bottom = (field_height_px / 2) + goal_half_width + constants.UPPER_PADDING
+
     screen_x, screen_y = entity.pixel_to_world(entity.real_x, entity.real_y)
 
     min_x = field_bbox[0] + entity.screen_radius
@@ -16,14 +25,20 @@ def check_wall_collision(entity):
     min_y = field_bbox[1] + entity.screen_radius
     max_y = field_bbox[3] - entity.screen_radius
 
+    is_ball = (entity.id == ball_id)
+    in_goal_zone = goal_top < screen_y < goal_bottom
+
     if screen_x < min_x:
-        new_real_x, _ = entity.world_to_pixel(min_x, screen_y)
-        entity.real_x = new_real_x
-        entity.real_vx = 0
+        if not (is_ball and in_goal_zone):
+            new_real_x, _ = entity.world_to_pixel(min_x, screen_y)
+            entity.real_x = new_real_x
+            entity.real_vx = 0
+
     elif screen_x > max_x:
-        new_real_x, _ = entity.world_to_pixel(max_x, screen_y)
-        entity.real_x = new_real_x
-        entity.real_vx = 0
+        if not (is_ball and in_goal_zone):
+            new_real_x, _ = entity.world_to_pixel(max_x, screen_y)
+            entity.real_x = new_real_x
+            entity.real_vx = 0
 
     if screen_y < min_y:
         _, new_real_y = entity.world_to_pixel(screen_x, min_y)
