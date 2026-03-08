@@ -42,9 +42,9 @@ class ControlNode : public rclcpp::Node
     ControlNode()
     : Node("control_node")
     {
-        this->declare_parameter("frame_prefix", "robot1");
+        this->declare_parameter("robot_name", "robot_name");
 
-        frame_prefix_ = this->get_parameter("frame_prefix").as_string();
+        frame_prefix_ = this->get_parameter("robot_name").as_string();
 
         RCLCPP_INFO(this->get_logger(), "Using frame prefix: %s", frame_prefix_.c_str());
         

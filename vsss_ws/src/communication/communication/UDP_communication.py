@@ -84,41 +84,44 @@ def twist_to_rpm(twist, wheel_radius=0.01431, wheel_distance=0.0311):
     vy = twist.linear.y  # Sideways velocity 
     wz = twist.angular.z  # Angular velocity
     
-    rpm_left = (-wheel_distance * wz  COS_30 * vx + 0.5 * vy) * OMEGA_TO_RPM / wheel_radius
-    rpm_right = (-wheel_distance * wz - 0.5 * vx + 0.5 * vy) * OMEGA_TO_RPM / wheel_radius
+    rpm_left = (-wheel_distance * wz  + COS_30 * vx + 0.5 * vy) * OMEGA_TO_RPM / wheel_radius
+    rpm_right = (-wheel_distance * wz - COS_30 * vx + 0.5 * vy) * OMEGA_TO_RPM / wheel_radius
     rpm_back = (-wheel_distance * wz - vx) * OMEGA_TO_RPM / wheel_radius
     
     return rpm_left, rpm_right, rpm_back
 
 class SingleRobotUDPNode(Node):
-    def __init__(self):
+    def __init__(self): 
         super().__init__('single_robot_udp_node')
         # Parameters should be loaded from external YAML config via ROS2 launch or CLI
         
         self.get_logger().info(f"Waiting to Start")
-        self.declare_parameter('robot_name', 'robot1')
-        self.declare_parameter('robot_ip', '192.168.0.220')
+        self.declare_parameter('robot_name', 'vsss_robot')
+        self.declare_parameter('robot_ip', '192.168.0.221')
         self.declare_parameter('robot_port', 8081)    
         self.latest_setpoints = [0, 0, 0]
 
         name = self.get_parameter('robot_name').value
         ip = self.get_parameter('robot_ip').value
         port = self.get_parameter('robot_port').value
-
         
-        self.get_logger().info(f"Node Started with values name {name}, connection->({ip}:{port})")
+        node_name = self.get_fully_qualified_name()
+        cmd_vel_topic = self.resolve_topic_name('cmd_vel')
+        rpms_topic = self.resolve_topic_name('rpms')
+        telemetry_topic = self.resolve_topic_name('telemetry')
+        
+        self.get_logger().info(f"{node_name} Started with values name: {name}, connection->({ip}:{port})")
         self.client = RobotUDPClient(ip, port)
 
         self.get_logger().info(f"Waiting to Start")
-        topic = 'cmd_vel'
-        self.create_subscription(Twist, topic, self.cmd_vel_callback, 10)
-        self.get_logger().info(f"Subscribed to {topic} for {name} ({ip}:{port})")
+        self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
+        self.get_logger().info(f"Subscribed to {cmd_vel_topic} for {name} ({ip}:{port})")
         
         self.telemetry_pub = self.create_publisher(Quaternion, 'telemetry', 10)
-        self.get_logger().info(f"Publishing telemetry to /{name}/telemetry")
+        self.get_logger().info(f"Publishing telemetry to {telemetry_topic} for {name} ({ip}:{port})")
         
         self.rpms_pub = self.create_publisher(Float32MultiArray, 'rpms', 10)
-        self.get_logger().info(f"Publishing RPMs to /{name}/rpms")
+        self.get_logger().info(f"Publishing RPMs to {rpms_topic} for {name} ({ip}:{port})")
         
         self.create_timer(0.02, self.receive_telemetry_timer_callback)  # 50 Hz for telemetry
         

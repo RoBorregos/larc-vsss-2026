@@ -1,27 +1,16 @@
 from launch import LaunchDescription
 from launch_ros.actions import Node
+from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.actions import DeclareLaunchArgument
 
 def generate_launch_description():
     return LaunchDescription([
+        DeclareLaunchArgument('robot_name', default_value='vsss_robot', description='Name of the robot'),
         Node(
             package='control',
             executable='control_node',
-            namespace='robot1',
-            name='control_node_robot1',
-            parameters=[{"frame_prefix": "robot1"}]
-        ),
-        Node(
-            package='control',
-            executable='control_node',
-            namespace='robot2',
-            name='control_node_robot2',
-            parameters=[{"frame_prefix": "robot2"}]
-        ),
-        Node(
-            package='control',
-            executable='control_node',
-            namespace='robot3',
-            name='control_node_robot3',
-            parameters=[{"frame_prefix": "robot3"}]
+            namespace=LaunchConfiguration('robot_name'),
+            name=PythonExpression(["'control_node_' + '", LaunchConfiguration('robot_name'), "'"]),
+            parameters=[{'robot_name': LaunchConfiguration('robot_name')}]
         )
     ])

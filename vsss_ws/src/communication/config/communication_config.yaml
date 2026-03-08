@@ -1,17 +1,13 @@
-communication_node_robot1:
-  ros__parameters:
-    robot_name: "robot1"
-    robot_ip: "2"
-    communication_port: 5000
+vsss_robot:
+  communication_node_vsss_robot:
+    ros__parameters:
+      robot_name: "vsss_robot"
+      robot_ip: "192.168.0.220"
+      communication_port: 8000
 
-communication_node_robot2:
-  ros__parameters:
-    robot_name: "robot2"
-    robot_ip: "23"
-    communication_port: 5000
-
-communication_node_robot3:
-  ros__parameters:
-    robot_name: "robot3"
-    robot_ip: "3"
-    communication_port: 5000
+gancho:
+  communication_node_gancho:
+    ros__parameters:
+      robot_name: "gancho"
+      robot_ip: "192.168.0.221"
+      communication_port: 8000
