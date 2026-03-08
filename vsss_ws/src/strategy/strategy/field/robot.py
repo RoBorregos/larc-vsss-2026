@@ -1,5 +1,6 @@
 import math
 import rclpy
+import random
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from .entity import Entity
@@ -40,8 +41,8 @@ class Robot(Entity):
         )
 
     def _simulation_move(self, msg):
-        self.real_vx = msg.linear.x
-        self.real_vy = msg.linear.y
+        self.real_vx = msg.linear.x + random.gauss(0, abs(msg.linear.x) * constants.MOVEMENT_NOISE)
+        self.real_vy = msg.linear.y + random.gauss(0, abs(msg.linear.y) * constants.MOVEMENT_NOISE)
         self.real_theta_vel = msg.angular.z
 
 

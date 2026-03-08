@@ -78,3 +78,5 @@ ROBOT_DATABASE = {
 
     20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
 }
+
+MOVEMENT_NOISE = 1
