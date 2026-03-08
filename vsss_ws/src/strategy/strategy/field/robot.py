@@ -133,7 +133,6 @@ class Robot(Entity):
 
                     codes_x = [p[0] for p in rotated_m_pil]
                     codes_y = [p[1] for p in rotated_m_pil]
-                    min_x, min_y = min(codes_x), min(codes_y)
 
                     draw_context.polygon(rotated_m_pil, fill=color_with_illumination, outline="black")
 
