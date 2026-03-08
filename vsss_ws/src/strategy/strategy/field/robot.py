@@ -126,11 +126,6 @@ class Robot(Entity):
                     patch_points = [(0, 0), (tex_w, 0), (tex_w, tex_h), (0, tex_h)]
                     temporal_drawing.polygon(patch_points, fill=color_with_illumination)
 
-                    noisy_patch = Image.composite(texture, temporal_image, temporal_image.getchannel('A'))
-
-                    theta_deg = math.degrees(-self.real_theta)
-                    rotated_patch = noisy_patch.rotate(theta_deg, expand=True, resample=Image.BILINEAR)
-
                     codes_x = [p[0] for p in rotated_m_pil]
                     codes_y = [p[1] for p in rotated_m_pil]
 
