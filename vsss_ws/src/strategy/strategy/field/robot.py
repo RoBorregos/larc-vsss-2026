@@ -1,10 +1,13 @@
 import math
 import rclpy
+import random
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool
 from .entity import Entity
 from .. import constants
+import numpy as np
+from PIL import Image, ImageDraw
 
 class Robot(Entity):
     def __init__(self, ros_handler, robot_id, start_x, start_y, start_theta, simulation = False):
@@ -101,6 +104,8 @@ class Robot(Entity):
         mark_size = size * 0.5
         half_size = size / 2
 
+        tex_w, tex_h = int(mark_size), int(mark_size)
+
         marks_offsets = [
             (-half_size, -half_size),
             (half_size - mark_size, -half_size)
@@ -108,6 +113,8 @@ class Robot(Entity):
 
         for i, (ox, oy) in enumerate(marks_offsets):
             if i < len(self.detail_colors) and self.detail_colors[i]:
+                base_color = self.detail_colors[i]
+
                 m_points = [
                     (ox, oy),
                     (ox + mark_size, oy),
@@ -123,7 +130,56 @@ class Robot(Entity):
                     rotated_m_tk.extend([rx, ry])
                     rotated_m_pil.append((rx, ry))
 
-                m = canvas.create_polygon(rotated_m_tk, fill=self.detail_colors[i], outline="black")
+                color_with_illumination = self._change_color_illumination(base_color, intensity=constants.ILLUMINATION_INTENSITY)
+                m = canvas.create_polygon(rotated_m_tk, fill=color_with_illumination, outline="black")
                 self.mark_ids.append(m)
 
-                draw_context.polygon(rotated_m_pil, fill=self.detail_colors[i], outline="black")
+                texture = self._generate_noisy_texture(tex_w, tex_h, color_with_illumination, intensity=constants.ILLUMINATION_INTENSITY)
+
+                if texture:
+                    temporal_image = Image.new('RGBA', texture.size, (0, 0, 0, 0))
+                    temporal_drawing = ImageDraw.Draw(temporal_image)
+
+                    patch_points = [(0, 0), (tex_w, 0), (tex_w, tex_h), (0, tex_h)]
+                    temporal_drawing.polygon(patch_points, fill=color_with_illumination)
+
+                    codes_x = [p[0] for p in rotated_m_pil]
+                    codes_y = [p[1] for p in rotated_m_pil]
+
+                    draw_context.polygon(rotated_m_pil, fill=color_with_illumination, outline="black")
+
+                    bbox = [min(codes_x), min(codes_y), max(codes_x), max(codes_y)]
+                    for _ in range(int(mark_size * mark_size * constants.NOISE_RATE)):
+                        rx = random.randint(int(bbox[0]), int(bbox[2]))
+                        ry = random.randint(int(bbox[1]), int(bbox[3]))
+
+                        dot_color = random.choice([(0, 0, 0), (255, 255, 255)])
+
+                        draw_context.point((rx, ry), fill=dot_color)
+
+    def _generate_noisy_texture(self, w, h, base_hex_color, intensity=30):
+        if w <= 0 or h <= 0: return None
+
+        hex_color = base_hex_color.lstrip('#')
+        r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+
+        img_array = np.full((int(h), int(w), 3), [r, g, b], dtype=np.uint8)
+
+        # Generate random noice and join both color arrays (normal + noise)
+        noise = np.random.normal(0, intensity, (int(h), int(w), 3))
+        noisy_array = np.clip(img_array + noise, 0, 255).astype(np.uint8)
+
+        return Image.fromarray(noisy_array, 'RGB')
+
+    def _change_color_illumination(self, hex_color, intensity=20):
+        if hex_color is None:
+            return None
+
+        hex_color = hex_color.lstrip('#')
+        r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+
+        r = max(0, min(255, r + random.randint(-intensity, intensity)))
+        g = max(0, min(255, g + random.randint(-intensity, intensity)))
+        b = max(0, min(255, b + random.randint(-intensity, intensity)))
+
+        return f'#{r:02x}{g:02x}{b:02x}'
