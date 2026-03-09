@@ -138,8 +138,7 @@ def handle_collision(entity_a, entity_b):
 
     # Apply impulse only if entities are moving towards each other
     if vel_normal < 0:
-        e = 0.5 # Restitution coefficient
-        impulse = -(1 + e) * vel_normal / (1 / entity_a.weight + 1 / entity_b.weight)
+        impulse = -(1 + constants.RESTITUTION) * vel_normal / (1 / entity_a.weight + 1 / entity_b.weight)
 
         entity_a.real_vx -= (impulse / entity_a.weight) * nx
         entity_a.real_vy -= (impulse / entity_a.weight) * ny
