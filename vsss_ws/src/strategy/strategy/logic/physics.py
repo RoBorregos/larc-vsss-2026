@@ -2,8 +2,6 @@ from .. import constants
 from ..field.ball import Ball
 import math
 
-ball_id = 20
-
 def check_wall_collision(entity):
     field_bbox = [
         constants.LEFT_PADDING,
@@ -37,7 +35,7 @@ def check_wall_collision(entity):
         entity.real_vy = 0
 
 def get_axes(entity):
-    if entity.id == ball_id:
+    if entity.id == constants.BALL_ID:
         return []
 
     angle = entity.theta
@@ -52,7 +50,7 @@ def project_entity_axes(entity, axis):
     ax, ay = axis
     cx, cy = entity.real_x, entity.real_y
 
-    if entity.id == ball_id:
+    if entity.id == constants.BALL_ID:
         # Project the ball center onto the axis using the dot product
         projection_center = cx * ax + cy * ay
         return [projection_center - entity.real_radius, projection_center + entity.real_radius]
@@ -97,7 +95,7 @@ def handle_collision(entity_a, entity_b):
     dist = math.sqrt(dist_sq)
 
     # If a ball is involved, add the axis connecting the two centers
-    if entity_a.id == ball_id or entity_b.id == ball_id:
+    if entity_a.id == constants.BALL_ID or entity_b.id == constants.BALL_ID:
         axes.append((dx / dist, dy / dist))
 
     # Initialize overlap with infinity to find the Minimum Separation Vector (MSV)

@@ -53,6 +53,7 @@ class Color_ID:
     ORANGE = "#d1860f"
     NONE = None
 
+BALL_ID = 20
 ROBOT_DATABASE = {
     0:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.GREEN],
     1:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.CYAN],
