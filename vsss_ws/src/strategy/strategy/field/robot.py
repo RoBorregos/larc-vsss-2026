@@ -31,6 +31,7 @@ class Robot(Entity):
 
         self.sub_cmd_vel = None
         self.sub_kicker = None
+        self.sub_stop = None
 
         if simulation:
             self.subscribe_to_topics()
@@ -48,6 +49,12 @@ class Robot(Entity):
             self._simulation_kick,
             10
         )
+        self.sub_stop = self.ros_handler.create_subscription(
+            Bool,
+            f'/strategy/robot_{self.id}/stop',
+            self._simulation_stop,
+            10
+        )
 
     def _simulation_move(self, msg):
         self.real_vx = msg.linear.x
@@ -58,7 +65,17 @@ class Robot(Entity):
         if msg.data:
             self.kick_request = True
 
+    def _simulation_stop(self, msg):
+        if msg.data:
+            print("Stop robot with id {}".format(self.id))
+            self.real_vx = 0
+            self.real_vy = 0
+
+    def stop(self):
+        self.ros_handler.publish_stop(self.id, True)
+
     def move(self, speed, angle):
+        self.ros_handler.publish_stop(self.id, False)
         self.ros_handler.publish_omni_move(self.id, speed, angle)
 
     def kicker(self, active):

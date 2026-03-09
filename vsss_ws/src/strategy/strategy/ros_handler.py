@@ -1,6 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 import math
 from tf2_ros import TransformException, Buffer, TransformListener
 from sensor_msgs.msg import Image
@@ -78,5 +79,13 @@ class RosHandler(Node):
 
         msg = Bool()
         msg.data = active
+        self.publishers_map[topic_name].publish(msg)
 
+    def publish_stop(self, robot_id, value):
+        topic_name = f'/strategy/robot_{robot_id}/stop'
+        if topic_name not in self.publishers_map:
+            self.publishers_map[topic_name] = self.create_publisher(Bool, topic_name, 10)
+
+        msg = Bool()
+        msg.data = value
         self.publishers_map[topic_name].publish(msg)
