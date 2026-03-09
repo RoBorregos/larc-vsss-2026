@@ -5,6 +5,8 @@ from ..field.ball import Ball
 from .. import constants
 from .physics import resolve_physics
 
+ball_id = 20
+
 class ObjectHandler:
     def __init__(self, infield_objects, ros_handler, simulation = False):
         self.infield_objects = infield_objects
@@ -17,10 +19,11 @@ class ObjectHandler:
         self.YELLOW_RANGE = list(range(0, 10))  # IDs 0-9
 
         self.last_update_time = time.time()
+        self.in_goal_callback = False
 
         self._init_objects()
 
-    def update(self):
+    def update(self, canvas):
         current_time = time.time()
         dt = current_time - self.last_update_time
 
@@ -38,11 +41,45 @@ class ObjectHandler:
 
         ball = self.get_ball()
         robots = self.get_all_robots()
-        resolve_physics([ball, *robots])
+        resolve_physics([ball, *robots], self.goal_callback, canvas)
 
         self.last_update_time = current_time
 
+    def goal_callback(self, canvas):
+        if self.in_goal_callback: return
+        self.in_goal_callback = True
+        width = canvas.winfo_width()
+        height = canvas.winfo_height()
+
+        goal_text = canvas.create_text(
+            width / 2, height / 2,
+            text="GOAL!", fill="yellow",
+            font=("Arial", 80, "bold")
+        )
+
+        def finish_and_reset(count):
+            print(f"Finish and reset with count: {count}")
+            if count <= 0:
+                canvas.delete(goal_text)
+
+                for entity in self.entities.values():
+                    entity.destroy(canvas)
+
+                self.entities = {}
+
+                self._init_objects()
+                self.in_goal_callback = False
+                return
+
+            new_color = "red" if canvas.itemcget(goal_text, "fill") == "yellow" else "yellow"
+            canvas.itemconfig(goal_text, fill=new_color)
+
+            canvas.after(200, lambda: finish_and_reset(count - 1))
+
+        finish_and_reset(10)
+
     def draw(self, canvas, draw_context):
+        if self.in_goal_callback: return
         width = canvas.winfo_width()
         height = canvas.winfo_height()
 

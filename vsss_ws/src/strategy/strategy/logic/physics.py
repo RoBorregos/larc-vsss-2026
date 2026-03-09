@@ -4,7 +4,7 @@ import math
 
 ball_id = 20
 
-def check_wall_collision(entity):
+def check_wall_collision(entity, goal_callback, canvas):
     field_bbox = [
         constants.LEFT_PADDING,
         constants.UPPER_PADDING,
@@ -29,13 +29,17 @@ def check_wall_collision(entity):
     in_goal_zone = goal_top < screen_y < goal_bottom
 
     if screen_x < min_x:
-        if not (is_ball and in_goal_zone):
+        if is_ball and in_goal_zone:
+            goal_callback(canvas)
+        else:
             new_real_x, _ = entity.world_to_pixel(min_x, screen_y)
             entity.real_x = new_real_x
             entity.real_vx = 0
 
     elif screen_x > max_x:
-        if not (is_ball and in_goal_zone):
+        if is_ball and in_goal_zone:
+            goal_callback(canvas)
+        else:
             new_real_x, _ = entity.world_to_pixel(max_x, screen_y)
             entity.real_x = new_real_x
             entity.real_vx = 0
@@ -91,14 +95,14 @@ def handle_collision(entity_a, entity_b):
         entity_b.real_vy += (impulse / entity_b.weight) * ny
 
 
-def resolve_physics(entities):
+def resolve_physics(entities, goal_callback, canvas):
     num_entities = len(entities)
 
     for i in range(num_entities):
         entity_a = entities[i]
         entity_a.real_vx *= constants.FRICTION
         entity_a.real_vy *= constants.FRICTION
-        check_wall_collision(entity_a)
+        check_wall_collision(entity_a, goal_callback, canvas)
 
         for j in range(i + 1, num_entities):
             entity_b = entities[j]

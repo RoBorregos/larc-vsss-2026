@@ -21,6 +21,11 @@ class Ball(Entity):
 
         self.canvas_id = None
 
+    def destroy(self, canvas):
+        if self.canvas_id:
+            canvas.delete(self.canvas_id)
+
+
     def draw(self, canvas, draw_context):
         screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)
 
