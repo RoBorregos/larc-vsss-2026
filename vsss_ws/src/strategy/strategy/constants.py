@@ -3,6 +3,7 @@ DT = 0.016              # Delta Time (approx. 60 FPS)
 FRICTION = 0.880        # Global velocity decay factor
 PUSH_FORCE = 60.0       # Force applied during robot movement
 RESTITUTION = 0.5         # Bounciness (0 = inelastic collision)
+KICK_FORCE = 2          # Force applied to the ball when the ball is kicked
 
 # --- Entity Dimensions ---
 ROBOT_RADIUS = 3.75
@@ -15,6 +16,7 @@ DISPLAY_FIELD_WIDTH = 150
 DISPLAY_FIELD_HEIGHT = 130
 DISPLAY_MID_X = DISPLAY_FIELD_WIDTH / 2
 DISPLAY_SCALE = 7       # Conversion factor from world units to pixels
+TEXT_OFFSET = 15
 
 # --- UI Padding & Offset Calculations ---
 LEFT_PADDING = DISPLAY_SCALE * (DISPLAY_CANVAS_WIDTH - DISPLAY_FIELD_WIDTH) / 2
@@ -89,7 +91,6 @@ ROBOT_DATABASE = {
 
     20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
 }
-
 
 # --- PATH PLANNING ---
 ATTRACTIVE_GAIN = 3.0 # Strength of attraction toward the target point

@@ -15,9 +15,19 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
     defender = roles.get_defender(team_robots)
     helper = roles.get_helper(team_robots)
 
-    attacking_right = True
 
+    attacking_right = True
+    
     if attacker:
+        move_angle = angle_between(attacker, ball)
+        angle_deg = math.degrees(move_angle)
+        distance = distance_to_ball(attacker, ball)
+
+        if distance < 0.15 and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
+            attacker.kicker(True)
+        else:
+            attacker.kicker(False)
+
         tx, ty = ball_target(ball, attacking_right)
         fx, fy = field(attacker, tx, ty, enemy_robots, team_robots, ball, attacking_right)
         speed, angle = resultant_vector(fx, fy, constants.BASE_SPEED)

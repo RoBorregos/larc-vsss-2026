@@ -21,4 +21,5 @@ public:
 	cv::Point meter_to_minimap(const cv::Point2f& meter, int width, int height) const;
 	double meter_to_pixel_scalar(double meter);
 	cv::Mat get_warped_image(const cv::Mat& input_image) const;
+	cv::Point2f warped_to_pixel(const cv::Point2f& warped_point, int width, int height) const;
 };

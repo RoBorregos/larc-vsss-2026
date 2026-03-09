@@ -36,6 +36,7 @@ private:
 	std::vector<std::unique_ptr<Widget>> camera_calibration_tool_widgets;
 	std::vector<std::unique_ptr<Widget>> mask_calibration_tool_widgets;
 	std::vector<std::unique_ptr<Widget>> roi_calibration_tool_widgets;
+	std::vector<std::unique_ptr<Widget>> detection_tool_widgets;
 
 	std::map<std::string, Button*> color_buttons;
 	std::optional<CalibrationResult> last_calculated_result;

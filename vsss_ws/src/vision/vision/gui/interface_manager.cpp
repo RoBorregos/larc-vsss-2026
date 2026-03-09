@@ -144,6 +144,10 @@ void InterfaceManager::init_widgets() {
 		color_calibrator->save_calibration(app_data->calibration_filename);
 		coordinates->update_matrix();
 	}));
+
+	detection_tool_widgets.push_back(std::make_unique<Button>(gui, 9, "VOLVER", [this]() {
+		app_data->current_state = AppState::MAIN_MENU;
+	}));
 }
 
 void InterfaceManager::save_current_blob_calibration() {
@@ -231,6 +235,7 @@ void InterfaceManager::draw_interface() {
     		break;
         case AppState::DETECTION:
             gui->text("MODO DETECTION (ESC para salir)", 1, Drawer::Layer::INTERFACE, 0.6, false);
+    		current_widgets = &detection_tool_widgets;
             break;
     }
 	// detector->display_debug_info();
@@ -294,6 +299,7 @@ void InterfaceManager::handle_input(int event, int x, int y) {
     	case AppState::COLOR_CALIBRATING: current_widgets = &color_calibration_tool_widgets; break;
     	case AppState::MASK_CALIBRATING: current_widgets = &mask_calibration_tool_widgets; break;
     	case AppState::ROI_CALIBRATING: current_widgets = &roi_calibration_tool_widgets; break;
+    	case AppState::DETECTION: current_widgets = &detection_tool_widgets; break;
         default: break;
     }
 
