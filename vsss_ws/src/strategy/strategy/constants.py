@@ -2,7 +2,7 @@
 DT = 0.016              # Delta Time (approx. 60 FPS)
 FRICTION = 0.880        # Global velocity decay factor
 PUSH_FORCE = 60.0       # Force applied during robot movement
-RESTITUTION = 0         # Bounciness (0 = inelastic collision)
+RESTITUTION = 0.5         # Bounciness (0 = inelastic collision)
 
 # --- Entity Dimensions ---
 ROBOT_RADIUS = 3.75
@@ -63,6 +63,7 @@ class Color_ID:
 
 # --- Robot Identity & Team Color Database ---
 # Maps entity ID to a list of identifying colors
+BALL_ID = 20
 ROBOT_DATABASE = {
     0:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.GREEN],
     1:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.CYAN],
