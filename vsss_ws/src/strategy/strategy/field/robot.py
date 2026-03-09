@@ -59,6 +59,19 @@ class Robot(Entity):
             10
         )
 
+    def destroy(self, canvas):
+        if self.canvas_id:
+            canvas.delete(self.canvas_id)
+        if self.text_id:
+            canvas.delete(self.text_id)
+        for m_id in self.mark_ids:
+            canvas.delete(m_id)
+
+        if self.sub_cmd_vel:
+            self.ros_handler.destroy_subscription(self.sub_cmd_vel)
+        if self.sub_stop:
+            self.ros_handler.destroy_subscription(self.sub_stop)
+
     def _simulation_move(self, msg):
         new_vx = msg.linear.x + random.gauss(0, abs(msg.linear.x) * constants.MOVEMENT_NOISE)
         new_vy = msg.linear.y + random.gauss(0, abs(msg.linear.y) * constants.MOVEMENT_NOISE)

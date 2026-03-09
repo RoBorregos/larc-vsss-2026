@@ -10,12 +10,14 @@ ROBOT_RADIUS = 3.75
 BALL_RADIUS = 2.135
 
 # --- Display & Field Geometry ---
+DISPLAY_SCALE = 7       # Conversion factor from world units to pixels
 DISPLAY_CANVAS_WIDTH = 240
 DISPLAY_CANVAS_HEIGHT = 135
 DISPLAY_FIELD_WIDTH = 150
 DISPLAY_FIELD_HEIGHT = 130
 DISPLAY_MID_X = DISPLAY_FIELD_WIDTH / 2
-DISPLAY_SCALE = 7       # Conversion factor from world units to pixels
+DISPLAY_GOAL_DEPTH = 10 * DISPLAY_SCALE
+DISPLAY_GOAL_WIDTH = 40 * DISPLAY_SCALE
 TEXT_OFFSET = 15
 
 # --- UI Padding & Offset Calculations ---
