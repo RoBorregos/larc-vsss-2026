@@ -11,9 +11,7 @@ from PIL import Image, ImageDraw
 
 class Robot(Entity):
     def __init__(self, ros_handler, robot_id, start_x, start_y, start_theta, simulation = False):
-        super().__init__()
-        self.id = robot_id
-        self.ros_handler = ros_handler
+        super().__init__(ros_handler, robot_id)
         self.simulation = simulation
         self.weight = 200
         self.screen_radius = constants.ROBOT_RADIUS * constants.DISPLAY_SCALE
@@ -22,6 +20,8 @@ class Robot(Entity):
         self.real_x = start_x
         self.real_y = start_y
         self.real_theta = start_theta
+
+        self.kick_request = False
 
         colors = constants.ROBOT_DATABASE.get(robot_id)
         self.main_color = colors[0]
@@ -33,6 +33,7 @@ class Robot(Entity):
         self.text_id = None
 
         self.sub_cmd_vel = None
+        self.sub_kicker = None
         self.sub_stop = None
 
         if simulation:
@@ -43,6 +44,12 @@ class Robot(Entity):
             Twist,
             f'/strategy/robot_{self.id}/cmd_vel',
             self._simulation_move,
+            10
+        )
+        self.sub_kicker = self.ros_handler.create_subscription(
+            Bool,
+            f'/strategy/robot_{self.id}/kicker',
+            self._simulation_kick,
             10
         )
         self.sub_stop = self.ros_handler.create_subscription(
@@ -76,6 +83,10 @@ class Robot(Entity):
         self.real_vy = new_vy
         self.real_theta_vel = msg.angular.z
 
+    def _simulation_kick(self, msg):
+        if msg.data:
+            self.kick_request = True
+
     def _simulation_stop(self, msg):
         if msg.data:
             print("Stop robot with id {}".format(self.id))
@@ -88,6 +99,9 @@ class Robot(Entity):
     def move(self, speed, angle):
         self.ros_handler.publish_stop(self.id, False)
         self.ros_handler.publish_omni_move(self.id, speed, angle)
+
+    def kicker(self, active):
+        self.ros_handler.publish_kicker(self.id, active)
 
     def draw(self, canvas, draw_context):
         screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)

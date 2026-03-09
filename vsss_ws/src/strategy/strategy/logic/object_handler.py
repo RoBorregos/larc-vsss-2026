@@ -34,6 +34,7 @@ class ObjectHandler:
 
             if new_pose:
                 entity.update_from_vision(new_pose, dt)
+                entity.request_prediction(seconds_in_future=0.5)
 
             entity.apply_physics(dt)
 
@@ -96,7 +97,7 @@ class ObjectHandler:
         self.entities[robot_id] = robot
 
     def spawn_ball(self, start_x, start_y, start_theta):
-        ball = Ball(start_x, start_y, start_theta)
+        ball = Ball(self.ros_handler, start_x, start_y, start_theta)
         self.entities[20] = ball
 
     def get_blue_robots(self):

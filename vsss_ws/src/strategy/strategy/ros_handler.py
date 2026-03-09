@@ -6,6 +6,8 @@ import math
 from tf2_ros import TransformException, Buffer, TransformListener
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
+from vsss_vision.srv import Prediction
+from std_msgs.msg import Bool
 
 class RosHandler(Node):
     def __init__(self, infield_objects):
@@ -19,8 +21,11 @@ class RosHandler(Node):
         self.publishers_map = {}
         self.bridge = CvBridge()
         self.image_pub = self.create_publisher(Image, '/vision/sim_image', 10)
-
+        self.prediction_client = self.create_client(Prediction, '/vision/prediction')
         self.create_timer(1.0 / 30.0, self._update_poses_callback)
+
+        while not self.prediction_client.wait_for_service(timeout_sec=2.0):
+            self.get_logger().info('Waiting for prediction server')
 
     def _update_poses_callback(self):
         for obj in self.infield_objects:
@@ -28,6 +33,8 @@ class RosHandler(Node):
             pose = self._fetch_transform(frame_id)
             if pose:
                 self.current_poses[frame_id] = pose
+
+
 
     def _fetch_transform(self, frame_name):
         try:
@@ -71,6 +78,15 @@ class RosHandler(Node):
         msg.angular.z = 0.0
         self.publishers_map[topic_name].publish(msg)
 
+    def publish_kicker(self, robot_id, active):
+        topic_name = f'/strategy/robot_{robot_id}/kicker'
+        if topic_name not in self.publishers_map:
+            self.publishers_map[topic_name] = self.create_publisher(Bool, topic_name, 10)
+
+        msg = Bool()
+        msg.data = active
+        self.publishers_map[topic_name].publish(msg)
+
     def publish_stop(self, robot_id, value):
         topic_name = f'/strategy/robot_{robot_id}/stop'
         if topic_name not in self.publishers_map:
@@ -78,5 +94,20 @@ class RosHandler(Node):
 
         msg = Bool()
         msg.data = value
-
         self.publishers_map[topic_name].publish(msg)
+        
+    def get_prediction(self, target_id, seconds_future):
+        request = Prediction.Request()
+        request.id = int(target_id)
+        request.seconds_in_future = float(seconds_future)
+
+        future = self.prediction_client.call_async(request)
+
+        future.add_done_callback(self._prediction_callback)
+        return future
+
+    def _prediction_callback(self, future):
+        try:
+            response = future.result()
+        except Exception as e:
+            self.get_logger().error(f"Failed to call service: {e}")

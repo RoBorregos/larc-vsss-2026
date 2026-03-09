@@ -3,6 +3,7 @@ DT = 0.016              # Delta Time (approx. 60 FPS)
 FRICTION = 0.880        # Global velocity decay factor
 PUSH_FORCE = 60.0       # Force applied during robot movement
 RESTITUTION = 0.5         # Bounciness (0 = inelastic collision)
+KICK_FORCE = 2          # Force applied to the ball when the ball is kicked
 
 # --- Entity Dimensions ---
 ROBOT_RADIUS = 3.75
@@ -93,7 +94,6 @@ ROBOT_DATABASE = {
     20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
 }
 
-
 # --- Robot Movement & Precision ---
 MOVEMENT_NOISE = 1      # Deviation based on a Gaussian distribution
 MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets to 0
@@ -101,3 +101,6 @@ MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets t
 # --- Environmental & Sensor Simulation ---
 ILLUMINATION_INTENSITY = 30
 NOISE_RATE = 0.20
+
+# --- Measurements ---
+WEIGHT_CONVERSION = 0.01

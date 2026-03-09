@@ -1,3 +1,6 @@
+from bdb import effective
+
+from .utils import angle_between
 from .. import constants
 from ..field.ball import Ball
 import math
@@ -26,13 +29,19 @@ def check_wall_collision(entity, goal_callback, canvas):
     is_ball = (entity.id == constants.BALL_ID)
     in_goal_zone = goal_top < screen_y < goal_bottom
 
+    
+    effective_restitution = 0
+
+    if entity.weight != 0:
+        effective_restitution = constants.RESTITUTION * ((entity.weight * constants.WEIGHT_CONVERSION) ** -1)
+
     if screen_x < min_x:
         if is_ball and in_goal_zone:
             goal_callback(canvas)
         else:
             new_real_x, _ = entity.world_to_pixel(min_x, screen_y)
             entity.real_x = new_real_x
-            entity.real_vx = 0
+            entity.real_vx = abs(entity.real_vx) * effective_restitution
 
     elif screen_x > max_x:
         if is_ball and in_goal_zone:
@@ -40,16 +49,16 @@ def check_wall_collision(entity, goal_callback, canvas):
         else:
             new_real_x, _ = entity.world_to_pixel(max_x, screen_y)
             entity.real_x = new_real_x
-            entity.real_vx = 0
+            entity.real_vx = -abs(entity.real_vx) * effective_restitution
 
     if screen_y < min_y:
         _, new_real_y = entity.world_to_pixel(screen_x, min_y)
         entity.real_y = new_real_y
-        entity.real_vy = 0
+        entity.real_vy = abs(entity.real_vy) * effective_restitution
     elif screen_y > max_y:
         _, new_real_y = entity.world_to_pixel(screen_x, max_y)
         entity.real_y = new_real_y
-        entity.real_vy = 0
+        entity.real_vy = -abs(entity.real_vy) * effective_restitution
 
 def get_axes(entity):
     if entity.id == constants.BALL_ID:
@@ -94,6 +103,14 @@ def project_entity_axes(entity, axis):
     projections = [px * ax + py * ay for px, py in corners]
     return [min(projections), max(projections)]
 
+def kick_ball(ball, robot):
+    kick_direction_x = math.cos(robot.theta)
+    kick_direction_y = math.sin(robot.theta)
+
+    ball.real_vx += kick_direction_x * constants.KICK_FORCE
+    ball.real_vy += kick_direction_y * constants.KICK_FORCE
+
+    robot.kick_request = False
 
 # This function features the Hyperplane Separation Theorem
 # https://en.wikipedia.org/wiki/Hyperplane_separation_theorem
@@ -135,6 +152,11 @@ def handle_collision(entity_a, entity_b):
         if current_overlap < overlap:
             overlap = current_overlap
             smallest_axis = axis
+
+    if entity_a.id == constants.BALL_ID and entity_b.kick_request and math.fabs(angle_between(entity_b, entity_a)) < 0.2:
+        kick_ball(entity_a, entity_b)
+    elif entity_b.id == constants.BALL_ID and entity_a.kick_request and math.fabs(angle_between(entity_a, entity_b)) < 0.2:
+        kick_ball(entity_b, entity_a)
 
     # Normalize the resolution vector (nx, ny)
     nx, ny = smallest_axis

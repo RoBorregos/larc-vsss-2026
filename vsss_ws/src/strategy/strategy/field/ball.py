@@ -5,10 +5,11 @@ from PIL.JpegImagePlugin import zigzag_index
 from .entity import Entity
 from .. import constants
 
+ball_id = 20
 
 class Ball(Entity):
-    def __init__(self, start_x, start_y, start_theta):
-        super().__init__()
+    def __init__(self, ros_handler, start_x, start_y, start_theta):
+        super().__init__(ros_handler, ball_id)
         self.id = 20
         self.weight = 48
         self.screen_radius = constants.BALL_RADIUS * constants.DISPLAY_SCALE
