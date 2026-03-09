@@ -6,6 +6,7 @@ import math
 from tf2_ros import TransformException, Buffer, TransformListener
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
+from std_msgs.msg import Bool
 
 class RosHandler(Node):
     def __init__(self, infield_objects):
@@ -71,6 +72,15 @@ class RosHandler(Node):
         msg.angular.z = 0.0
         self.publishers_map[topic_name].publish(msg)
 
+    def publish_kicker(self, robot_id, active):
+        topic_name = f'/strategy/robot_{robot_id}/kicker'
+        if topic_name not in self.publishers_map:
+            self.publishers_map[topic_name] = self.create_publisher(Bool, topic_name, 10)
+
+        msg = Bool()
+        msg.data = active
+        self.publishers_map[topic_name].publish(msg)
+
     def publish_stop(self, robot_id, value):
         topic_name = f'/strategy/robot_{robot_id}/stop'
         if topic_name not in self.publishers_map:
@@ -78,5 +88,4 @@ class RosHandler(Node):
 
         msg = Bool()
         msg.data = value
-
         self.publishers_map[topic_name].publish(msg)

@@ -15,8 +15,13 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
 
     if attacker:
         move_angle = angle_between(attacker, ball)
-
         angle_deg = math.degrees(move_angle)
+        distance = distance_to_ball(attacker, ball)
+
+        if distance < 0.15 and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
+            attacker.kicker(True)
+        else:
+            attacker.kicker(False)
 
         if abs(angle_deg) >= constants.ANGLE_THRESHOLD:
             negative = angle_deg < 0

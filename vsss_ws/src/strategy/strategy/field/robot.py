@@ -23,6 +23,8 @@ class Robot(Entity):
         self.real_y = start_y
         self.real_theta = start_theta
 
+        self.kick_request = False
+
         colors = constants.ROBOT_DATABASE.get(robot_id)
         self.main_color = colors[0]
         self.detail_colors = [colors[2], colors[1]] # I don't know why, it just does + is not critical to find why
@@ -33,6 +35,7 @@ class Robot(Entity):
         self.text_id = None
 
         self.sub_cmd_vel = None
+        self.sub_kicker = None
         self.sub_stop = None
 
         if simulation:
@@ -43,6 +46,12 @@ class Robot(Entity):
             Twist,
             f'/strategy/robot_{self.id}/cmd_vel',
             self._simulation_move,
+            10
+        )
+        self.sub_kicker = self.ros_handler.create_subscription(
+            Bool,
+            f'/strategy/robot_{self.id}/kicker',
+            self._simulation_kick,
             10
         )
         self.sub_stop = self.ros_handler.create_subscription(
@@ -63,6 +72,10 @@ class Robot(Entity):
         self.real_vy = new_vy
         self.real_theta_vel = msg.angular.z
 
+    def _simulation_kick(self, msg):
+        if msg.data:
+            self.kick_request = True
+
     def _simulation_stop(self, msg):
         if msg.data:
             print("Stop robot with id {}".format(self.id))
@@ -75,6 +88,9 @@ class Robot(Entity):
     def move(self, speed, angle):
         self.ros_handler.publish_stop(self.id, False)
         self.ros_handler.publish_omni_move(self.id, speed, angle)
+
+    def kicker(self, active):
+        self.ros_handler.publish_kicker(self.id, active)
 
     def draw(self, canvas, draw_context):
         screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)

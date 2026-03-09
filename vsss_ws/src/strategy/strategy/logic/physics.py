@@ -1,3 +1,4 @@
+from .utils import angle_between
 from .. import constants
 from ..field.ball import Ball
 import math
@@ -77,6 +78,14 @@ def project_entity_axes(entity, axis):
     projections = [px * ax + py * ay for px, py in corners]
     return [min(projections), max(projections)]
 
+def kick_ball(ball, robot):
+    kick_direction_x = math.cos(robot.theta)
+    kick_direction_y = math.sin(robot.theta)
+
+    ball.real_vx += kick_direction_x * constants.KICK_FORCE
+    ball.real_vy += kick_direction_y * constants.KICK_FORCE
+
+    robot.kick_request = False
 
 # This function features the Hyperplane Separation Theorem
 # https://en.wikipedia.org/wiki/Hyperplane_separation_theorem
@@ -118,6 +127,11 @@ def handle_collision(entity_a, entity_b):
         if current_overlap < overlap:
             overlap = current_overlap
             smallest_axis = axis
+
+    if entity_a.id == constants.BALL_ID and entity_b.kick_request and math.fabs(angle_between(entity_b, entity_a)) < 0.2:
+        kick_ball(entity_a, entity_b)
+    elif entity_b.id == constants.BALL_ID and entity_a.kick_request and math.fabs(angle_between(entity_a, entity_b)) < 0.2:
+        kick_ball(entity_b, entity_a)
 
     # Normalize the resolution vector (nx, ny)
     nx, ny = smallest_axis
