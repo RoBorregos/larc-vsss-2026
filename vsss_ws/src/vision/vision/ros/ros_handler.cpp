@@ -13,11 +13,6 @@ RosHandler::RosHandler(AppData* app_data, Tracker* tracker) : Node("vision_publi
         qos_profile
     );
 
-	prediction_service = this->create_service<vsss_vision::srv::Prediction>(
-		"/vision/prediction",
-		std::bind(&RosHandler::handle_prediction, this, std::placeholders::_1, std::placeholders::_2)
-	);
-
 	image_subscription = this->create_subscription<sensor_msgs::msg::Image>(
 			"/vision/sim_image",
 			10,
@@ -60,29 +55,6 @@ void RosHandler::publish_objects() {
 	}
 }
 
-void RosHandler::handle_prediction(
-	const std::shared_ptr<vsss_vision::srv::Prediction::Request> request,
-	std::shared_ptr<vsss_vision::srv::Prediction::Response> response)
-{
-	double dt = request->seconds_in_future;
-	int target_id = request->id;
-
-	response->header.stamp = this->get_clock()->now();
-	response->header.frame_id = "field";
-	response->id = target_id;
-
-	if (target_id == 20) {
-		response->predicted_position.position.x = tracker->ball.pos.x + (tracker->ball.vel.x * dt);
-		response->predicted_position.position.y = tracker->ball.pos.y + (tracker->ball.vel.y * dt);
-	}
-	else if (tracker->robots.count(target_id)) {
-		auto& robot = tracker->robots[target_id];
-		response->predicted_position.position.x = robot.pos.x + (robot.vel.x * dt);
-		response->predicted_position.position.y = robot.pos.y + (robot.vel.y * dt);
-		response->predicted_position.orientation.w = 1.0;
-	}
-}
-
 void RosHandler::publish_tfs(const rclcpp::Time & now) {
     geometry_msgs::msg::TransformStamped t_ball;
     t_ball.header.stamp = now;
@@ -93,6 +65,7 @@ void RosHandler::publish_tfs(const rclcpp::Time & now) {
     t_ball.transform.translation.z = 0.0;
     t_ball.transform.rotation.w = 1.0;
     tf_broadcaster->sendTransform(t_ball);
+	std::cout << now.seconds() << ": sending ball with x: " << tracker->ball.pos.x << " - y: " << tracker->ball.pos.y << std::endl;
 
     for (const auto& [id, robot] : tracker->robots) {
        geometry_msgs::msg::TransformStamped t_robot;

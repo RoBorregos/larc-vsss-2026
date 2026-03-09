@@ -3,7 +3,6 @@
 #include "field_sizes.h"
 #include "rclcpp/rclcpp.hpp"
 #include "vsss_vision/msg/entity_state.hpp"
-#include "vsss_vision/srv/prediction.hpp"
 #include <tf2_ros/transform_broadcaster.h>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
@@ -20,7 +19,6 @@ private:
 	rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub;
 	rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription;
 	std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster;
-	rclcpp::Service<vsss_vision::srv::Prediction>::SharedPtr prediction_service;
 
 	AppData* app_data;
 	Tracker* tracker;
@@ -33,10 +31,6 @@ private:
 	void publish_markers(const rclcpp::Time & now);
 	void publish_field_markers(const rclcpp::Time & now);
 	void image_callback(sensor_msgs::msg::Image::SharedPtr msg);
-
-	void handle_prediction(
-		std::shared_ptr<vsss_vision::srv::Prediction::Request> request,
-		std::shared_ptr<vsss_vision::srv::Prediction::Response> response);
 
 	long long millis();
 	long long previous_millis = millis();
