@@ -26,9 +26,11 @@ class Robot(Entity):
         colors = constants.ROBOT_DATABASE.get(robot_id)
         self.main_color = colors[0]
         self.detail_colors = [colors[2], colors[1]] # I don't know why, it just does + is not critical to find why
+        self.role = None
 
         self.canvas_id = None
         self.mark_ids = []
+        self.text_id = None
 
         self.sub_cmd_vel = None
         self.sub_stop = None
@@ -99,8 +101,24 @@ class Robot(Entity):
         self.canvas_id = canvas.create_polygon(rotated_points_tk, fill=self.main_color, outline="black")
 
         draw_context.polygon(rotated_points_pil, fill=self.main_color, outline="black")
+        self._draw_identification_marks(canvas, draw_context, screen_x, screen_y, size)
 
         self._draw_identification_marks(canvas, draw_context, screen_x, screen_y, size)
+
+        text_offset = size / 2 + constants.TEXT_OFFSET
+        text_y = screen_y - text_offset
+
+        if self.text_id:
+            canvas.delete(self.text_id)
+
+        if self.role:
+            self.text_id = canvas.create_text(
+                screen_x, text_y,
+                text=self.role,
+                fill="white",
+                font=("Arial", 10, "bold"),
+                anchor="s"
+            )
 
     def _draw_identification_marks(self, canvas, draw_context, cx, cy, size):
         for m_id in self.mark_ids:
