@@ -1,3 +1,5 @@
+from bdb import effective
+
 from .utils import angle_between
 from .. import constants
 from ..field.ball import Ball
@@ -17,7 +19,10 @@ def check_wall_collision(entity):
     min_y = field_bbox[1] + entity.screen_radius
     max_y = field_bbox[3] - entity.screen_radius
 
-    effective_restitution = constants.RESTITUTION * (1.0 / (1.0 + entity.weight * 0.01))
+    effective_restitution = 0
+
+    if entity.weight != 0:
+        effective_restitution = constants.RESTITUTION * ((entity.weight * constants.WEIGHT_CONVERSION) ** -1)
 
     if screen_x < min_x:
         new_real_x, _ = entity.world_to_pixel(min_x, screen_y)

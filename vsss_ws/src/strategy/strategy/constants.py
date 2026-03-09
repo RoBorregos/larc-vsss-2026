@@ -99,3 +99,6 @@ MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets t
 # --- Environmental & Sensor Simulation ---
 ILLUMINATION_INTENSITY = 30
 NOISE_RATE = 0.20
+
+# --- Measurements ---
+WEIGHT_CONVERSION = 0.01
