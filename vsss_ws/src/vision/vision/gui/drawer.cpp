@@ -1,5 +1,6 @@
 #include "drawer.h"
 
+#include <optional>
 #include <utility>
 
 class PlotCmd final : public DrawCommand {
@@ -64,21 +65,42 @@ public:
 };
 
 class TextCmd final : public DrawCommand {
-    std::string txt; cv::Rect roi; float scale; int y_off; bool erase;
+    std::string txt;
+    cv::Rect roi;
+    float scale;
+    int y_off{};
+    bool erase{};
+    std::optional<cv::Point> predefined_org;
 public:
-    TextCmd(std::string t, cv::Rect r, float s, int y, bool e) : txt(std::move(t)), roi(r), scale(s), y_off(y), erase(e) {}
-    void draw(cv::Mat& target) override {
-        if (erase) cv::rectangle(target, roi & cv::Rect(0,0,target.cols,target.rows), cv::Scalar(0,0,0), -1);
+    TextCmd(const std::string &t, const cv::Rect r, const float s, const int y, const bool e) {
+        this->txt = t;
+        this->roi = r;
+        this->scale = s;
+        this->y_off = y;
+        this->erase = e;
+    }
+    TextCmd(const std::string& t, const cv::Point org, const float s) {
+        this->txt = t;
+        this->predefined_org = org;
+        this->scale = s;
+    }
 
-        int baseline = 0;
-        double cur_scale = scale;
-        cv::Size sz = cv::getTextSize(txt, cv::FONT_HERSHEY_SIMPLEX, cur_scale, 1, &baseline);
-        while (sz.width > roi.width && cur_scale > 0.3) {
-            cur_scale -= 0.1;
-            sz = cv::getTextSize(txt, cv::FONT_HERSHEY_SIMPLEX, cur_scale, 1, &baseline);
+    void draw(cv::Mat& target) override {
+        if (predefined_org.has_value()) {
+            cv::putText(target, txt, predefined_org.value(), cv::FONT_HERSHEY_SIMPLEX, scale, cv::Scalar(255,255,255), 1);
+        } else {
+            if (erase) cv::rectangle(target, roi & cv::Rect(0,0,target.cols,target.rows), cv::Scalar(0,0,0), -1);
+
+            int baseline = 0;
+            double cur_scale = scale;
+            cv::Size sz = cv::getTextSize(txt, cv::FONT_HERSHEY_SIMPLEX, cur_scale, 1, &baseline);
+            while (sz.width > roi.width && cur_scale > 0.3) {
+                cur_scale -= 0.1;
+                sz = cv::getTextSize(txt, cv::FONT_HERSHEY_SIMPLEX, cur_scale, 1, &baseline);
+            }
+            cv::Point org(roi.x + (roi.width - sz.width)/2, roi.y + (roi.height + sz.height)/2 + y_off);
+            cv::putText(target, txt, org, cv::FONT_HERSHEY_SIMPLEX, cur_scale, cv::Scalar(255,255,255), 1);
         }
-        cv::Point org(roi.x + (roi.width - sz.width)/2, roi.y + (roi.height + sz.height)/2 + y_off);
-        cv::putText(target, txt, org, cv::FONT_HERSHEY_SIMPLEX, cur_scale, cv::Scalar(255,255,255), 1);
     }
 };
 
@@ -104,6 +126,10 @@ void Drawer::inverse_polyline(const std::vector<cv::Point>& points, const cv::Sc
 
 void Drawer::text(const std::string& content, const cv::Rect& roi, float font_scale, int y_offset, bool erase_bg, Layer layer) {
     queues[layer].push_back(std::make_unique<TextCmd>(content, roi, font_scale, y_offset, erase_bg));
+}
+
+void Drawer::text(const std::string& content, cv::Point org, float font_scale, Layer layer) {
+    queues[layer].push_back(std::make_unique<TextCmd>(content, org, font_scale));
 }
 
 void Drawer::render(cv::Mat& target, const Layer layer) {

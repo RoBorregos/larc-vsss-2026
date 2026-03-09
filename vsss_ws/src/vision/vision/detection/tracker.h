@@ -7,10 +7,17 @@
 #include "gui.h"
 #include "robot_identities.h"
 
+#define DRAW_RADIUS 10
+#define DRAW_THICKNESS 2
+#define DRAW_FONT_SCALE 0.4
+#define DRAW_TEXT_X_OFFSET (-10)
+#define DRAW_TEXT_Y_OFFSET (-15)
+
 class Tracker {
 private:
     Coordinates* coordinates;
     GUI* gui;
+    Drawer* drawer;
     std::set<int> infield_objects;
 
     std::chrono::steady_clock::time_point last_prediction_time;
@@ -43,7 +50,7 @@ public:
         [[nodiscard]] ObjectType team() const;
     };
 
-    Tracker(Coordinates* coordinates, GUI* gui);
+    Tracker(Coordinates* coordinates, GUI* gui, Drawer* drawer);
     void upload_infield_objects(const std::set<int>& infield_objects);
     Entity ball;
     std::map<int, Entity> robots;
