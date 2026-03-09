@@ -11,7 +11,7 @@
 class GUI {
 private:
 	AppData* app_data;
-	Drawer drawer;
+	Drawer* drawer;
 
 	std::string window_name{};
 	cv::Mat image_with_gui;
@@ -31,8 +31,8 @@ private:
 	double current_fps = 0.0;
 	int frame_counter = 0;
 public:
-	explicit GUI(AppData* app_data);
-	GUI(AppData* app_data, const std::string& window_name);
+	GUI(AppData* app_data, Drawer* drawer);
+	GUI(AppData* app_data, Drawer* drawer, const std::string& window_name);
 
 	void set_window_name(const std::string& window_name);
 	void free_rowspace(int rowspace);

@@ -3,8 +3,6 @@ from .. import constants
 from ..field.ball import Ball
 import math
 
-ball_id = 20
-
 def check_wall_collision(entity):
     field_bbox = [
         constants.LEFT_PADDING,
@@ -38,7 +36,7 @@ def check_wall_collision(entity):
         entity.real_vy = 0
 
 def get_axes(entity):
-    if entity.id == ball_id:
+    if entity.id == constants.BALL_ID:
         return []
 
     angle = entity.theta
@@ -53,7 +51,7 @@ def project_entity_axes(entity, axis):
     ax, ay = axis
     cx, cy = entity.real_x, entity.real_y
 
-    if entity.id == ball_id:
+    if entity.id == constants.BALL_ID:
         # Project the ball center onto the axis using the dot product
         projection_center = cx * ax + cy * ay
         return [projection_center - entity.real_radius, projection_center + entity.real_radius]
@@ -106,7 +104,7 @@ def handle_collision(entity_a, entity_b):
     dist = math.sqrt(dist_sq)
 
     # If a ball is involved, add the axis connecting the two centers
-    if entity_a.id == ball_id or entity_b.id == ball_id:
+    if entity_a.id == constants.BALL_ID or entity_b.id == constants.BALL_ID:
         axes.append((dx / dist, dy / dist))
 
     # Initialize overlap with infinity to find the Minimum Separation Vector (MSV)
@@ -130,9 +128,9 @@ def handle_collision(entity_a, entity_b):
             overlap = current_overlap
             smallest_axis = axis
 
-    if entity_a.id == ball_id and entity_b.kick_request and math.fabs(angle_between(entity_b, entity_a)) < 0.2:
+    if entity_a.id == constants.BALL_ID and entity_b.kick_request and math.fabs(angle_between(entity_b, entity_a)) < 0.2:
         kick_ball(entity_a, entity_b)
-    elif entity_b.id == ball_id and entity_a.kick_request and math.fabs(angle_between(entity_a, entity_b)) < 0.2:
+    elif entity_b.id == constants.BALL_ID and entity_a.kick_request and math.fabs(angle_between(entity_a, entity_b)) < 0.2:
         kick_ball(entity_b, entity_a)
 
     # Normalize the resolution vector (nx, ny)
@@ -154,8 +152,7 @@ def handle_collision(entity_a, entity_b):
 
     # Apply impulse only if entities are moving towards each other
     if vel_normal < 0:
-        e = 0.5 # Restitution coefficient
-        impulse = -(1 + e) * vel_normal / (1 / entity_a.weight + 1 / entity_b.weight)
+        impulse = -(1 + constants.RESTITUTION) * vel_normal / (1 / entity_a.weight + 1 / entity_b.weight)
 
         entity_a.real_vx -= (impulse / entity_a.weight) * nx
         entity_a.real_vy -= (impulse / entity_a.weight) * ny
