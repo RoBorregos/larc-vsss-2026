@@ -26,6 +26,7 @@ class Robot(Entity):
         colors = constants.ROBOT_DATABASE.get(robot_id)
         self.main_color = colors[0]
         self.detail_colors = [colors[2], colors[1]] # I don't know why, it just does + is not critical to find why
+        self.role = None
 
         self.canvas_id = None
         self.mark_ids = []
@@ -65,8 +66,14 @@ class Robot(Entity):
             self.ros_handler.destroy_subscription(self.sub_stop)
 
     def _simulation_move(self, msg):
-        self.real_vx = msg.linear.x
-        self.real_vy = msg.linear.y
+        new_vx = msg.linear.x + random.gauss(0, abs(msg.linear.x) * constants.MOVEMENT_NOISE)
+        new_vy = msg.linear.y + random.gauss(0, abs(msg.linear.y) * constants.MOVEMENT_NOISE)
+
+        if math.fabs(new_vx) <= constants.MIN_SPEED: new_vx = 0
+        if math.fabs(new_vy) <= constants.MIN_SPEED: new_vy = 0
+
+        self.real_vx = new_vx
+        self.real_vy = new_vy
         self.real_theta_vel = msg.angular.z
 
     def _simulation_stop(self, msg):
@@ -107,8 +114,24 @@ class Robot(Entity):
         self.canvas_id = canvas.create_polygon(rotated_points_tk, fill=self.main_color, outline="black")
 
         draw_context.polygon(rotated_points_pil, fill=self.main_color, outline="black")
+        self._draw_identification_marks(canvas, draw_context, screen_x, screen_y, size)
 
         self._draw_identification_marks(canvas, draw_context, screen_x, screen_y, size)
+
+        text_offset = size / 2 + constants.TEXT_OFFSET
+        text_y = screen_y - text_offset
+
+        if self.text_id:
+            canvas.delete(self.text_id)
+
+        if self.role:
+            self.text_id = canvas.create_text(
+                screen_x, text_y,
+                text=self.role,
+                fill="white",
+                font=("Arial", 10, "bold"),
+                anchor="s"
+            )
 
     def _draw_identification_marks(self, canvas, draw_context, cx, cy, size):
         for m_id in self.mark_ids:

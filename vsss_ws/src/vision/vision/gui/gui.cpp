@@ -1,11 +1,13 @@
 #include "gui.h"
 
-GUI::GUI(AppData* app_data): app_data(app_data) {
+GUI::GUI(AppData* app_data, Drawer* drawer): app_data(app_data) {
 	this->window_name = "default";
+	this->drawer = drawer;
 }
 
-GUI::GUI(AppData* app_data, const std::string& window_name): app_data(app_data) {
+GUI::GUI(AppData* app_data, Drawer* drawer, const std::string& window_name): app_data(app_data) {
 	this->window_name = window_name;
+	this->drawer = drawer;
 }
 
 void GUI::set_window_name(const std::string& window_name) {
@@ -37,7 +39,7 @@ void GUI::upload_frame(cv::Mat &input_frame) {
 	if (app_data->roi_points.size() > 1) {
 		inverse_closed_polyline(app_data->roi_points, Drawer::Layer::PREPROCESSING, {0, 0, 0});
 	}
-	drawer.render(input_frame, Drawer::Layer::PREPROCESSING);
+	drawer->render(input_frame, Drawer::Layer::PREPROCESSING);
 
 	image_bgr.upload(input_frame);
 	preprocessing::filters(image_bgr, image_bgr, image_hsv, app_data->color_params);
@@ -159,7 +161,7 @@ void GUI::text(
 	) {
 
 	const cv::Rect roi = rowspace_roi(rowspace);
-	drawer.text(text, roi, font_scale, y_offset, erase_rowspace, layer);
+	drawer->text(text, roi, font_scale, y_offset, erase_rowspace, layer);
 }
 
 void GUI::display_frame() {
@@ -170,7 +172,7 @@ void GUI::display_frame() {
 	cudaDeviceSynchronize();
 	image_bgr.download(cpu_image_bgr);
 
-	drawer.render(cpu_image_bgr, Drawer::Layer::MARKINGS);
+	drawer->render(cpu_image_bgr, Drawer::Layer::MARKINGS);
 	cv::Mat image_view = cpu_image_bgr(viewport);
 	cv::resize(image_view, image_view, cv::Size(image_width, total_height), 0, 0, cv::INTER_LINEAR);
 
@@ -181,7 +183,7 @@ void GUI::display_frame() {
 
 	sidebar.copyTo(display_buffer(sidebar_rect));
 
-	drawer.render(display_buffer, Drawer::Layer::INTERFACE);
+	drawer->render(display_buffer, Drawer::Layer::INTERFACE);
 
 	{
 		fps_timer.stop();
@@ -217,25 +219,25 @@ void GUI::display_frame() {
 
 void GUI::plot(const cv::Point &point, const Drawer::Layer layer, const cv::Scalar &color) {
 	if (!valid_coordinate(point)) return;
-	drawer.plot(point, color, layer);
+	drawer->plot(point, color, layer);
 }
 
 
 void GUI::solid_circle(const cv::Point& center, const int radius, const Drawer::Layer layer, const cv::Scalar& color) {
 	if (!valid_coordinate(center)) return;
-	drawer.circle(center, radius, cv::FILLED, color, layer);
+	drawer->circle(center, radius, cv::FILLED, color, layer);
 }
 
 void GUI::hollow_circle(const cv::Point& center, const int radius, const Drawer::Layer layer, const int thickness, const cv::Scalar& color) {
 	if (!valid_coordinate(center)) return;
-	drawer.circle(center, radius, thickness, color, layer);
+	drawer->circle(center, radius, thickness, color, layer);
 }
 
 void GUI::line(const cv::Point& point1, const cv::Point& point2, const Drawer::Layer layer, const int thickness, const cv::Scalar& color) {
 	if (!valid_coordinate(point1)) return;
 	if (!valid_coordinate(point2)) return;
 
-	drawer.line(point1, point2, thickness, color, layer);
+	drawer->line(point1, point2, thickness, color, layer);
 }
 
 void GUI::polyline(
@@ -247,7 +249,7 @@ void GUI::polyline(
 	if (points.size() <= 1) return;
 	if (!valid_coordinate(points)) return;
 
-	drawer.polyline(points, false, thickness, color, layer);
+	drawer->polyline(points, false, thickness, color, layer);
 }
 
 void GUI::closed_polyline(
@@ -260,7 +262,7 @@ void GUI::closed_polyline(
 	if (points.size() <= 1) return;
 	if (!valid_coordinate(points)) return;
 
-	drawer.polyline(points, true, thickness, color, layer);
+	drawer->polyline(points, true, thickness, color, layer);
 }
 
 void GUI::inverse_closed_polyline(
@@ -273,7 +275,7 @@ void GUI::inverse_closed_polyline(
 	if (!valid_coordinate(points)) return;
 
 	cv::Rect image_area(0, 0, image_width, total_height);
-	drawer.inverse_polyline(points, color, image_area, layer);
+	drawer->inverse_polyline(points, color, image_area, layer);
 }
 
 

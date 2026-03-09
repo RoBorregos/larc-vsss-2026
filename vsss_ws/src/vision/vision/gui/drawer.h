@@ -28,6 +28,7 @@ public:
 	void polyline(const std::vector<cv::Point>& points, bool is_closed, int thickness, const cv::Scalar& color, Layer layer);
 	void inverse_polyline(const std::vector<cv::Point>& points, const cv::Scalar& color, const cv::Rect& restriction_roi, Layer layer);
 	void text(const std::string& content, const cv::Rect& roi, float font_scale, int y_offset, bool erase_bg, Layer layer);
+	void text(const std::string& content, cv::Point org, float font_scale, Layer layer);
 
 	void render(cv::Mat& target, Layer layer);
 

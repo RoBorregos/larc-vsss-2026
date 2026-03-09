@@ -2,7 +2,7 @@
 DT = 0.016              # Delta Time (approx. 60 FPS)
 FRICTION = 0.880        # Global velocity decay factor
 PUSH_FORCE = 60.0       # Force applied during robot movement
-RESTITUTION = 0         # Bounciness (0 = inelastic collision)
+RESTITUTION = 0.5         # Bounciness (0 = inelastic collision)
 
 # --- Entity Dimensions ---
 ROBOT_RADIUS = 3.75
@@ -17,6 +17,7 @@ DISPLAY_FIELD_HEIGHT = 130
 DISPLAY_MID_X = DISPLAY_FIELD_WIDTH / 2
 DISPLAY_GOAL_DEPTH = 10 * DISPLAY_SCALE
 DISPLAY_GOAL_WIDTH = 40 * DISPLAY_SCALE
+TEXT_OFFSET = 15
 
 # --- UI Padding & Offset Calculations ---
 LEFT_PADDING = DISPLAY_SCALE * (DISPLAY_CANVAS_WIDTH - DISPLAY_FIELD_WIDTH) / 2
@@ -91,6 +92,11 @@ ROBOT_DATABASE = {
 
     20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
 }
+
+
+# --- Robot Movement & Precision ---
+MOVEMENT_NOISE = 1      # Deviation based on a Gaussian distribution
+MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets to 0
 
 # --- Environmental & Sensor Simulation ---
 ILLUMINATION_INTENSITY = 30
