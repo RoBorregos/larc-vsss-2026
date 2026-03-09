@@ -2,6 +2,7 @@ import math
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Bool
 from .entity import Entity
 from .. import constants
 
@@ -19,6 +20,8 @@ class Robot(Entity):
         self.real_y = start_y
         self.real_theta = start_theta
 
+        self.kick_request = False
+
         colors = constants.ROBOT_DATABASE.get(robot_id)
         self.main_color = colors[0]
         self.detail_colors = [colors[2], colors[1]] # I don't know why, it just does + is not critical to find why
@@ -27,6 +30,7 @@ class Robot(Entity):
         self.mark_ids = []
 
         self.sub_cmd_vel = None
+        self.sub_kicker = None
 
         if simulation:
             self.subscribe_to_topics()
@@ -38,15 +42,27 @@ class Robot(Entity):
             self._simulation_move,
             10
         )
+        self.sub_kicker = self.ros_handler.create_subscription(
+            Bool,
+            f'/strategy/robot_{self.id}/kicker',
+            self._simulation_kick,
+            10
+        )
 
     def _simulation_move(self, msg):
         self.real_vx = msg.linear.x
         self.real_vy = msg.linear.y
         self.real_theta_vel = msg.angular.z
 
+    def _simulation_kick(self, msg):
+        if msg.data:
+            self.kick_request = True
 
     def move(self, speed, angle):
         self.ros_handler.publish_omni_move(self.id, speed, angle)
+
+    def kicker(self, active):
+        self.ros_handler.publish_kicker(self.id, active)
 
     def draw(self, canvas, draw_context):
         screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)
