@@ -1,39 +1,12 @@
 import math
 from .. import constants
-
-FIELD_WIDTH = constants.DISPLAY_FIELD_WIDTH
-FIELD_HEIGHT = constants.DISPLAY_FIELD_HEIGHT
-
-def defender_target(ball, attacking_right=True):
-    goal_x = (-FIELD_WIDTH / 2 + 0.05) if attacking_right else (FIELD_WIDTH / 2 - 0.05)
-
-    max_y = constants.GOAL["y"] + constants.GOAL["MIDPOINT_OFFSET"]
-    min_y = constants.GOAL["y"] - constants.GOAL["MIDPOINT_OFFSET"]
-
-    target_y = max(min(ball.y, max_y), min_y)
-
-    return goal_x, target_y
+from .utils import clamp
 
 
-def helper_target(ball, attacking_right=True):
-    lateral_offset = 0.30
-    back_offset = 0.30
+def ball_target(ball):
 
-    target_x = ball.x - back_offset if attacking_right else ball.x + back_offset
-    target_y = ball.y - lateral_offset if ball.y >= 0 else ball.y + lateral_offset
-
-    return target_x, target_y
-
-def clamp(value, min_val, max_val):
-    return max(min_val, min(max_val, value))
-
-def ball_target(ball, attacking_right=True):
-
-    goal_x = FIELD_WIDTH / 2 if attacking_right else -FIELD_WIDTH / 2
-    goal_y = 0
-
-    dx = goal_x - ball.x
-    dy = goal_y - ball.y
+    dx = constants.GOAL_X - ball.x
+    dy = constants.GOAL_Y - ball.y
     norm = math.hypot(dx, dy)
 
     if norm == 0:
@@ -52,11 +25,8 @@ def approach_side(robot, ball, attacking_right=True):
     if robot.id in constants.ROBOT_VORTEX_SIDE:
         return constants.ROBOT_VORTEX_SIDE[robot.id]
 
-    goal_x = FIELD_WIDTH / 2 if attacking_right else -FIELD_WIDTH / 2
-    goal_y = 0
-
-    bgx = goal_x - ball.x
-    bgy = goal_y - ball.y
+    bgx = constants.GOAL_X - ball.x
+    bgy = constants.GOAL_Y - ball.y
 
     brx = robot.x - ball.x
     bry = robot.y - ball.y
@@ -105,22 +75,22 @@ def blocking(robot, obstacle, target_x, target_y):
     return perp_dist < constants.BLOCKING_WIDTH
 
 
-def rolling_vector(robot, obstacle, ball, attacking_right=True):
+def rolling_vector(robot, obstacle, ball):
     dx = robot.x - obstacle.x
     dy = robot.y - obstacle.y
     dist = math.hypot(dx, dy)
 
-    if dist > constants.INFLUENCE_RADIUS * 1.5 or dist == 0:
+    if dist > constants.EXPAND_INFLUENCE_RADIUS or dist == 0:
         return 0.0, 0.0
 
     rx = dx / dist
     ry = dy / dist
-    side = approach_side(robot, ball, attacking_right)
+    side = approach_side(robot, ball)
 
     tang_x = -ry * side
     tang_y = rx * side
 
-    ratio = max(0.0, 1 - dist / (constants.INFLUENCE_RADIUS * 1.5))
+    ratio = max(0.0, 1 - dist / constants.EXPAND_INFLUENCE_RADIUS)
 
     tang_strength = constants.VORTEX_GAIN * ratio
     radial_strength = constants.REPULSIVE_GAIN * 0.15 * ratio
@@ -164,13 +134,10 @@ def team_repulsion(robot, mate):
 def wall_repulsion(robot):
     fx, fy = 0.0, 0.0
 
-    half_width = FIELD_WIDTH / 2
-    half_height = FIELD_HEIGHT / 2
-
-    dx_left = robot.x + half_width
-    dx_right = half_width - robot.x
-    dy_bottom = robot.y + half_height
-    dy_top = half_height - robot.y
+    dx_left = robot.x + constants.DISPLAY_MID_X
+    dx_right = constants.DISPLAY_MID_X - robot.x
+    dy_bottom = robot.y + constants.DISPLAY_MID_Y
+    dy_top = constants.DISPLAY_MID_Y - robot.y
 
     if dx_left < constants.WALL_MARGIN:
         fx += constants.WALL_GAIN * (constants.WALL_MARGIN - dx_left) / constants.WALL_MARGIN
@@ -191,15 +158,13 @@ def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=T
     for enemy in enemies:
         if blocking(robot, enemy, target_x, target_y):
             blocking_detected = True
-            fx, fy = rolling_vector(robot, enemy, ball, attacking_right)
+            fx, fy = rolling_vector(robot, enemy, ball)
         else:
             fx, fy = repulsion(robot, enemy)
 
         total_x += fx
         total_y += fy
 
-
-    # reset vortex side if no obstacle is blocking
     if not blocking_detected:
         if robot.id in constants.ROBOT_VORTEX_SIDE:
             del constants.ROBOT_VORTEX_SIDE[robot.id]
