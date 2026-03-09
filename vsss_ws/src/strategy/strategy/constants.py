@@ -2,7 +2,7 @@
 DT = 0.016              # Delta Time (approx. 60 FPS)
 FRICTION = 0.880        # Global velocity decay factor
 PUSH_FORCE = 60.0       # Force applied during robot movement
-RESTITUTION = 0         # Bounciness (0 = inelastic collision)
+RESTITUTION = 0.5         # Bounciness (0 = inelastic collision)
 
 # --- Entity Dimensions ---
 ROBOT_RADIUS = 3.75
@@ -63,6 +63,7 @@ class Color_ID:
 
 # --- Robot Identity & Team Color Database ---
 # Maps entity ID to a list of identifying colors
+BALL_ID = 20
 ROBOT_DATABASE = {
     0:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.GREEN],
     1:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.CYAN],
@@ -89,6 +90,7 @@ ROBOT_DATABASE = {
     20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
 }
 
+
 # --- PATH PLANNING ---
 ATTRACTIVE_GAIN = 3.0 # Strength of attraction toward the target point
 REPULSIVE_GAIN = 1.2 # Strength of repulsion from enemy robots
@@ -102,6 +104,11 @@ VORTEX_GAIN = 3.0 # Strength of the tangential component in the rolling vector w
 TEAM_REPULSION_GAIN = 0.35 # Strength of repulsion from team robots
 TEAM_INFLUENCE_RADIUS = 0.12 # Distance where team robots start influencing the field
 ROBOT_VORTEX_SIDE = {} # Variable to store the assigned vortex side for each robot when blocking is detected
+
+# --- Robot Movement & Precision ---
+MOVEMENT_NOISE = 1      # Deviation based on a Gaussian distribution
+MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets to 0
+
 
 # --- Environmental & Sensor Simulation ---
 ILLUMINATION_INTENSITY = 30

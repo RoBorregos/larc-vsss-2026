@@ -51,8 +51,14 @@ class Robot(Entity):
         )
 
     def _simulation_move(self, msg):
-        self.real_vx = msg.linear.x
-        self.real_vy = msg.linear.y
+        new_vx = msg.linear.x + random.gauss(0, abs(msg.linear.x) * constants.MOVEMENT_NOISE)
+        new_vy = msg.linear.y + random.gauss(0, abs(msg.linear.y) * constants.MOVEMENT_NOISE)
+
+        if math.fabs(new_vx) <= constants.MIN_SPEED: new_vx = 0
+        if math.fabs(new_vy) <= constants.MIN_SPEED: new_vy = 0
+
+        self.real_vx = new_vx
+        self.real_vy = new_vy
         self.real_theta_vel = msg.angular.z
 
     def _simulation_stop(self, msg):
