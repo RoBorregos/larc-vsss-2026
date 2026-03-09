@@ -11,9 +11,7 @@ from PIL import Image, ImageDraw
 
 class Robot(Entity):
     def __init__(self, ros_handler, robot_id, start_x, start_y, start_theta, simulation = False):
-        super().__init__()
-        self.id = robot_id
-        self.ros_handler = ros_handler
+        super().__init__(ros_handler, robot_id)
         self.simulation = simulation
         self.weight = 200
         self.screen_radius = constants.ROBOT_RADIUS * constants.DISPLAY_SCALE
