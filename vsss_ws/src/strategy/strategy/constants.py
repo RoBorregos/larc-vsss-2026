@@ -65,6 +65,7 @@ class Color_ID:
 
 # --- Robot Identity & Team Color Database ---
 # Maps entity ID to a list of identifying colors
+BALL_ID = 20
 ROBOT_DATABASE = {
     0:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.GREEN],
     1:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.CYAN],

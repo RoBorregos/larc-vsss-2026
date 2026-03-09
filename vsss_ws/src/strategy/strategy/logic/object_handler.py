@@ -5,8 +5,6 @@ from ..field.ball import Ball
 from .. import constants
 from .physics import resolve_physics
 
-ball_id = 20
-
 class ObjectHandler:
     def __init__(self, infield_objects, ros_handler, simulation = False):
         self.infield_objects = infield_objects
@@ -31,7 +29,7 @@ class ObjectHandler:
             return
 
         for entity_id, entity in self.entities.items():
-            frame_name = "ball" if entity_id == 20 else f"robot_{entity_id}"
+            frame_name = "ball" if entity_id == constants.BALL_ID else f"robot_{entity_id}"
             new_pose = self.ros_handler.get_pose(frame_name)
 
             if new_pose:

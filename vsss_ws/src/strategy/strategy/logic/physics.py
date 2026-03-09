@@ -2,8 +2,6 @@ from .. import constants
 from ..field.ball import Ball
 import math
 
-ball_id = 20
-
 def check_wall_collision(entity, goal_callback, canvas):
     field_bbox = [
         constants.LEFT_PADDING,
@@ -25,7 +23,7 @@ def check_wall_collision(entity, goal_callback, canvas):
     min_y = field_bbox[1] + entity.screen_radius
     max_y = field_bbox[3] - entity.screen_radius
 
-    is_ball = (entity.id == ball_id)
+    is_ball = (entity.id == constants.BALL_ID)
     in_goal_zone = goal_top < screen_y < goal_bottom
 
     if screen_x < min_x:
