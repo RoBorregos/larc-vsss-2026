@@ -14,13 +14,15 @@ simulation = True
 team = "YELLOW"
 
 
-def on_canvas_click(event, ball):
+def on_canvas_click(event, ball, team_robots):
     x, y = ball.world_to_pixel(event.x, event.y)
     ball.real_x = x
     ball.real_y = y
     ball.real_vx = 0
     ball.real_vy = 0
 
+    for robot in team_robots:
+        robot.stop()
 
 def main():
     rclpy.init()
@@ -59,7 +61,14 @@ def main():
     last_pub_time = millis()
     pub_hz = 10
 
-    root.bind("<Button-1>", lambda event: on_canvas_click(event, object_handler.get_ball()))
+    root.bind(
+        "<Button-1>",
+        lambda event: on_canvas_click(
+            event,
+            object_handler.get_ball(),
+            object_handler.get_yellow_robots()
+        )
+    )
 
     def loop():
         nonlocal last_pub_time
