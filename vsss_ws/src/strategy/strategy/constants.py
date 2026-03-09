@@ -1,7 +1,9 @@
+# --- Physics & Simulation Timing ---
 DT = 0.016
 FRICTION = 0.880
 PUSH_FORCE = 60.0
 RESTITUTION = 0
+KICK_FORCE = 2
 
 ROBOT_RADIUS = 3.75
 BALL_RADIUS = 2.135
@@ -78,3 +80,4 @@ ROBOT_DATABASE = {
 
     20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
 }
+

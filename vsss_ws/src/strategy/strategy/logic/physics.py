@@ -81,13 +81,11 @@ def project_entity_axes(entity, axis):
     return [min(projections), max(projections)]
 
 def kick_ball(ball, robot):
-    kick_force = 2.0
-
     kick_direction_x = math.cos(robot.theta)
     kick_direction_y = math.sin(robot.theta)
 
-    ball.real_vx += kick_direction_x * kick_force
-    ball.real_vy += kick_direction_y * kick_force
+    ball.real_vx += kick_direction_x * constants.KICK_FORCE
+    ball.real_vy += kick_direction_y * constants.KICK_FORCE
 
     robot.kick_request = False
 
