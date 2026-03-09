@@ -90,6 +90,11 @@ ROBOT_DATABASE = {
     20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
 }
 
+
+# --- Robot Movement & Precision ---
+MOVEMENT_NOISE = 1      # Deviation based on a Gaussian distribution
+MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets to 0
+
 # --- Environmental & Sensor Simulation ---
 ILLUMINATION_INTENSITY = 30
 NOISE_RATE = 0.20
