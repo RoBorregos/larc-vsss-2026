@@ -79,6 +79,7 @@ ROBOT_DATABASE = {
     20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
 }
 
+# --- PATH PLANNING ---
 ATTRACTIVE_GAIN = 3.0 # Strength of attraction toward the target point
 REPULSIVE_GAIN = 1.2 # Strength of repulsion from enemy robots
 WALL_GAIN = 0.1 # Strength of repulsion from field walls
