@@ -1,15 +1,24 @@
+from bdb import effective
+
 from .utils import angle_between
 from .. import constants
 from ..field.ball import Ball
 import math
 
-def check_wall_collision(entity):
+def check_wall_collision(entity, goal_callback, canvas):
     field_bbox = [
         constants.LEFT_PADDING,
         constants.UPPER_PADDING,
         constants.LEFT_PADDING + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE,
         constants.UPPER_PADDING + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
     ]
+
+    field_height_px = constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
+    goal_half_width = (constants.DISPLAY_GOAL_WIDTH / 2)
+
+    goal_top = (field_height_px / 2) - goal_half_width + constants.UPPER_PADDING
+    goal_bottom = (field_height_px / 2) + goal_half_width + constants.UPPER_PADDING
+
     screen_x, screen_y = entity.pixel_to_world(entity.real_x, entity.real_y)
 
     min_x = field_bbox[0] + entity.screen_radius
@@ -17,23 +26,39 @@ def check_wall_collision(entity):
     min_y = field_bbox[1] + entity.screen_radius
     max_y = field_bbox[3] - entity.screen_radius
 
+    is_ball = (entity.id == constants.BALL_ID)
+    in_goal_zone = goal_top < screen_y < goal_bottom
+
+    
+    effective_restitution = 0
+
+    if entity.weight != 0:
+        effective_restitution = constants.RESTITUTION * ((entity.weight * constants.WEIGHT_CONVERSION) ** -1)
+
     if screen_x < min_x:
-        new_real_x, _ = entity.world_to_pixel(min_x, screen_y)
-        entity.real_x = new_real_x
-        entity.real_vx = 0
+        if is_ball and in_goal_zone:
+            goal_callback(canvas)
+        else:
+            new_real_x, _ = entity.world_to_pixel(min_x, screen_y)
+            entity.real_x = new_real_x
+            entity.real_vx = abs(entity.real_vx) * effective_restitution
+
     elif screen_x > max_x:
-        new_real_x, _ = entity.world_to_pixel(max_x, screen_y)
-        entity.real_x = new_real_x
-        entity.real_vx = 0
+        if is_ball and in_goal_zone:
+            goal_callback(canvas)
+        else:
+            new_real_x, _ = entity.world_to_pixel(max_x, screen_y)
+            entity.real_x = new_real_x
+            entity.real_vx = -abs(entity.real_vx) * effective_restitution
 
     if screen_y < min_y:
         _, new_real_y = entity.world_to_pixel(screen_x, min_y)
         entity.real_y = new_real_y
-        entity.real_vy = 0
+        entity.real_vy = abs(entity.real_vy) * effective_restitution
     elif screen_y > max_y:
         _, new_real_y = entity.world_to_pixel(screen_x, max_y)
         entity.real_y = new_real_y
-        entity.real_vy = 0
+        entity.real_vy = -abs(entity.real_vy) * effective_restitution
 
 def get_axes(entity):
     if entity.id == constants.BALL_ID:
@@ -159,14 +184,14 @@ def handle_collision(entity_a, entity_b):
         entity_b.real_vx += (impulse / entity_b.weight) * nx
         entity_b.real_vy += (impulse / entity_b.weight) * ny
 
-def resolve_physics(entities):
+def resolve_physics(entities, goal_callback, canvas):
     num_entities = len(entities)
 
     for i in range(num_entities):
         entity_a = entities[i]
         entity_a.real_vx *= constants.FRICTION
         entity_a.real_vy *= constants.FRICTION
-        check_wall_collision(entity_a)
+        check_wall_collision(entity_a, goal_callback, canvas)
 
         for j in range(i + 1, num_entities):
             entity_b = entities[j]

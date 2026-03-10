@@ -11,9 +11,7 @@ from PIL import Image, ImageDraw
 
 class Robot(Entity):
     def __init__(self, ros_handler, robot_id, start_x, start_y, start_theta, simulation = False):
-        super().__init__()
-        self.id = robot_id
-        self.ros_handler = ros_handler
+        super().__init__(ros_handler, robot_id)
         self.simulation = simulation
         self.weight = 200
         self.screen_radius = constants.ROBOT_RADIUS * constants.DISPLAY_SCALE
@@ -60,6 +58,19 @@ class Robot(Entity):
             self._simulation_stop,
             10
         )
+
+    def destroy(self, canvas):
+        if self.canvas_id:
+            canvas.delete(self.canvas_id)
+        if self.text_id:
+            canvas.delete(self.text_id)
+        for m_id in self.mark_ids:
+            canvas.delete(m_id)
+
+        if self.sub_cmd_vel:
+            self.ros_handler.destroy_subscription(self.sub_cmd_vel)
+        if self.sub_stop:
+            self.ros_handler.destroy_subscription(self.sub_stop)
 
     def _simulation_move(self, msg):
         new_vx = msg.linear.x + random.gauss(0, abs(msg.linear.x) * constants.MOVEMENT_NOISE)

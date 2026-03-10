@@ -69,9 +69,30 @@ def draw_field(canvas, draw_context, width, height):
     draw_context.rectangle(rect_area_l, outline="white", width=2)
 
     # Right area
-    rect_area_r = [constants.LEFT_PADDING + width - area_depth, y_start, constants.LEFT_PADDING + width, y_end]
+    rect_area_r = [
+        constants.LEFT_PADDING + width - area_depth, y_start, constants.LEFT_PADDING + width, y_end]
     canvas.create_rectangle(*rect_area_r, outline="white", width=2)
     draw_context.rectangle(rect_area_r, outline="white", width=2)
+
+    # Left goal
+    rect_goal_l = [
+        constants.LEFT_PADDING - constants.DISPLAY_GOAL_DEPTH,
+        constants.DISPLAY_GOAL_WIDTH / 2 + height / 2,
+        constants.LEFT_PADDING,
+        -constants.DISPLAY_GOAL_WIDTH / 2 + height / 2
+    ]
+    canvas.create_rectangle(*rect_goal_l, outline="white", width=2)
+    draw_context.rectangle(rect_goal_l, outline="white", width=2)
+
+    # Right goal
+    rect_goal_r = [
+        constants.LEFT_PADDING + width + constants.DISPLAY_GOAL_DEPTH,
+        constants.DISPLAY_GOAL_WIDTH / 2 + height / 2,
+        constants.LEFT_PADDING + width,
+        -constants.DISPLAY_GOAL_WIDTH / 2 + height / 2
+    ]
+    canvas.create_rectangle(*rect_goal_r, outline="white", width=2)
+    draw_context.rectangle(rect_goal_r, outline="white", width=2)
 
     # Visual marks
     circles = [(16, 105), (16, 25), (56, 105), (56, 25), (134, 25), (134, 105), (94, 105), (94, 25)]

@@ -74,19 +74,20 @@ def main():
         nonlocal last_pub_time
         current_time = millis()
 
-        field.draw_field(
-            canvas,
-            draw_context,
-            constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE,
-            constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
-        )
+        if not object_handler.in_goal_callback:
+            field.draw_field(
+                canvas,
+                draw_context,
+                constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE,
+                constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
+            )
 
         team_robots = object_handler.get_yellow_robots() if team == "YELLOW" else object_handler.get_blue_robots()
         enemy_robots = object_handler.get_blue_robots() if team == "YELLOW" else object_handler.get_yellow_robots()
 
         strategy(object_handler.get_ball(), team_robots, enemy_robots)
 
-        object_handler.update()
+        object_handler.update(canvas)
         object_handler.draw(canvas, draw_context)
 
         if current_time - last_pub_time >= (1000 / pub_hz):
