@@ -3,6 +3,7 @@ from typing import List
 from ..field.ball import Ball
 from ..field.robot import Robot
 from . import roles
+from .utils import distance_to_goal, distance_between, angle_between
 from .. import constants
 from .path_planning import *
 import time
@@ -18,20 +19,68 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
     helper = roles.get_helper(team_robots)
 
     current_time = time.time()
-    if (current_time - last_print_time) >= 0.5:
+    if (current_time - last_print_time) >= constants.DISPLAY_BALL_PREDICTION_INTERVAL:
         print(f"ball is going to be in: ({ball.pred_x:.2f}, {ball.pred_y:.2f})")
         last_print_time = current_time
 
     if attacker:
-        dx = ball.x - attacker.x
-        dy = ball.y - attacker.y
-        distance = math.hypot(dx, dy)
+        move_angle = angle_between(attacker, ball)
+        angle_deg = math.degrees(move_angle)
 
-        if distance < 0.15:
+        distance = distance_between(attacker, ball)
+
+        if distance < constants.DISTANCE_TO_BALL_THRESHOLD and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
             attacker.kicker(True)
         else:
             attacker.kicker(False)
 
-        fx, fy = field(attacker, ball.x, ball.y, enemy_robots, team_robots, ball)
-        speed, angle = resultant_vector(fx, fy, constants.BASE_SPEED)
-        attacker.move(speed, angle)
+        goal_angle = math.atan2(ball.y, constants.GOAL["RIGHT_X"] - ball.x)
+
+        if distance < constants.DISTANCE_TO_BALL_THRESHOLD and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
+            move_angle = goal_angle
+        else:
+            if abs(angle_deg) >= constants.ANGLE_THRESHOLD:
+                negative = angle_deg < 0
+                offset = math.radians(constants.ANGLE_OFFSET)
+                move_angle += offset * (-1 if negative else 1)
+        attacker.move(constants.BASE_SPEED, move_angle)
+
+
+    if defender:
+        x,y=defender.x, defender.y
+
+        dx=0
+        dy=0
+
+        left_limit  = -constants.ZONE_GOAL["x"] - constants.ZONE_GOAL["LEFT_PADDING"]
+        right_limit = -constants.ZONE_GOAL["x"] + constants.ZONE_GOAL["RIGHT_PADDING"]
+
+        if x > right_limit:
+            dx = -1
+        elif x < left_limit:
+            dx = 1
+
+        error_y = ball.y - defender.y
+        if abs(error_y) > constants.GOALKEEPER_Y_THRESHOLD:
+            dy = 1 if error_y > 0 else -1
+
+        if dx != 0 or dy != 0:
+            move_angle = math.atan2(dy, dx)
+            defender.move(constants.BASE_SPEED * 0.8, move_angle)
+        else:
+            defender.move(0, 0)
+     
+    if helper:
+        target_x = attacker.x - constants.HELPER_FOLLOW_DISTANCE
+        target_y = attacker.y
+
+        move_dx = target_x - helper.x
+        move_dy = target_y - helper.y
+
+        distance = math.hypot(move_dx, move_dy)
+
+        if distance > constants.HELPER_MINIMUM_DISTANCE_TO_ATTACKER:
+            move_angle= math.atan2(move_dy, move_dx)
+            helper.move(constants.HELPER_FOLLOW_SPEED, move_angle)
+        else:
+            helper.move(0,0)

@@ -35,7 +35,7 @@ def distance_to_goal(robot, side):
 
     return math.hypot(dx, dy)
 
-def distance_to_ball(robot, ball):
+def distance_between(robot, ball):
     rx = robot.x
     ry = robot.y
 
