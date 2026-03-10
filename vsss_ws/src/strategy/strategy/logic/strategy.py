@@ -23,7 +23,6 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         last_print_time = current_time
 
     if attacker:
-
         dx = ball.x - attacker.x
         dy = ball.y - attacker.y
         distance = math.hypot(dx, dy)
@@ -33,9 +32,6 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         else:
             attacker.kicker(False)
 
-        tx, ty = ball_target(ball)
-
-        fx, fy = field(attacker, tx, ty, enemy_robots, team_robots, ball)
-
+        fx, fy = field(attacker, ball.x, ball.y, enemy_robots, team_robots, ball)
         speed, angle = resultant_vector(fx, fy, constants.BASE_SPEED)
         attacker.move(speed, angle)
