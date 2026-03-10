@@ -27,19 +27,16 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         angle_deg = math.degrees(move_angle)
 
         distance = distance_between(attacker, ball)
-        goal_x = 1.50
-        goal_y = max(-0.20, min(0.20, ball.y))
 
-        if distance < 0.15 and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
+        if distance < constants.DISTANCE_TO_BALL_THRESHOLD and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
             attacker.kicker(True)
         else:
             attacker.kicker(False)
 
-        goal_angle = math.atan2(goal_y - ball.y, goal_x - ball.x)
+        goal_angle = math.atan2(ball.y, constants.GOAL["RIGHT_X"] - ball.x)
 
-        if distance < 0.15 and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
+        if distance < constants.DISTANCE_TO_BALL_THRESHOLD and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
             move_angle = goal_angle
-
         else:
             if abs(angle_deg) >= constants.ANGLE_THRESHOLD:
                 negative = angle_deg < 0
@@ -62,23 +59,10 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         elif x < left_limit:
             dx = 1
 
-        target_y = ball.y
-
-        upper_limit = constants.ZONE_GOAL["y"] + constants.ZONE_GOAL["MIDPOINT_OFFSET"]
-        lower_limit = constants.ZONE_GOAL["y"] - constants.ZONE_GOAL["MIDPOINT_OFFSET"]
-        
-        if target_y > upper_limit:
-            target_y = upper_limit
-        elif target_y < lower_limit:
-            target_y = lower_limit
-
-            
         error_y = ball.y - defender.y
-    
         if abs(error_y) > constants.GOALKEEPER_Y_THRESHOLD:
             dy = 1 if error_y > 0 else -1
 
-    
         if dx != 0 or dy != 0:
             move_angle = math.atan2(dy, dx)
             defender.move(constants.BASE_SPEED * 0.8, move_angle)
@@ -89,14 +73,14 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         target_x = attacker.x - constants.HELPER_FOLLOW_DISTANCE
         target_y = attacker.y
 
-        move_dx = target_x -helper.x
+        move_dx = target_x - helper.x
         move_dy = target_y - helper.y
 
         distance = math.hypot(move_dx, move_dy)
 
-        if distance > 0.03:
-            move_angle= math.atan2 (move_dy, move_dx)
-            helper.move(constants.BASE_SPEED*0.8, move_angle)
+        if distance > constants.HELPER_MINIMUM_DISTANCE_TO_ATTACKER:
+            move_angle= math.atan2(move_dy, move_dx)
+            helper.move(constants.HELPER_FOLLOW_SPEED, move_angle)
         else:
             helper.move(0,0)
      

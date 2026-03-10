@@ -9,12 +9,18 @@ KICK_FORCE = 2          # Force applied to the ball when the ball is kicked
 ROBOT_RADIUS = 3.75
 BALL_RADIUS = 2.135
 
+# --- Navigation & Control Thresholds ---
+ANGLE_THRESHOLD = 15    # Tolerance in degrees for alignment
+ANGLE_OFFSET = 40       # Applied offset for orbital movement
+BASE_SPEED = 0.10       # Movement speed for non-path-planning movement
+
 HELPER_HOLD_OFFSET_X=0.1
 HELPER_STOP_THRESHOLD=0.015
 GOALKEEPER_Y_THRESHOLD = 0.02
 HELPER_Y_THRESHOLD = 0.02
 HELPER_FOLLOW_DISTANCE=0.20
-
+HELPER_FOLLOW_SPEED = BASE_SPEED * 0.8
+HELPER_MINIMUM_DISTANCE_TO_ATTACKER = 0.05
 
 # --- Display & Field Geometry ---
 DISPLAY_SCALE = 7       # Conversion factor from world units to pixels
@@ -41,11 +47,6 @@ DEFENDER_OFFSET_X = 25
 DEFENDER_OFFSET_Y = 0
 DEFENDER_MAX_FORWARD = DISPLAY_MID_X + 5
 
-# --- Navigation & Control Thresholds ---
-ANGLE_THRESHOLD = 15    # Tolerance in degrees for alignment
-ANGLE_OFFSET = 40       # Applied offset for orbital movement
-BASE_SPEED = 0.10       # Movement speed for non-path-planning movement
-
 # --- Cardinal Direction Mappings (Degrees) ---
 LEFT = 180
 RIGHT = 0
@@ -53,6 +54,7 @@ DOWN = 90
 UP = 270
 
 # --- Goal Post Geometry & Detection Areas ---
+DISTANCE_TO_BALL_THRESHOLD = 0.15
 ZONE_GOAL = {
     "x": DISPLAY_FIELD_WIDTH / 100 / 2,
     "y": 0,
@@ -62,11 +64,10 @@ ZONE_GOAL = {
 }
 
 GOAL = {
-    "x": DISPLAY_FIELD_WIDTH / 100 / 2,
-    "y": 0,
-    "LEFT_PADDING": 0.07,
-    "RIGHT_PADDING": 0.15,
-    "MIDPOINT_OFFSET": 0.10
+    "LEFT_X": -1.5 / 2,
+    "LEFT_Y": 0,
+    "RIGHT_X": 1.5 / 2,
+    "RIGHT_Y": 0
 }
 
 MIDFIELD = {
