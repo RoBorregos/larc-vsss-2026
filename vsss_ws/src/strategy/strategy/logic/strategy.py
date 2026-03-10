@@ -18,7 +18,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
     helper = roles.get_helper(team_robots)
 
     current_time = time.time()
-    if (current_time - last_print_time) >= 0.5:
+    if (current_time - last_print_time) >= constants.DISPLAY_BALL_PREDICTION_INTERVAL:
         print(f"ball is going to be in: ({ball.pred_x:.2f}, {ball.pred_y:.2f})")
         last_print_time = current_time
 
