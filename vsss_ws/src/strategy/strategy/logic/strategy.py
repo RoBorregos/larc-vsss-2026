@@ -5,21 +5,35 @@ from ..field.robot import Robot
 from . import roles
 from .utils import distance_to_goal, distance_between, angle_between
 from .. import constants
+import time
+
+last_print_time = 0
 
 def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
+    global last_print_time
     roles.select(team_robots, ball, 'LEFT')
 
     attacker = roles.get_attacker(team_robots)
     defender = roles.get_defender(team_robots)
     helper = roles.get_helper(team_robots)
 
+    current_time = time.time()
+    if (current_time - last_print_time) >= 0.5:
+        print(f"ball is going to be in: ({ball.pred_x:.2f}, {ball.pred_y:.2f})")
+        last_print_time = current_time
 
     if attacker:
         move_angle = angle_between(attacker, ball)
         angle_deg = math.degrees(move_angle)
-        distance = math.hypot(ball.x - attacker.x, ball.y - attacker.y)
+
+        distance = distance_between(attacker, ball)
         goal_x = 1.50
         goal_y = max(-0.20, min(0.20, ball.y))
+
+        if distance < 0.15 and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
+            attacker.kicker(True)
+        else:
+            attacker.kicker(False)
 
         goal_angle = math.atan2(goal_y - ball.y, goal_x - ball.x)
 
@@ -35,7 +49,6 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
 
 
     if defender:
-
         x,y=defender.x, defender.y
 
         dx=0

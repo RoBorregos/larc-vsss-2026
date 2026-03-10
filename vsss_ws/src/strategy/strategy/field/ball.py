@@ -5,10 +5,11 @@ from PIL.JpegImagePlugin import zigzag_index
 from .entity import Entity
 from .. import constants
 
+ball_id = 20
 
 class Ball(Entity):
-    def __init__(self, start_x, start_y, start_theta):
-        super().__init__()
+    def __init__(self, ros_handler, start_x, start_y, start_theta):
+        super().__init__(ros_handler, ball_id)
         self.id = 20
         self.weight = 48
         self.screen_radius = constants.BALL_RADIUS * constants.DISPLAY_SCALE
@@ -20,6 +21,11 @@ class Ball(Entity):
         print(f"started real values with: r({start_x}, {start_y}) - v({self.real_x}, {self.real_y})")
 
         self.canvas_id = None
+
+    def destroy(self, canvas):
+        if self.canvas_id:
+            canvas.delete(self.canvas_id)
+
 
     def draw(self, canvas, draw_context):
         screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)
