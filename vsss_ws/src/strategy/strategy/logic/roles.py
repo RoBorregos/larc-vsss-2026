@@ -1,6 +1,6 @@
 import math
 from .. import constants
-from .utils import distance_to_goal, distance_to_ball, angle_between
+from .utils import distance_to_goal, distance_between, angle_between
 
 
 def get_attacker(robots):
@@ -29,9 +29,11 @@ def select(robots, ball, side):
     remaining = sorted_by_attacker[1:]
 
     remaining.sort(key=lambda r: r.defender_score, reverse=True)
+    defender = remaining[0]
+    defender.role= "defender"
 
-    remaining[0].role = 'defender'
-    remaining[1].role = 'helper'
+    helper=remaining[1]
+    helper.role="helper"
 
 
 def robot_defender_score(robot, side):
@@ -57,7 +59,7 @@ def robot_attacker_score(robot, ball):
     angle_to_ball_weight = 0.3
     hysteresis_weight = 0.1
 
-    distance = distance_to_ball(robot, ball)
+    distance = distance_between(robot, ball)
 
     min_distance = 0.05
     max_distance = constants.DISPLAY_FIELD_WIDTH / 100
