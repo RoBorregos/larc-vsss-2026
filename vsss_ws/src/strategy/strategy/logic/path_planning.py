@@ -39,7 +39,7 @@ def attractive_vector(robot, target_x, target_y):
     return constants.ATTRACTIVE_GAIN * dx, constants.ATTRACTIVE_GAIN * dy
 
 
-def blocking(robot, obstacle, target_x, target_y):
+def is_obstacle_blocking(robot, obstacle, target_x, target_y):
     # Target vector
     tx = target_x - robot.x
     ty = target_y - robot.y
@@ -147,7 +147,7 @@ def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=T
 
     # Repulsion for each enemy (fx, fy) are accumulated in total_x and total_y
     for enemy in enemies:
-        if blocking(robot, enemy, target_x, target_y):
+        if is_obstacle_blocking(robot, enemy, target_x, target_y):
             blocking_detected = True
             fx, fy = rolling_vector(robot, enemy, ball)
         else:
