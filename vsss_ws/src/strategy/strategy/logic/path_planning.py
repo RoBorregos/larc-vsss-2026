@@ -1,32 +1,19 @@
 import math
 from .. import constants
-from .utils import clamp
-
-
-def ball_target(ball):
-
-    dx = constants.GOAL_X - ball.x
-    dy = constants.GOAL_Y - ball.y
-    norm = math.hypot(dx, dy)
-
-    if norm == 0:
-        return ball.x, ball.y
-
-    ux = dx / norm
-    uy = dy / norm
-
-    return (
-        ball.x - ux * constants.BEHIND_BALL_OFFSET,
-        ball.y - uy * constants.BEHIND_BALL_OFFSET
-    )
+from . import utils
 
 
 def approach_side(robot, ball, attacking_right=True):
     if robot.id in constants.ROBOT_VORTEX_SIDE:
         return constants.ROBOT_VORTEX_SIDE[robot.id]
 
-    bgx = constants.GOAL_X - ball.x
-    bgy = constants.GOAL_Y - ball.y
+    # Define goal objective
+    goal_x = constants.FIELD_WIDTH / 2 if attacking_right else -constants.FIELD_WIDTH / 2
+    goal_y = 0
+
+    # Find relative vectors to the ball
+    bgx = goal_x - ball.x
+    bgy = goal_y - ball.y
 
     brx = robot.x - ball.x
     bry = robot.y - ball.y
@@ -39,18 +26,21 @@ def approach_side(robot, ball, attacking_right=True):
 
 
 def attractive_vector(robot, target_x, target_y):
+    # Displacement vector
     dx = target_x - robot.x
     dy = target_y - robot.y
     dist = math.hypot(dx, dy)
 
     if dist == 0: return 0.0, 0.0
 
+    # Vector gain and normalization
     dx /= dist
     dy /= dist
     return constants.ATTRACTIVE_GAIN * dx, constants.ATTRACTIVE_GAIN * dy
 
 
 def blocking(robot, obstacle, target_x, target_y):
+    # Target vector
     tx = target_x - robot.x
     ty = target_y - robot.y
     t_norm = math.hypot(tx, ty)
@@ -60,9 +50,11 @@ def blocking(robot, obstacle, target_x, target_y):
     tx /= t_norm
     ty /= t_norm
 
+    # Position of the obstacle relaltive to the robot
     ox = obstacle.x - robot.x
     oy = obstacle.y - robot.y
 
+    # Check if it is in front or behind
     projection = ox * tx + oy * ty
 
     if projection <= 0:
@@ -71,6 +63,7 @@ def blocking(robot, obstacle, target_x, target_y):
     closest_x = robot.x + projection * tx
     closest_y = robot.y + projection * ty
 
+    # Find the distance to the obstacle center
     perp_dist = math.hypot(obstacle.x - closest_x, obstacle.y - closest_y)
     return perp_dist < constants.BLOCKING_WIDTH
 
@@ -80,9 +73,12 @@ def rolling_vector(robot, obstacle, ball):
     dy = robot.y - obstacle.y
     dist = math.hypot(dx, dy)
 
-    if dist > constants.EXPAND_INFLUENCE_RADIUS or dist == 0:
+    # This is to make the vortex radius activate before the influence radius of an obstacle
+    vortex_radius = constants.INFLUENCE_RADIUS * constants.EXPAND_INFLUENCE_RADIUS
+    if dist > vortex_radius or dist == 0:
         return 0.0, 0.0
 
+    # Make the robot
     rx = dx / dist
     ry = dy / dist
     side = approach_side(robot, ball)
@@ -90,10 +86,11 @@ def rolling_vector(robot, obstacle, ball):
     tang_x = -ry * side
     tang_y = rx * side
 
-    ratio = max(0.0, 1 - dist / constants.EXPAND_INFLUENCE_RADIUS)
+    influence = 1 - dist / vortex_radius
+    ratio = utils.clamp(influence, 0, 1)
 
     tang_strength = constants.VORTEX_GAIN * ratio
-    radial_strength = constants.REPULSIVE_GAIN * 0.15 * ratio
+    radial_strength = constants.REPULSIVE_GAIN * constants.EXPAND_REPULSIVE_GAIN * ratio
 
     fx = tang_x * tang_strength + rx * radial_strength
     fy = tang_y * tang_strength + ry * radial_strength
@@ -101,44 +98,37 @@ def rolling_vector(robot, obstacle, ball):
     return fx, fy
 
 
-def repulsion(robot, obstacle):
+def repulsion(robot, obstacle, influence_radius):
     dx = robot.x - obstacle.x
     dy = robot.y - obstacle.y
     dist = math.hypot(dx, dy)
 
-    if dist > constants.INFLUENCE_RADIUS or dist == 0:
+    if dist > influence_radius or dist == 0:
         return 0.0, 0.0
 
+    # Add repulsion based on how close the robot is to the obstacle
     rx = dx / dist
     ry = dy / dist
 
-    strength = constants.REPULSIVE_GAIN * (1 - dist / constants.INFLUENCE_RADIUS)
-    return rx * strength, ry * strength
+    ratio = dist / influence_radius
+    strength = constants.REPULSIVE_GAIN * utils.clamp(1 - ratio, 0, 1)
 
-
-def team_repulsion(robot, mate):
-    dx = robot.x - mate.x
-    dy = robot.y - mate.y
-
-    dist = math.hypot(dx, dy)
-
-    if dist > constants.TEAM_INFLUENCE_RADIUS or dist == 0:
-        return 0.0, 0.0
-
-    rx = dx / dist
-    ry = dy / dist
-
-    strength = constants.TEAM_REPULSION_GAIN * (1 - dist / constants.TEAM_INFLUENCE_RADIUS)
     return rx * strength, ry * strength
 
 def wall_repulsion(robot):
     fx, fy = 0.0, 0.0
 
-    dx_left = robot.x + constants.DISPLAY_MID_X
-    dx_right = constants.DISPLAY_MID_X - robot.x
-    dy_bottom = robot.y + constants.DISPLAY_MID_Y
-    dy_top = constants.DISPLAY_MID_Y - robot.y
 
+    half_width = constants.FIELD_WIDTH / 2
+    half_height = constants.FIELD_HEIGHT / 2
+
+    # Distances to wall
+    dx_left = robot.x + half_width
+    dx_right = half_width - robot.x
+    dy_bottom = robot.y + half_height
+    dy_top = half_height - robot.y
+
+    # If distance < wall margin, add repulsion
     if dx_left < constants.WALL_MARGIN:
         fx += constants.WALL_GAIN * (constants.WALL_MARGIN - dx_left) / constants.WALL_MARGIN
     if dx_right < constants.WALL_MARGIN:
@@ -155,12 +145,13 @@ def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=T
     total_x = 0.0
     total_y = 0.0
 
+    # Repulsion for each enemy (fx, fy) are accumulated in total_x and total_y
     for enemy in enemies:
         if blocking(robot, enemy, target_x, target_y):
             blocking_detected = True
             fx, fy = rolling_vector(robot, enemy, ball)
         else:
-            fx, fy = repulsion(robot, enemy)
+            fx, fy = repulsion(robot, enemy, constants.INFLUENCE_RADIUS)
 
         total_x += fx
         total_y += fy
@@ -170,21 +161,25 @@ def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=T
             del constants.ROBOT_VORTEX_SIDE[robot.id]
 
 
+    # Get the attractive vector of the target
     ax, ay = attractive_vector(robot, target_x, target_y)
 
+    # For each teammate, find the repulsion and add to the total_x and total_y vector
     for mate in teammates:
         if mate.id != robot.id:
-            fx, fy = team_repulsion(robot, mate)
+            fx, fy = repulsion(robot, mate, constants.TEAM_INFLUENCE_RADIUS)
             total_x += fx
             total_y += fy
 
+
     if blocking_detected:
-        ax *= 0.4
-        ay *= 0.4
+        ax *= constants.REDUCE_ATTRACTION_IF_BLOCKED
+        ay *= constants.REDUCE_ATTRACTION_IF_BLOCKED
 
     total_x += ax
     total_y += ay
 
+    # Wall repulsion to avoid hitting walls
     wx, wy = wall_repulsion(robot)
 
     total_x += wx
@@ -205,5 +200,5 @@ def resultant_vector(fx, fy, base_speed):
         return 0, 0
 
     angle = math.atan2(fy, fx)
-    speed = clamp(magnitude, 0, base_speed)
+    speed = utils.clamp(magnitude, 0, base_speed)
     return speed, angle
