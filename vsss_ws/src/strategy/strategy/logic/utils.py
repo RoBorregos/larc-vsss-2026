@@ -62,11 +62,6 @@ def angle_between(robot, ball):
 def millis():
     return int(time.perf_counter() * 1000)
 
-<<<<<<< HEAD
 
 def clamp(value, min_val, max_val):
     return max(min_val, min(max_val, value))
-=======
-def clamp(value, min_val, max_val):
-    return max(min_val, min(max_val, value))
->>>>>>> 3d50651 (Added comments)
