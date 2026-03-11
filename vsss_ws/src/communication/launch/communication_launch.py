@@ -17,7 +17,7 @@ def generate_launch_description():
             package='communication',
             executable='communication_node',
             namespace=['robot_', LaunchConfiguration('robot_id')],
-            name=['communication_node_', LaunchConfiguration('robot_id')],
+            name=['communication_node_robot_', LaunchConfiguration('robot_id')],
             remappings=[
                 ('cmd_vel', ['/strategy/robot_', LaunchConfiguration('robot_id'), '/cmd_vel']),
                 ('stop', ['/strategy/robot_', LaunchConfiguration('robot_id'), '/stop']),

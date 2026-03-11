@@ -6,7 +6,7 @@
 
 // Replace with your server/router ,etc 
 const char* ssid = "vsss_r";
-const char* password = "vsss2025";
+const char* password = "vsss1234";
 
 // UDP Server
 WiFiUDP udp;
