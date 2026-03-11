@@ -5,8 +5,8 @@
 #include "MotorController.h"
 
 // Replace with your server/router ,etc 
-const char* ssid = "vsss_r";
-const char* password = "vsss1234";
+const char* ssid = "Roborregos";
+const char* password = "RoBorregos2025";
 
 // UDP Server
 WiFiUDP udp;
@@ -22,10 +22,10 @@ struct __attribute__((packed)) Packet {
 // TODO: set pins to actual values
 
 // define front motor pins
-#define motorA1 1
-#define motorA2 2
-#define motorAPWM 3
-#define motorAENC1 4
+#define motorA1 26
+#define motorA2 27
+#define motorAPWM 14
+#define motorAENC1 13
 #define motorAENC2 GPIO_NUM_5
 
 // define right motor pins
@@ -202,11 +202,13 @@ void taskReadGyro(void *parameter) {
 void setup() {
   Serial.begin(115200);
 
-  // Set timer
+  Serial.println("SERIAL STARTED");
+
+  // // Set timer
   timerControl = timerBegin(1000000);
   timerAttachInterrupt(timerControl, &timerInterruption);
 
-  // semaphore that executes contorl every 5ms
+  // // semaphore that executes contorl every 5ms
   executeControl = xSemaphoreCreateBinary();
 
   timerGyro = timerBegin(10000000);
@@ -218,21 +220,21 @@ void setup() {
 
   //Set motors
   motors.front.setMotor();
-  motors.right.setMotor();
-  motors.left.setMotor();
+  // motors.right.setMotor();
+  // motors.left.setMotor();
   
   // Set encoders
   pinMode(motorAENC1, INPUT_PULLUP);
   pinMode(motorAENC2, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(motorAENC1), updateFrontPulses, RISING);
 
-  pinMode(motorBENC1, INPUT_PULLUP);
-  pinMode(motorBENC2, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(motorBENC1), updateRightPulses, RISING);
+  // pinMode(motorBENC1, INPUT_PULLUP);
+  // pinMode(motorBENC2, INPUT_PULLUP);
+  // attachInterrupt(digitalPinToInterrupt(motorBENC1), updateRightPulses, RISING);
 
-  pinMode(motorCENC1, INPUT_PULLUP);
-  pinMode(motorCENC2, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(motorCENC1), updateLeftPulses, RISING);
+  // pinMode(motorCENC1, INPUT_PULLUP);
+  // pinMode(motorCENC2, INPUT_PULLUP);
+  // attachInterrupt(digitalPinToInterrupt(motorCENC1), updateLeftPulses, RISING);
 
   // Connect to WiFi
   Serial.println();
@@ -253,13 +255,13 @@ void setup() {
   Serial.println(localPort);
 
 
-  /* Initialise the sensor */
-  if (!bno.begin())
-  {
-    /* There was a problem detecting the BNO055 ... check your connections */
-    Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
-    while (1);
-  }
+//   /* Initialise the sensor */
+//   if (!bno.begin())
+//   {
+//     /* There was a problem detecting the BNO055 ... check your connections */
+//     Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+//     while (1);
+//   }
 
   timerAlarm(timerControl, dt * 1000000, true, 0);
   timerAlarm(timerGyro, 10000, true, 0);
