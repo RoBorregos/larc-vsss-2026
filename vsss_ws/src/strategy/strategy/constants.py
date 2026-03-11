@@ -3,7 +3,7 @@ DT = 0.016              # Delta Time (approx. 60 FPS)
 FRICTION = 0.880        # Global velocity decay factor
 PUSH_FORCE = 60.0       # Force applied during robot movement
 RESTITUTION = 0.5         # Bounciness (0 = inelastic collision)
-KICK_FORCE = 2          # Force applied to the ball when the ball is kicked
+KICK_FORCE = 0.3          # Force applied to the ball when the ball is kicked
 
 # --- Entity Dimensions ---
 FIELD_WIDTH = 1.5

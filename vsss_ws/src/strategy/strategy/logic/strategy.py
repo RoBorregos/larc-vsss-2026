@@ -26,7 +26,6 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
     if attacker:
         move_angle = angle_between(attacker, ball)
         angle_deg = math.degrees(move_angle)
-
         distance = distance_between(attacker, ball)
 
         if distance < constants.DISTANCE_TO_BALL_THRESHOLD and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
@@ -34,16 +33,17 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         else:
             attacker.kicker(False)
 
-        goal_angle = math.atan2(ball.y, constants.GOAL["RIGHT_X"] - ball.x)
+        speed = constants.BASE_SPEED
+        move_angle = 0
 
+        goal_angle = math.atan2(ball.y, constants.GOAL["RIGHT_X"] - ball.x)
         if distance < constants.DISTANCE_TO_BALL_THRESHOLD and math.fabs(angle_deg) < constants.ANGLE_THRESHOLD:
             move_angle = goal_angle
         else:
-            if abs(angle_deg) >= constants.ANGLE_THRESHOLD:
-                negative = angle_deg < 0
-                offset = math.radians(constants.ANGLE_OFFSET)
-                move_angle += offset * (-1 if negative else 1)
-        attacker.move(constants.BASE_SPEED, move_angle)
+            fx, fy = field(attacker, ball.x - 0.2, ball.y, enemy_robots, team_robots, ball)
+
+            speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
+        attacker.move(speed, move_angle)
 
 
     if defender:
