@@ -4,7 +4,7 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist, Quaternion
-from std_msgs.msg import Float32MultiArray
+from std_msgs.msg import Float32MultiArray, Bool
 import socket
 import struct
 import math
@@ -59,13 +59,13 @@ class RobotUDPClient:
         
         return latest_orientation, latest_rpms
 
-    def send_floats(self, float1, float2, float3):
+    def send_floats(self, float1, float2, float3, float4=0.0):
         if not self.client_socket:
             print("UDP socket not available.")
             return False
         try:
             # Pack both floats into a single UDP packet
-            packed_data = struct.pack('<fff', float1, float2, float3)
+            packed_data = struct.pack('<ffff', float1, float2, float3, float4)
             self.client_socket.sendto(packed_data, (self.robot_ip, self.robot_port))
             
         except socket.error as e:
@@ -123,8 +123,13 @@ class SingleRobotUDPNode(Node):
         self.rpms_pub = self.create_publisher(Float32MultiArray, 'rpms', 10)
         self.get_logger().info(f"Publishing RPMs to {rpms_topic} for {name} ({ip}:{port})")
         
-        self.create_timer(0.02, self.receive_telemetry_timer_callback)  # 50 Hz for telemetry
+        self.create_subscription(Bool, 'stop', self.stop_callback, 10)
+        self.get_logger().info(f"Subscribed to stop commands on {self.resolve_topic_name('stop')} for {name} ({ip}:{port})")
         
+        self.create_subscription(Bool, 'kicker', self.kicker_callback, 10)
+        self.get_logger().info(f"Subscribed to kicker commands on {self.resolve_topic_name('kicker')} for {name} ({ip}:{port})")
+        
+        self.create_timer(0.02, self.receive_telemetry_timer_callback)  # 50 Hz for telemetry
         
 
     def receive_telemetry_timer_callback(self):
@@ -147,6 +152,18 @@ class SingleRobotUDPNode(Node):
             rpms_msg.data = [rpms_data[0], rpms_data[1], rpms_data[2], self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2]]
             self.rpms_pub.publish(rpms_msg)
             self.get_logger().info(f"Received RPMs: F={rpms_msg.data[0]:.2f}, R={rpms_msg.data[1]:.2f}, L={rpms_msg.data[2]:.2f}")
+    
+    def stop_callback(self):
+        self.get_logger().info("Stop command received, sending zero RPMs")
+        self.client.send_floats(0.0, 0.0, 0.0)
+        
+    def kicker_callback(self, msg):
+        if msg.data:
+            self.get_logger().info("Kicker command received, sending kicker signal")
+            self.client.send_floats(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 1.0)
+        else: 
+            self.get_logger().info("Kicker release command received, sending normal setpoints")
+            self.client.send_floats(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 0.0)
             
         
     def destroy_node(self):
