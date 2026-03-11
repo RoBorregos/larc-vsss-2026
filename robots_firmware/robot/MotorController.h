@@ -53,7 +53,6 @@ public:
   }
 
   void move(int PWM) {
-
     PWM = constrain(PWM, -MAX_PWM_VALUE, MAX_PWM_VALUE);
 
     if (PWM > 0) {
@@ -66,6 +65,11 @@ public:
       digitalWrite(pinA, LOW);
       digitalWrite(pinB, LOW);
     }
+
+    Serial.print("Writing to pin ");
+    Serial.print(pinPWM);
+    Serial.print(" with ");
+    Serial.println(abs(PWM));
 
     ledcWrite(pinPWM, abs(PWM));
   }

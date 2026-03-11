@@ -41,35 +41,42 @@ class RobotUDPClient:
         
         if not self.client_socket:
             print("UDP socket not available.")
-            return None, None
-        
-        while True:
-            try:
-                data, _ = self.client_socket.recvfrom(buffer_size)
-                
-                if len(data) == 16:  # Expecting at least 16 bytes for 4 floats
-                    latest_orientation = struct.unpack('<ffff', data)
-                elif len(data) == 12:  # Expecting at least 12 bytes for 3 floats
-                    latest_rpms = struct.unpack('<fff', data)
-                
-            except BlockingIOError:
-                break  # No more data to read
-            except socket.error as e:
-                print(f"Socket error during receive: {e}")
-        
-        return latest_orientation, latest_rpms
+
+            return None
+        try:
+            data, _ = self.client_socket.recvfrom(buffer_size)
+            
+            if len(data) < 16:
+                print("Received data is too short.")
+                return None
+            unpacked_data = struct.unpack('<ffff', data)
+            
+            msg = Quaternion()
+            msg.x = unpacked_data[0]
+            msg.y = unpacked_data[1]
+            msg.z = unpacked_data[2]
+            msg.w = unpacked_data[3]
+            return msg
+        except BlockingIOError:
+            pass
+        except socket.error as e:
+            print(f"Socket error during receive: {e}")
 
     def send_floats(self, float1, float2, float3, float4=0.0):
         if not self.client_socket:
-            print("UDP socket not available.")
             return False
         try:
-            # Pack both floats into a single UDP packet
-            packed_data = struct.pack('<ffff', float1, float2, float3, float4)
+            packed_data = struct.pack('<fff', float1, float2, float3)
             self.client_socket.sendto(packed_data, (self.robot_ip, self.robot_port))
-            
+
+            print(
+                f"UDP SENT: IP: {self.robot_ip}:{self.robot_port}: {float1},{float2},{float3}",
+            )
+
         except socket.error as e:
-            print(f"Socket error during send: {e}")
+            print(
+                f"Error de socket al intentar enviar a {self.robot_ip}:{self.robot_port} -> {e}",
+            )
             return False
         return True
 
@@ -96,10 +103,9 @@ class SingleRobotUDPNode(Node):
         # Parameters should be loaded from external YAML config via ROS2 launch or CLI
         
         self.get_logger().info(f"Waiting to Start")
-        self.declare_parameter('robot_name', 'vsss_robot')
-        self.declare_parameter('robot_ip', '192.168.0.221')
-        self.declare_parameter('robot_port', 8081)    
-        self.latest_setpoints = [0, 0, 0]
+        self.declare_parameter('robot_name', 'robot1')
+        self.declare_parameter('robot_ip', '172.20.10.2')
+        self.declare_parameter('robot_port', 8081)
 
         name = self.get_parameter('robot_name').value
         ip = self.get_parameter('robot_ip').value
@@ -134,38 +140,17 @@ class SingleRobotUDPNode(Node):
 
     def receive_telemetry_timer_callback(self):
         # Attempt to receive telemetry data
-        orientation_data, rpms_data = self.client.receive_telemetry()
-        
-        if orientation_data:
-            # Publish received telemetry
-            
-            orientation_msg = Quaternion()
-            orientation_msg.x = orientation_data[0]
-            orientation_msg.y = orientation_data[1]
-            orientation_msg.z = orientation_data[2]
-            orientation_msg.w = orientation_data[3]
-            self.telemetry_pub.publish(orientation_msg)
-            self.get_logger().info(f"Received telemetry: {orientation_msg.x:.2f}, {orientation_msg.y:.2f}, {orientation_msg.z:.2f}, {orientation_msg.w:.2f}")
-        
-        if rpms_data:
-            rpms_msg = Float32MultiArray()
-            rpms_msg.data = [rpms_data[0], rpms_data[1], rpms_data[2], self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2]]
-            self.rpms_pub.publish(rpms_msg)
-            self.get_logger().info(f"Received RPMs: F={rpms_msg.data[0]:.2f}, R={rpms_msg.data[1]:.2f}, L={rpms_msg.data[2]:.2f}")
-    
-    def stop_callback(self):
-        self.get_logger().info("Stop command received, sending zero RPMs")
-        self.client.send_floats(0.0, 0.0, 0.0)
-        
-    def kicker_callback(self, msg):
-        if msg.data:
-            self.get_logger().info("Kicker command received, sending kicker signal")
-            self.client.send_floats(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 1.0)
-        else: 
-            self.get_logger().info("Kicker release command received, sending normal setpoints")
-            self.client.send_floats(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 0.0)
-            
-        
+        data = self.client.receive_floats()
+
+
+        try:
+            if data:
+                # Publish received telemetry
+                self.telemetry_pub.publish(data)
+                self.get_logger().info(f"Received telemetry: {data.data}")
+        except:
+            self.get_logger().error("Unknown error receiving telemetry")
+
     def destroy_node(self):
         # Ensure the UDP client is closed when the node is destroyed
         if self.client:
@@ -176,8 +161,6 @@ class SingleRobotUDPNode(Node):
         rpm_left, rpm_right, rpm_back = twist_to_rpm(msg)
         self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
         sent = self.client.send_floats(rpm_left, rpm_right, rpm_back)
-
-        self.get_logger().info(f"Sent: F={rpm_left:.2f} R={rpm_right:.2f} L={rpm_back:.2f}") 
 
 def main(args=None):
     rclpy.init(args=args)

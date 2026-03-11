@@ -5,8 +5,8 @@
 #include "MotorController.h"
 
 // Replace with your server/router ,etc 
-const char* ssid = "Roborregos";
-const char* password = "RoBorregos2025";
+const char* ssid = "iPhone von iker";
+const char* password = "iker1595";
 
 // UDP Server
 WiFiUDP udp;
@@ -26,7 +26,7 @@ struct __attribute__((packed)) Packet {
 #define motorA2 27
 #define motorAPWM 14
 #define motorAENC1 13
-#define motorAENC2 GPIO_NUM_5
+#define motorAENC2 25
 
 // define right motor pins
 #define motorB1 6
@@ -127,7 +127,6 @@ void taskControl(void *parameter) {
   for (;;) {
     // check if the task can do the control
     if (xSemaphoreTake(executeControl, portMAX_DELAY) == pdTRUE) {
-
       readEncoders();
 
       // if the variable velSP is being written, do not read it
@@ -139,8 +138,11 @@ void taskControl(void *parameter) {
 
         xSemaphoreGive(mutex);
       }
+
       drive(frontVel, rightVel, leftVel);
     }
+
+    vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
 
@@ -150,6 +152,7 @@ void taskCommunication(void *parameter) {
     int expectedSize = 3 * sizeof(float);
     int packetSize = udp.parsePacket();
     if (packetSize == expectedSize) { // Expecting exactly 12 bytes (3 floats)
+      Serial.println("Received value with expected size of 12 bytes");
       byte buffer[expectedSize];
       udp.read(buffer, expectedSize);
 
@@ -175,27 +178,33 @@ void taskCommunication(void *parameter) {
       Serial.println(packetSize);
       udp.flush(); // Clear the packet
     }
+
+    vTaskDelay(pdMS_TO_TICKS(10));
   }
 }
 void taskReadGyro(void *parameter) {
   float w = 0, x = 0, y = 0, z = 0;
+
+  // unsigned long previous_send = millis();
   for (;;) {
-    if (xSemaphoreTake(readGyro, portMAX_DELAY) == pdTRUE) {
+  //   if ((millis() - previous_send > 1000) && xSemaphoreTake(readGyro, portMAX_DELAY) == pdTRUE) {
 
-      // Read gyroscope
-      imu::Quaternion quat = bno.getQuat();
+  //     // Read gyroscope
+  //     imu::Quaternion quat = bno.getQuat();
 
-      Packet data;
+  //     Packet data;
 
-      data.w = quat.w();
-      data.x = quat.x();
-      data.y = quat.y();
-      data.z = quat.z();
+  //     data.w = quat.w();
+  //     data.x = quat.x();
+  //     data.y = quat.y();
+  //     data.z = quat.z();
 
-      udp.beginPacket(udp.remoteIP(), udp.remotePort());
-      udp.write((uint8_t*)&data, sizeof(data));
-      udp.endPacket();
-    }
+  //     udp.beginPacket(udp.remoteIP(), udp.remotePort());
+  //     udp.write((uint8_t*)&data, sizeof(data));
+  //     udp.endPacket();
+
+  //     previous_send = millis();
+  //   }
   }
 }
 
@@ -297,8 +306,8 @@ void setup() {
 
 void drive(int frontSpeed, int rightSpeed, int leftSpeed) {
   motors.front.move(frontSpeed);
-  motors.right.move(rightSpeed);
-  motors.left.move(leftSpeed);
+  // motors.right.move(rightSpeed);
+  // motors.left.move(leftSpeed);
 }
 
 void readEncoders() {
