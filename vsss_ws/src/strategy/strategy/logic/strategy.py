@@ -5,6 +5,7 @@ from ..field.robot import Robot
 from . import roles
 from .utils import distance_to_goal, distance_between, angle_between
 from .. import constants
+from .path_planning import *
 import time
 
 last_print_time = 0
@@ -83,4 +84,3 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
             helper.move(constants.HELPER_FOLLOW_SPEED, move_angle)
         else:
             helper.move(0,0)
-     

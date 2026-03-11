@@ -6,6 +6,9 @@ RESTITUTION = 0.5         # Bounciness (0 = inelastic collision)
 KICK_FORCE = 2          # Force applied to the ball when the ball is kicked
 
 # --- Entity Dimensions ---
+FIELD_WIDTH = 1.5
+FIELD_HEIGHT = 1.3
+
 ROBOT_RADIUS = 3.75
 BALL_RADIUS = 2.135
 
@@ -29,10 +32,17 @@ DISPLAY_CANVAS_HEIGHT = 135
 DISPLAY_FIELD_WIDTH = 150
 DISPLAY_FIELD_HEIGHT = 130
 DISPLAY_MID_X = DISPLAY_FIELD_WIDTH / 2
+DISPLAY_MID_Y = DISPLAY_FIELD_HEIGHT / 2
+DISPLAY_SCALE = 7       # Conversion factor from world units to pixels
 DISPLAY_GOAL_DEPTH = 10 * DISPLAY_SCALE
 DISPLAY_GOAL_WIDTH = 40 * DISPLAY_SCALE
 TEXT_OFFSET = 15
 DISPLAY_BALL_PREDICTION_INTERVAL = 0.5
+
+# --- Goal Dimensions ---
+ATTACKING_RIGHT = True # Set to False if attacking left
+GOAL_Y = 0
+GOAL_X = DISPLAY_FIELD_WIDTH / 2 if ATTACKING_RIGHT else -DISPLAY_FIELD_WIDTH / 2
 
 # --- UI Padding & Offset Calculations ---
 LEFT_PADDING = DISPLAY_SCALE * (DISPLAY_CANVAS_WIDTH - DISPLAY_FIELD_WIDTH) / 2
@@ -118,13 +128,31 @@ ROBOT_DATABASE = {
     20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
 }
 
+# --- PATH PLANNING ---
+ATTRACTIVE_GAIN = 3.0 # Strength of attraction toward the target point
+REPULSIVE_GAIN = 1.2 # Strength of repulsion from enemy robots
+WALL_GAIN = 0.1 # Strength of repulsion from field walls
+INFLUENCE_RADIUS = 0.17 # Distance where enemy robots start influencing the field
+EXPAND_INFLUENCE_RADIUS = 1.5
+EXPAND_REPULSIVE_GAIN = 0.15
+WALL_MARGIN = 0.06 # Distance from wall where wall repulsion starts acting
+BEHIND_BALL_OFFSET = 0.06 # Distance behind the ball where the attacker aims to position
+MAX_FIELD = 4.0 # Maximum magnitude allowed for the total vector field
+BLOCKING_WIDTH = 0.18 # Width of the corridor considered for blocking detection
+VORTEX_GAIN = 3.0 # Strength of the tangential component in the rolling vector when blocking is detected
+TEAM_REPULSION_GAIN = 0.35 # Strength of repulsion from team robots
+TEAM_INFLUENCE_RADIUS = 0.12 # Distance where team robots start influencing the field
+ROBOT_VORTEX_SIDE = {} # Variable to store the assigned vortex side for each robot when blocking is detected
+
 # --- Robot Movement & Precision ---
-MOVEMENT_NOISE = 1      # Deviation based on a Gaussian distribution
+MOVEMENT_NOISE = 0.2      # Deviation based on a Gaussian distribution
 MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets to 0
+
 
 # --- Environmental & Sensor Simulation ---
 ILLUMINATION_INTENSITY = 30
 NOISE_RATE = 0.20
+REDUCE_ATTRACTION_IF_BLOCKED = 0.4
 
 # --- Measurements ---
 WEIGHT_CONVERSION = 0.01
