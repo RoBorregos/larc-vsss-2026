@@ -115,7 +115,7 @@ def repulsion(robot, obstacle, influence_radius, canvas=None):
             r_level = inf_rad_pix * (1 - (i / steps))
 
             ratio_level = r_level / inf_rad_pix
-            norm_strength = max(0, 1 - ratio_level)  # Valor de 0 a 1
+            norm_strength = max(0, 1 - ratio_level)
 
             red = int(255 * norm_strength)
             color = f'#{red:02x}0000'
