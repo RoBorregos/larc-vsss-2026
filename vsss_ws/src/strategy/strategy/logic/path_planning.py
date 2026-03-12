@@ -3,7 +3,7 @@ from .. import constants
 from . import utils
 
 
-def approach_side(robot, ball, attacking_right=True):
+def approach_side(robot, target_x, target_y, attacking_right=True):
     if robot.id in constants.ROBOT_VORTEX_SIDE:
         return constants.ROBOT_VORTEX_SIDE[robot.id]
 
@@ -11,12 +11,12 @@ def approach_side(robot, ball, attacking_right=True):
     goal_x = constants.FIELD_WIDTH / 2 if attacking_right else -constants.FIELD_WIDTH / 2
     goal_y = 0
 
-    # Find relative vectors to the ball
-    bgx = goal_x - ball.x
-    bgy = goal_y - ball.y
+    # Find relative vectors to the target
+    bgx = goal_x - target_x
+    bgy = goal_y - target_y
 
-    brx = robot.x - ball.x
-    bry = robot.y - ball.y
+    brx = robot.x - target_x
+    bry = robot.y - target_y
 
     cross = bgx * bry - bgy * brx
     side = 1 if cross > 0 else -1
@@ -68,7 +68,7 @@ def is_obstacle_blocking(robot, obstacle, target_x, target_y):
     return perp_dist < constants.BLOCKING_WIDTH
 
 
-def rolling_vector(robot, obstacle, ball):
+def rolling_vector(robot, obstacle, target_x, target_y):
     dx = robot.x - obstacle.x
     dy = robot.y - obstacle.y
     dist = math.hypot(dx, dy)
@@ -81,7 +81,7 @@ def rolling_vector(robot, obstacle, ball):
     # Make the robot
     rx = dx / dist
     ry = dy / dist
-    side = approach_side(robot, ball)
+    side = approach_side(robot, target_x, target_y)
 
     tang_x = -ry * side
     tang_y = rx * side
@@ -119,7 +119,6 @@ def repulsion(robot, obstacle, influence_radius, canvas=None):
 
             red = int(255 * norm_strength)
             color = f'#{red:02x}0000'
-            print(f"Drawing oval: x1: {obs_px - r_level} y1 {obs_py - r_level}, x2: {obs_px + r_level}, y2: {obs_py + r_level}")
             canvas.create_oval(
                 obs_px - r_level, obs_py - r_level,
                 obs_px + r_level, obs_py + r_level,
@@ -137,7 +136,6 @@ def repulsion(robot, obstacle, influence_radius, canvas=None):
 
     ratio = dist / influence_radius
     strength = constants.ENEMY_REPULSIVE_GAIN * utils.clamp(1 - ratio, 0, 1)
-
     return rx * strength, ry * strength
 
 def wall_repulsion(robot):
@@ -174,9 +172,30 @@ def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=T
     for enemy in enemies:
         if is_obstacle_blocking(robot, enemy, target_x, target_y):
             blocking_detected = True
-            fx, fy = rolling_vector(robot, enemy, ball)
+            fx, fy = rolling_vector(robot, enemy, target_x, target_y)
         else:
             fx, fy = repulsion(robot, enemy, constants.INFLUENCE_RADIUS)
+
+        total_x += fx
+        total_y += fy
+
+    # For each teammate, find the repulsion and add to the total_x and total_y vector
+    for mate in teammates:
+        if mate.id != robot.id:
+            if is_obstacle_blocking(robot, mate, target_x, target_y):
+                blocking_detected = True
+                fx, fy = rolling_vector(robot, mate, target_x, target_y)
+            else:
+                fx, fy = repulsion(robot, mate, constants.TEAM_INFLUENCE_RADIUS)
+
+            total_x += fx
+            total_y += fy
+
+    if ball:
+        if is_obstacle_blocking(robot, ball, target_x, target_y):
+            fx, fy = rolling_vector(robot, ball, target_x, target_y)
+        else:
+            fx, fy = repulsion(robot, ball, constants.BALL_INFLUENCE_RADIUS)
 
         total_x += fx
         total_y += fy
@@ -186,20 +205,8 @@ def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=T
             del constants.ROBOT_VORTEX_SIDE[robot.id]
 
 
-    ball_repulsion_x, ball_repulsion_y = repulsion(robot, ball, constants.BALL_INFLUENCE_RADIUS)
-    total_x += ball_repulsion_x
-    total_y += ball_repulsion_y
-
     # Get the attractive vector of the target
     ax, ay = attractive_vector(robot, target_x, target_y)
-
-    # For each teammate, find the repulsion and add to the total_x and total_y vector
-    for mate in teammates:
-        if mate.id != robot.id:
-            fx, fy = repulsion(robot, mate, constants.TEAM_INFLUENCE_RADIUS)
-            total_x += fx
-            total_y += fy
-
 
     if blocking_detected:
         ax *= constants.REDUCE_ATTRACTION_IF_BLOCKED

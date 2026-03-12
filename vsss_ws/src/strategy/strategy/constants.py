@@ -141,7 +141,7 @@ ENEMY_REPULSIVE_GAIN = 1.2 # Strength of repulsion from enemy robots
 TEAM_REPULSION_GAIN = 0.35 # Strength of repulsion from team robots
 TEAM_INFLUENCE_RADIUS = 0.12 # Distance where team robots start influencing the field
 INFLUENCE_RADIUS = 0.17 # Distance where enemy robots start influencing the field
-BALL_INFLUENCE_RADIUS = 0.10 # Distance where the ball start influencing the field
+BALL_INFLUENCE_RADIUS = 0.12 # Distance where the ball start influencing the field
 ROBOT_VORTEX_SIDE = {} # Variable to store the assigned vortex side for each robot when blocking is detected
 
 # --- Robot Movement & Precision ---
