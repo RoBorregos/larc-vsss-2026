@@ -10,7 +10,7 @@ import struct
 import math
 
 beta = 30  # degrees
-gama = 0 # degrees
+gama = 0  # degrees
 OMEGA_TO_RPM = 60 / (2 * math.pi)  # Conversion factor from rad/s to RPM
 COS_30 = math.cos(math.radians(beta))
 
@@ -28,55 +28,49 @@ class RobotUDPClient:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.client_socket.setblocking(False)
             print(f"UDP socket ready for {self.robot_ip}:{self.robot_port}")
-            
+
             self.client_socket.bind(('', 8081))
         except socket.error as e:
             print(f"Socket error: {e}")
             self.client_socket = None
-            
+
     def receive_telemetry(self, buffer_size=2048):
-        
+
         latest_orientation = None
         latest_rpms = None
-        
+
         if not self.client_socket:
             print("UDP socket not available.")
+            return None, None
 
-            return None
-        try:
-            data, _ = self.client_socket.recvfrom(buffer_size)
-            
-            if len(data) < 16:
-                print("Received data is too short.")
-                return None
-            unpacked_data = struct.unpack('<ffff', data)
-            
-            msg = Quaternion()
-            msg.x = unpacked_data[0]
-            msg.y = unpacked_data[1]
-            msg.z = unpacked_data[2]
-            msg.w = unpacked_data[3]
-            return msg
-        except BlockingIOError:
-            pass
-        except socket.error as e:
-            print(f"Socket error during receive: {e}")
+        while True:
+            try:
+                data, _ = self.client_socket.recvfrom(buffer_size)
 
-    def send_floats(self, float1, float2, float3, float4=0.0):
+                if len(data) == 16:  # Expecting at least 16 bytes for 4 floats
+                    latest_orientation = struct.unpack('<ffff', data)
+                elif len(data) == 12:  # Expecting at least 12 bytes for 3 floats
+                    latest_rpms = struct.unpack('<fff', data)
+
+            except BlockingIOError:
+                break  # No more data to read
+            except socket.error as e:
+                print(f"Socket error during receive: {e}")
+
+        return latest_orientation, latest_rpms
+
+    def send_floats(self, float1, float2, float3, float4):
         if not self.client_socket:
+            print("UDP socket not available.")
             return False
         try:
-            packed_data = struct.pack('<fff', float1, float2, float3)
+            # Pack both floats into a single UDP packet
+            packed_data = struct.pack('<ffff', float1, float2, float3, float4)
             self.client_socket.sendto(packed_data, (self.robot_ip, self.robot_port))
-
-            print(
-                f"UDP SENT: IP: {self.robot_ip}:{self.robot_port}: {float1},{float2},{float3}",
-            )
+            print(f"Sending to {self.robot_ip}:{self.robot_port} - {float1:.2f}-{float2:.2f}-{float3:.2f}-{float4:.2f}")
 
         except socket.error as e:
-            print(
-                f"Error de socket al intentar enviar a {self.robot_ip}:{self.robot_port} -> {e}",
-            )
+            print(f"Socket error during send: {e}")
             return False
         return True
 
@@ -85,71 +79,102 @@ class RobotUDPClient:
             self.client_socket.close()
             self.client_socket = None
 
+
 def twist_to_rpm(twist, wheel_radius=0.01431, wheel_distance=0.0311):
     # Convert Twist message to RPM for three-wheeled robot
     vx = twist.linear.x  # Forward velocity
-    vy = twist.linear.y  # Sideways velocity 
+    vy = twist.linear.y  # Sideways velocity
     wz = twist.angular.z  # Angular velocity
-    
-    rpm_left = (-wheel_distance * wz  + COS_30 * vx + 0.5 * vy) * OMEGA_TO_RPM / wheel_radius
+
+    rpm_left = (-wheel_distance * wz + COS_30 * vx + 0.5 * vy) * OMEGA_TO_RPM / wheel_radius
     rpm_right = (-wheel_distance * wz - COS_30 * vx + 0.5 * vy) * OMEGA_TO_RPM / wheel_radius
     rpm_back = (-wheel_distance * wz - vx) * OMEGA_TO_RPM / wheel_radius
-    
+
     return rpm_left, rpm_right, rpm_back
 
+
 class SingleRobotUDPNode(Node):
-    def __init__(self): 
+    def __init__(self):
         super().__init__('single_robot_udp_node')
         # Parameters should be loaded from external YAML config via ROS2 launch or CLI
-        
+
         self.get_logger().info(f"Waiting to Start")
         self.declare_parameter('robot_name', 'robot1')
         self.declare_parameter('robot_ip', '172.20.10.2')
         self.declare_parameter('robot_port', 8081)
+        self.latest_setpoints = [0, 0, 0]
 
         name = self.get_parameter('robot_name').value
         ip = self.get_parameter('robot_ip').value
         port = self.get_parameter('robot_port').value
-        
+
         node_name = self.get_fully_qualified_name()
-        cmd_vel_topic = self.resolve_topic_name('cmd_vel')
-        rpms_topic = self.resolve_topic_name('rpms')
-        telemetry_topic = self.resolve_topic_name('telemetry')
-        
+        cmd_vel_topic = self.resolve_topic_name(f'/strategy/{name}/cmd_vel')
+        kicker_topic = self.resolve_topic_name(f'/strategy/{name}/kicker')
+        rpms_topic = self.resolve_topic_name(f'/control/{name}/rpms')
+        telemetry_topic = self.resolve_topic_name(f'/control/{name}/telemetry')
+
         self.get_logger().info(f"{node_name} Started with values name: {name}, connection->({ip}:{port})")
         self.client = RobotUDPClient(ip, port)
 
         self.get_logger().info(f"Waiting to Start")
-        self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
+        self.create_subscription(Twist, cmd_vel_topic, self.cmd_vel_callback, 10)
         self.get_logger().info(f"Subscribed to {cmd_vel_topic} for {name} ({ip}:{port})")
-        
-        self.telemetry_pub = self.create_publisher(Quaternion, 'telemetry', 10)
+
+        self.create_subscription(Bool, kicker_topic, self.kicker_callback, 10)
+        self.get_logger().info(f"Subscribed to {kicker_topic} for {name} ({ip}:{port})")
+
+        self.telemetry_pub = self.create_publisher(Quaternion, telemetry_topic, 10)
         self.get_logger().info(f"Publishing telemetry to {telemetry_topic} for {name} ({ip}:{port})")
-        
-        self.rpms_pub = self.create_publisher(Float32MultiArray, 'rpms', 10)
+
+        self.rpms_pub = self.create_publisher(Float32MultiArray, rpms_topic, 10)
         self.get_logger().info(f"Publishing RPMs to {rpms_topic} for {name} ({ip}:{port})")
-        
+
         self.create_subscription(Bool, 'stop', self.stop_callback, 10)
-        self.get_logger().info(f"Subscribed to stop commands on {self.resolve_topic_name('stop')} for {name} ({ip}:{port})")
-        
+        self.get_logger().info(
+            f"Subscribed to stop commands on {self.resolve_topic_name('stop')} for {name} ({ip}:{port})")
+
         self.create_subscription(Bool, 'kicker', self.kicker_callback, 10)
-        self.get_logger().info(f"Subscribed to kicker commands on {self.resolve_topic_name('kicker')} for {name} ({ip}:{port})")
-        
+        self.get_logger().info(
+            f"Subscribed to kicker commands on {self.resolve_topic_name('kicker')} for {name} ({ip}:{port})")
+
         self.create_timer(0.02, self.receive_telemetry_timer_callback)  # 50 Hz for telemetry
-        
 
     def receive_telemetry_timer_callback(self):
         # Attempt to receive telemetry data
-        data = self.client.receive_floats()
+        orientation_data, rpms_data = self.client.receive_telemetry()
 
+        if orientation_data:
+            # Publish received telemetry
 
-        try:
-            if data:
-                # Publish received telemetry
-                self.telemetry_pub.publish(data)
-                self.get_logger().info(f"Received telemetry: {data.data}")
-        except:
-            self.get_logger().error("Unknown error receiving telemetry")
+            orientation_msg = Quaternion()
+            orientation_msg.x = orientation_data[0]
+            orientation_msg.y = orientation_data[1]
+            orientation_msg.z = orientation_data[2]
+            orientation_msg.w = orientation_data[3]
+            self.telemetry_pub.publish(orientation_msg)
+            self.get_logger().info(
+                f"Received telemetry: {orientation_msg.x:.2f}, {orientation_msg.y:.2f}, {orientation_msg.z:.2f}, {orientation_msg.w:.2f}")
+
+        if rpms_data:
+            rpms_msg = Float32MultiArray()
+            rpms_msg.data = [rpms_data[0], rpms_data[1], rpms_data[2], self.latest_setpoints[0],
+                             self.latest_setpoints[1], self.latest_setpoints[2]]
+            self.rpms_pub.publish(rpms_msg)
+            self.get_logger().info(
+                f"Received RPMs: F={rpms_msg.data[0]:.2f}, R={rpms_msg.data[1]:.2f}, L={rpms_msg.data[2]:.2f}")
+
+    def stop_callback(self):
+        self.get_logger().info("Stop command received, sending zero RPMs")
+        self.client.send_floats(0.0, 0.0, 0.0, 0.0)
+
+    def kicker_callback(self, msg):
+        if msg.data:
+            self.get_logger().info("Kicker command received, sending kicker signal")
+            self.client.send_floats(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 1.0)
+        else:
+            self.get_logger().info("Kicker release command received, sending normal setpoints")
+            self.client.send_floats(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 0.0)
 
     def destroy_node(self):
         # Ensure the UDP client is closed when the node is destroyed
@@ -160,7 +185,9 @@ class SingleRobotUDPNode(Node):
     def cmd_vel_callback(self, msg):
         rpm_left, rpm_right, rpm_back = twist_to_rpm(msg)
         self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
-        sent = self.client.send_floats(rpm_left, rpm_right, rpm_back)
+        sent = self.client.send_floats(rpm_left, rpm_right, rpm_back, 0.0)
+        print("CMD VEL RECEIVED")
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -172,6 +199,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()

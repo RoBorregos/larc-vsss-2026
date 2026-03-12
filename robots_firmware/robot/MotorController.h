@@ -55,21 +55,21 @@ public:
   void move(int PWM) {
     PWM = constrain(PWM, -MAX_PWM_VALUE, MAX_PWM_VALUE);
 
+    Serial.print("PWM "); Serial.print(pinPWM); Serial.print(" - "); Serial.print(abs(PWM)); Serial.print(" --- ");
+
     if (PWM > 0) {
       digitalWrite(pinA, HIGH);
       digitalWrite(pinB, LOW);
+      Serial.print("Pin "); Serial.print(pinA); Serial.print(" HIGH - Pin "); Serial.print(pinB); Serial.println(" LOW"); 
     } else if (PWM < 0) {
       digitalWrite(pinA, LOW);
       digitalWrite(pinB, HIGH);
+      Serial.print("Pin "); Serial.print(pinA); Serial.print(" LOW - Pin "); Serial.print(pinB); Serial.println(" HIGH"); 
     } else {
       digitalWrite(pinA, LOW);
       digitalWrite(pinB, LOW);
+      Serial.print("Pin "); Serial.print(pinA); Serial.print(" LOW - Pin "); Serial.print(pinB); Serial.println(" LOW"); 
     }
-
-    Serial.print("Writing to pin ");
-    Serial.print(pinPWM);
-    Serial.print(" with ");
-    Serial.println(abs(PWM));
 
     ledcWrite(pinPWM, abs(PWM));
   }

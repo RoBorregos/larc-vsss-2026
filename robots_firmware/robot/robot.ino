@@ -5,8 +5,8 @@
 #include "MotorController.h"
 
 // Replace with your server/router ,etc 
-const char* ssid = "iPhone von iker";
-const char* password = "iker1595";
+const char* ssid = "Roborregos";
+const char* password = "RoBorregos2025";
 
 // UDP Server
 WiFiUDP udp;
@@ -22,18 +22,18 @@ struct __attribute__((packed)) Packet {
 // TODO: set pins to actual values
 
 // define front motor pins
-#define motorA1 26
-#define motorA2 27
+#define motorA1 13
+#define motorA2 25
 #define motorAPWM 14
-#define motorAENC1 13
-#define motorAENC2 25
+#define motorAENC1 27
+#define motorAENC2 GPIO_NUM_26
 
 // define right motor pins
-#define motorB1 6
-#define motorB2 7
-#define motorBPWM 8
-#define motorBENC1 9
-#define motorBENC2 GPIO_NUM_10
+#define motorB1 4
+#define motorB2 18
+#define motorBPWM 17
+#define motorBENC1 35
+#define motorBENC2 GPIO_NUM_34
 
 // define left motor pins
 #define motorC1 11
@@ -113,6 +113,7 @@ struct Motors {
 
 // motors initialization
 Motors motors;
+bool kicker = false;
 
 // the pwm signal each motor will receive
 int frontVel = 0;
@@ -139,6 +140,7 @@ void taskControl(void *parameter) {
         xSemaphoreGive(mutex);
       }
 
+      
       drive(frontVel, rightVel, leftVel);
     }
 
@@ -149,19 +151,25 @@ void taskControl(void *parameter) {
 // task that receives the velocity of each wheel
 void taskCommunication(void *parameter) {
   for (;;) {
-    int expectedSize = 3 * sizeof(float);
+    int expectedSize = 4 * sizeof(float);
     int packetSize = udp.parsePacket();
-    if (packetSize == expectedSize) { // Expecting exactly 12 bytes (3 floats)
-      Serial.println("Received value with expected size of 12 bytes");
+    float temporal_kicker_float = 0;
+    if (packetSize == expectedSize) {
+      Serial.println("Received value with expected size of 16 bytes");
       byte buffer[expectedSize];
       udp.read(buffer, expectedSize);
 
       // if the variable velSP is being read, do not write on it
       if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
+
         // Extract the two floats from the UDP packet
         memcpy(&motors.front.velSP, &buffer[0], 4);
         memcpy(&motors.right.velSP, &buffer[4], 4);
         memcpy(&motors.left.velSP, &buffer[8], 4);
+        memcpy(&temporal_kicker_float, &buffer[12], 4);
+      
+        if (temporal_kicker_float > 0.5) kicker = true; 
+        else kicker = false;
         xSemaphoreGive(mutex);
       }
 
@@ -171,6 +179,8 @@ void taskCommunication(void *parameter) {
       Serial.println(motors.right.velSP);
       Serial.print("Left Motor: ");
       Serial.println(motors.left.velSP);
+      Serial.print("Kicker: ");
+      Serial.println(kicker);
 
     } else if (packetSize > 0) {
       // Discard unexpected packet sizes
@@ -229,7 +239,7 @@ void setup() {
 
   //Set motors
   motors.front.setMotor();
-  // motors.right.setMotor();
+  motors.right.setMotor();
   // motors.left.setMotor();
   
   // Set encoders
@@ -237,9 +247,9 @@ void setup() {
   pinMode(motorAENC2, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(motorAENC1), updateFrontPulses, RISING);
 
-  // pinMode(motorBENC1, INPUT_PULLUP);
-  // pinMode(motorBENC2, INPUT_PULLUP);
-  // attachInterrupt(digitalPinToInterrupt(motorBENC1), updateRightPulses, RISING);
+  pinMode(motorBENC1, INPUT_PULLUP);
+  pinMode(motorBENC2, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(motorBENC1), updateRightPulses, RISING);
 
   // pinMode(motorCENC1, INPUT_PULLUP);
   // pinMode(motorCENC2, INPUT_PULLUP);
@@ -306,7 +316,7 @@ void setup() {
 
 void drive(int frontSpeed, int rightSpeed, int leftSpeed) {
   motors.front.move(frontSpeed);
-  // motors.right.move(rightSpeed);
+  motors.right.move(rightSpeed);
   // motors.left.move(leftSpeed);
 }
 
