@@ -97,16 +97,41 @@ def rolling_vector(robot, obstacle, ball):
 
     return fx, fy
 
-
-def repulsion(robot, obstacle, influence_radius):
+def repulsion(robot, obstacle, influence_radius, canvas=None):
     dx = robot.x - obstacle.x
     dy = robot.y - obstacle.y
     dist = math.hypot(dx, dy)
 
+    if canvas is not None:
+        tag_name = f"repulsion_field_{obstacle.id}"
+        canvas.delete(tag_name)
+
+        obs_px, obs_py = obstacle.pixel_to_world(obstacle.x, obstacle.y)
+        inf_rad_pix = influence_radius * constants.METER_TO_CM * constants.DISPLAY_SCALE
+
+        # Number of level curves
+        steps = 6
+        for i in range(steps):
+            r_level = inf_rad_pix * (1 - (i / steps))
+
+            ratio_level = r_level / inf_rad_pix
+            norm_strength = max(0, 1 - ratio_level)  # Valor de 0 a 1
+
+            red = int(255 * norm_strength)
+            color = f'#{red:02x}0000'
+            print(f"Drawing oval: x1: {obs_px - r_level} y1 {obs_py - r_level}, x2: {obs_px + r_level}, y2: {obs_py + r_level}")
+            canvas.create_oval(
+                obs_px - r_level, obs_py - r_level,
+                obs_px + r_level, obs_py + r_level,
+                outline=color,
+                dash=(2, 2) if i == 0 else None,
+                tags=tag_name
+            )
+            canvas.tag_raise(tag_name)
+
     if dist > influence_radius or dist == 0:
         return 0.0, 0.0
 
-    # Add repulsion based on how close the robot is to the obstacle
     rx = dx / dist
     ry = dy / dist
 

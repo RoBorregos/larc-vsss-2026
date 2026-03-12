@@ -2,6 +2,9 @@ import rclpy
 import tkinter as tk
 import math
 import threading
+
+from breezy.doc_generate.conf import project
+
 from . import constants
 from strategy.field import field
 from PIL import Image, ImageDraw
@@ -9,6 +12,7 @@ from .logic.strategy import strategy
 from .logic.object_handler import ObjectHandler
 from .ros_handler import RosHandler
 from .logic.utils import *
+from .logic import path_planning
 
 simulation = True
 team = "YELLOW"
@@ -84,8 +88,14 @@ def main():
 
         team_robots = object_handler.get_yellow_robots() if team == "YELLOW" else object_handler.get_blue_robots()
         enemy_robots = object_handler.get_blue_robots() if team == "YELLOW" else object_handler.get_yellow_robots()
+        ball = object_handler.get_ball()
 
-        strategy(object_handler.get_ball(), team_robots, enemy_robots)
+        strategy(ball, team_robots, enemy_robots)
+
+        for robot in team_robots:
+            path_planning.repulsion(robot, robot, constants.TEAM_INFLUENCE_RADIUS, canvas)
+        for robot in enemy_robots:
+            path_planning.repulsion(robot, robot, constants.INFLUENCE_RADIUS, canvas)
 
         object_handler.update(canvas)
         object_handler.draw(canvas, draw_context)
