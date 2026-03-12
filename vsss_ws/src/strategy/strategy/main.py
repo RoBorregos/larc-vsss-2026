@@ -96,6 +96,7 @@ def main():
             path_planning.repulsion(robot, robot, constants.TEAM_INFLUENCE_RADIUS, canvas)
         for robot in enemy_robots:
             path_planning.repulsion(robot, robot, constants.INFLUENCE_RADIUS, canvas)
+        path_planning.repulsion(ball, ball, constants.BALL_INFLUENCE_RADIUS, canvas)
 
         object_handler.update(canvas)
         object_handler.draw(canvas, draw_context)
