@@ -90,7 +90,7 @@ def rolling_vector(robot, obstacle, ball):
     ratio = utils.clamp(influence, 0, 1)
 
     tang_strength = constants.VORTEX_GAIN * ratio
-    radial_strength = constants.REPULSIVE_GAIN * constants.EXPAND_REPULSIVE_GAIN * ratio
+    radial_strength = constants.ENEMY_REPULSIVE_GAIN * constants.EXPAND_REPULSIVE_GAIN * ratio
 
     fx = tang_x * tang_strength + rx * radial_strength
     fy = tang_y * tang_strength + ry * radial_strength
@@ -136,7 +136,7 @@ def repulsion(robot, obstacle, influence_radius, canvas=None):
     ry = dy / dist
 
     ratio = dist / influence_radius
-    strength = constants.REPULSIVE_GAIN * utils.clamp(1 - ratio, 0, 1)
+    strength = constants.ENEMY_REPULSIVE_GAIN * utils.clamp(1 - ratio, 0, 1)
 
     return rx * strength, ry * strength
 
@@ -185,6 +185,10 @@ def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=T
         if robot.id in constants.ROBOT_VORTEX_SIDE:
             del constants.ROBOT_VORTEX_SIDE[robot.id]
 
+
+    ball_repulsion_x, ball_repulsion_y = repulsion(robot, ball, constants.BALL_INFLUENCE_RADIUS)
+    total_x += ball_repulsion_x
+    total_y += ball_repulsion_y
 
     # Get the attractive vector of the target
     ax, ay = attractive_vector(robot, target_x, target_y)

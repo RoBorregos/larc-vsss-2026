@@ -129,9 +129,7 @@ ROBOT_DATABASE = {
 
 # --- PATH PLANNING ---
 ATTRACTIVE_GAIN = 3.0 # Strength of attraction toward the target point
-REPULSIVE_GAIN = 1.2 # Strength of repulsion from enemy robots
 WALL_GAIN = 0.1 # Strength of repulsion from field walls
-INFLUENCE_RADIUS = 0.17 # Distance where enemy robots start influencing the field
 EXPAND_INFLUENCE_RADIUS = 1.5
 EXPAND_REPULSIVE_GAIN = 0.15
 WALL_MARGIN = 0.06 # Distance from wall where wall repulsion starts acting
@@ -139,8 +137,11 @@ BEHIND_BALL_OFFSET = 0.06 # Distance behind the ball where the attacker aims to 
 MAX_FIELD = 4.0 # Maximum magnitude allowed for the total vector field
 BLOCKING_WIDTH = 0.18 # Width of the corridor considered for blocking detection
 VORTEX_GAIN = 3.0 # Strength of the tangential component in the rolling vector when blocking is detected
+ENEMY_REPULSIVE_GAIN = 1.2 # Strength of repulsion from enemy robots
 TEAM_REPULSION_GAIN = 0.35 # Strength of repulsion from team robots
 TEAM_INFLUENCE_RADIUS = 0.12 # Distance where team robots start influencing the field
+INFLUENCE_RADIUS = 0.17 # Distance where enemy robots start influencing the field
+BALL_INFLUENCE_RADIUS = 0.10 # Distance where the ball start influencing the field
 ROBOT_VORTEX_SIDE = {} # Variable to store the assigned vortex side for each robot when blocking is detected
 
 # --- Robot Movement & Precision ---
