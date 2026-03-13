@@ -40,7 +40,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
 
             speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
 
-        attacker.move(speed, move_angle)
+        attacker.move(speed, move_angle, 0)
 
 
     if defender:
@@ -68,7 +68,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
                 move_angle = 0
                 speed = 0
 
-        defender.move(speed, move_angle)
+        defender.move(speed, move_angle, 0)
 
     if helper:
         target_x = attacker.x - constants.HELPER_FOLLOW_DISTANCE
@@ -86,4 +86,4 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
             print(f"Going to {target_x:.2f}, {target_y:.2f} {(move_angle * 3.14/180):.2f}°")
 
 
-        helper.move(speed, move_angle)
+        helper.move(speed, move_angle, 90)

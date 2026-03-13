@@ -8,6 +8,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from vsss_vision.srv import Prediction
 from std_msgs.msg import Bool
+from . import constants
 
 class RosHandler(Node):
     def __init__(self, infield_objects):
@@ -74,8 +75,7 @@ class RosHandler(Node):
         msg.linear.x = float(speed * math.cos(angle))
         msg.linear.y = float(speed * math.sin(angle))
 
-        kp_angular = 2.0
-        msg.angular.z = float(kp_angular * facing_error)
+        msg.angular.z = float(constants.ROBOT_KP_ANGULAR_MOVEMENT * facing_error)
         self.publishers_map[topic_name].publish(msg)
 
     def publish_kicker(self, robot_id, active):

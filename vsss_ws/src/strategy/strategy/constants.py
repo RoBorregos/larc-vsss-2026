@@ -147,7 +147,7 @@ ROBOT_VORTEX_SIDE = {} # Variable to store the assigned vortex side for each rob
 # --- Robot Movement & Precision ---
 MOVEMENT_NOISE = 0.2      # Deviation based on a Gaussian distribution
 MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets to 0
-
+ROBOT_KP_ANGULAR_MOVEMENT = 1 # Angular movement speed factor
 
 # --- Environmental & Sensor Simulation ---
 ILLUMINATION_INTENSITY = 30
