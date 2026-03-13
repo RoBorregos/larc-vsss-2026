@@ -81,7 +81,7 @@ class Robot(Entity):
 
         self.real_vx = new_vx
         self.real_vy = new_vy
-        self.real_theta_vel = msg.angular.z
+        self.real_angular_vel = msg.angular.z
 
     def _simulation_kick(self, msg):
         if msg.data:
@@ -96,9 +96,11 @@ class Robot(Entity):
     def stop(self):
         self.ros_handler.publish_stop(self.id, True)
 
-    def move(self, speed, angle):
+    def move(self, speed, angle, facing_target_deg):
         self.ros_handler.publish_stop(self.id, False)
-        self.ros_handler.publish_omni_move(self.id, speed, angle)
+
+        facing_error = self.theta - math.radians(facing_target_deg)
+        self.ros_handler.publish_omni_move(self.id, speed, angle, facing_error)
 
     def kicker(self, active):
         self.ros_handler.publish_kicker(self.id, active)
