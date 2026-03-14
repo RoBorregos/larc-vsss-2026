@@ -12,6 +12,7 @@ last_print_time = 0
 
 def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
     global last_print_time
+
     roles.select(team_robots, ball, 'LEFT')
 
     attacker = roles.get_attacker(team_robots)
@@ -83,7 +84,5 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         if distance > constants.HELPER_MINIMUM_DISTANCE_TO_ATTACKER:
             fx, fy = field(helper, target_x, target_y, enemy_robots, team_robots, ball)
             speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
-            print(f"Going to {target_x:.2f}, {target_y:.2f} {(move_angle * 3.14/180):.2f}°")
 
-
-        helper.move(speed, move_angle, 90)
+        helper.move(speed, move_angle, 0)
