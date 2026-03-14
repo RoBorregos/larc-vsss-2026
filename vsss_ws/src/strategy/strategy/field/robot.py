@@ -28,10 +28,6 @@ class Robot(Entity):
         self.detail_colors = [colors[2], colors[1]] # I don't know why, it just does + is not critical to find why
         self.role = None
 
-        self.canvas_id = None
-        self.mark_ids = []
-        self.text_id = None
-
         self.sub_cmd_vel = None
         self.sub_kicker = None
         self.sub_stop = None
@@ -60,17 +56,12 @@ class Robot(Entity):
         )
 
     def destroy(self, canvas):
-        if self.canvas_id:
-            canvas.delete(self.canvas_id)
-        if self.text_id:
-            canvas.delete(self.text_id)
-        for m_id in self.mark_ids:
-            canvas.delete(m_id)
-
         if self.sub_cmd_vel:
             self.ros_handler.destroy_subscription(self.sub_cmd_vel)
         if self.sub_stop:
             self.ros_handler.destroy_subscription(self.sub_stop)
+        if self.sub_kicker:
+            self.ros_handler.destroy_subscription(self.sub_kicker)
 
     def _simulation_move(self, msg):
         new_vx = msg.linear.x + random.gauss(0, abs(msg.linear.x) * constants.MOVEMENT_NOISE)
@@ -125,9 +116,7 @@ class Robot(Entity):
             rotated_points_tk.extend([rx, ry])
             rotated_points_pil.append((rx, ry))
 
-        if self.canvas_id:
-            canvas.delete(self.canvas_id)
-        self.canvas_id = canvas.create_polygon(rotated_points_tk, fill=self.main_color, outline="black")
+        canvas.create_polygon(rotated_points_tk, fill=self.main_color, outline="black")
 
         draw_context.polygon(rotated_points_pil, fill=self.main_color, outline="black")
         self._draw_identification_marks(canvas, draw_context, screen_x, screen_y, size)
@@ -137,11 +126,8 @@ class Robot(Entity):
         text_offset = size / 2 + constants.TEXT_OFFSET
         text_y = screen_y - text_offset
 
-        if self.text_id:
-            canvas.delete(self.text_id)
-
         if self.role:
-            self.text_id = canvas.create_text(
+            canvas.create_text(
                 screen_x, text_y,
                 text=self.role,
                 fill="white",
@@ -150,10 +136,6 @@ class Robot(Entity):
             )
 
     def _draw_identification_marks(self, canvas, draw_context, cx, cy, size):
-        for m_id in self.mark_ids:
-            canvas.delete(m_id)
-        self.mark_ids = []
-
         mark_size = size * 0.5
         half_size = size / 2
 
@@ -185,7 +167,6 @@ class Robot(Entity):
 
                 color_with_illumination = self._change_color_illumination(base_color, intensity=constants.ILLUMINATION_INTENSITY)
                 m = canvas.create_polygon(rotated_m_tk, fill=color_with_illumination, outline="black")
-                self.mark_ids.append(m)
 
                 texture = self._generate_noisy_texture(tex_w, tex_h, color_with_illumination, intensity=constants.ILLUMINATION_INTENSITY)
 

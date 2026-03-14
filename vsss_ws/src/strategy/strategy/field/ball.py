@@ -20,11 +20,8 @@ class Ball(Entity):
 
         print(f"started real values with: r({start_x}, {start_y}) - v({self.real_x}, {self.real_y})")
 
-        self.canvas_id = None
-
     def destroy(self, canvas):
-        if self.canvas_id:
-            canvas.delete(self.canvas_id)
+        pass
 
 
     def draw(self, canvas, draw_context):
@@ -37,17 +34,13 @@ class Ball(Entity):
             screen_y + self.screen_radius
         ]
 
-        if self.canvas_id:
-            canvas.coords(self.canvas_id, *bbox)
-        else:
-            self.canvas_id = canvas.create_oval(
-                *bbox,
-                fill="orange",
-                outline="black",
-                width=10,
-                tags="ball",
-            )
-        canvas.tag_raise(self.canvas_id)
+        canvas.create_oval(
+            *bbox,
+            fill="orange",
+            outline="black",
+            width=10,
+            tags="ball",
+        )
         draw_context.ellipse(
             bbox,
             fill="orange",
