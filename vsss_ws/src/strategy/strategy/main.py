@@ -77,6 +77,7 @@ def main():
     def loop():
         nonlocal last_pub_time
         current_time = millis()
+        canvas.delete("all")
 
         if not object_handler.in_goal_callback:
             field.draw_field(
