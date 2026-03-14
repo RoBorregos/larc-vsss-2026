@@ -71,6 +71,8 @@ class Robot(Entity):
             self.ros_handler.destroy_subscription(self.sub_cmd_vel)
         if self.sub_stop:
             self.ros_handler.destroy_subscription(self.sub_stop)
+        if self.sub_kicker:
+            self.ros_handler.destroy_subscription(self.sub_kicker)
 
     def _simulation_move(self, msg):
         new_vx = msg.linear.x + random.gauss(0, abs(msg.linear.x) * constants.MOVEMENT_NOISE)
