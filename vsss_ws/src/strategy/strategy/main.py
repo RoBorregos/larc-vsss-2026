@@ -79,6 +79,7 @@ def main():
         current_time = millis()
 
         if not object_handler.in_goal_callback:
+            canvas.delete("all")
             field.draw_field(
                 canvas,
                 draw_context,
