@@ -80,6 +80,7 @@ def main():
 
         if not object_handler.in_goal_callback:
             canvas.delete("all")
+            image_buffer.paste("black", [0, 0, int(canvas_w), int(canvas_h)])
             field.draw_field(
                 canvas,
                 draw_context,
