@@ -47,17 +47,34 @@ def distance_between(robot, ball):
     return math.hypot(dx, dy)
 
 def angle_between(robot, ball):
-    rx = robot.x
-    ry = robot.y
-
-    bx = ball.x
-    by = ball.y
-
-    dx = bx - rx
-    dy = by - ry
+    dx = ball.x - robot.x
+    dy = ball.y - robot.y
 
     return math.atan2(dy, dx)
 
+def angle_between_relative(robot, ball):
+    dx = ball.x - robot.x
+    dy = ball.y - robot.y
+
+    absolute_angle = math.atan2(dy, dx)
+    relative_angle = absolute_angle - robot.theta
+    relative_angle = (relative_angle + math.pi) % (2 * math.pi) - math.pi
+
+    return relative_angle
+
+
+def get_dynamic_threshold(distance):
+    d_min, angle_max = constants.DISTANCE_THRESHOLD_MIN, constants.ANGLE_THRESHOLD_MAX
+    d_max, angle_min = constants.DISTANCE_THRESHOLD_MAX, constants.ANGLE_THRESHOLD_MIN
+
+    if distance <= d_min:
+        return angle_max
+    if distance >= d_max:
+        return angle_min
+
+    threshold = angle_max + (distance - d_min) * (angle_min - angle_max) / (d_max - d_min)
+
+    return threshold
 
 def millis():
     return int(time.perf_counter() * 1000)

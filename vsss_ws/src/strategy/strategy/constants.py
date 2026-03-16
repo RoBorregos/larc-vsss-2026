@@ -13,7 +13,12 @@ ROBOT_RADIUS = 3.75
 BALL_RADIUS = 2.135
 
 # --- Navigation & Control Thresholds ---
-ANGLE_THRESHOLD = 15    # Tolerance in degrees for alignment
+ANGLE_THRESHOLD_MIN = 15    # Tolerance in degrees for alignment when the distance is to the maximum
+DISTANCE_THRESHOLD_MAX = 0.4 # Distance where the angle threshold is set to min
+
+ANGLE_THRESHOLD_MAX = 30
+DISTANCE_THRESHOLD_MIN = 0.05 # Distance where the angle threshold is set to max
+
 ANGLE_OFFSET = 40       # Applied offset for orbital movement
 BASE_SPEED = 0.10       # Movement speed for non-path-planning movement
 
@@ -64,7 +69,7 @@ DOWN = 90
 UP = 270
 
 # --- Goal Post Geometry & Detection Areas ---
-DISTANCE_TO_BALL_THRESHOLD = 0.15
+DISTANCE_TO_BALL_THRESHOLD = 0.3
 ZONE_GOAL = {
     "x": DISPLAY_FIELD_WIDTH / 100 / 2,
     "y": 0,
@@ -133,7 +138,7 @@ WALL_GAIN = 0.1 # Strength of repulsion from field walls
 EXPAND_INFLUENCE_RADIUS = 1.5
 EXPAND_REPULSIVE_GAIN = 0.15
 WALL_MARGIN = 0.06 # Distance from wall where wall repulsion starts acting
-BEHIND_BALL_OFFSET = 0.10 # Distance behind the ball where the attacker aims to position
+BEHIND_BALL_OFFSET = 0.20 # Distance behind the ball where the attacker aims to position
 MAX_FIELD = 4.0 # Maximum magnitude allowed for the total vector field
 BLOCKING_WIDTH = 0.18 # Width of the corridor considered for blocking detection
 VORTEX_GAIN = 3.0 # Strength of the tangential component in the rolling vector when blocking is detected
@@ -147,7 +152,7 @@ ROBOT_VORTEX_SIDE = {} # Variable to store the assigned vortex side for each rob
 # --- Robot Movement & Precision ---
 MOVEMENT_NOISE = 0.2      # Deviation based on a Gaussian distribution
 MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets to 0
-
+ROBOT_KP_ANGULAR_MOVEMENT = 1 # Angular movement speed factor
 
 # --- Environmental & Sensor Simulation ---
 ILLUMINATION_INTENSITY = 30
