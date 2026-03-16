@@ -22,6 +22,8 @@ def generate_launch_description():
                 ('cmd_vel', ['/strategy/robot_', LaunchConfiguration('robot_id'), '/cmd_vel']),
                 ('stop', ['/strategy/robot_', LaunchConfiguration('robot_id'), '/stop']),
                 ('kicker', ['/strategy/robot_', LaunchConfiguration('robot_id'), '/kicker']),
+                ('telemetry', ['/communication/robot_', LaunchConfiguration('robot_id'), '/telemetry']),
+                ('rpms', ['/communication/robot_', LaunchConfiguration('robot_id'), '/rpms'])
             ],
             parameters=[params]
         )

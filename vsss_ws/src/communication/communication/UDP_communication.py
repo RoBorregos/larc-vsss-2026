@@ -3,16 +3,16 @@
 # ROS2 node for sending RPMs to robots via UDP, subscribing to cmd_vel for each robot
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist, Quaternion
-from std_msgs.msg import Float32MultiArray, Bool
+from geometry_msgs.msg import Twist
+from std_msgs.msg import Float32MultiArray, Bool, Float32
 import socket
 import struct
 import math
 
-beta = 30  # degrees
-gama = 0 # degrees
+BETA = math.radians(30)  # degrees
+GAMA = 0 # degrees
 OMEGA_TO_RPM = 60 / (2 * math.pi)  # Conversion factor from rad/s to RPM
-COS_30 = math.cos(math.radians(beta))
+COS_30 = math.cos(BETA) 
 
 
 class RobotUDPClient:
@@ -47,8 +47,8 @@ class RobotUDPClient:
             try:
                 data, _ = self.client_socket.recvfrom(buffer_size)
                 
-                if len(data) == 16:  # Expecting at least 16 bytes for 4 floats
-                    latest_orientation = struct.unpack('<ffff', data)
+                if len(data) == 4:  # Expecting at least 4 bytes for 1 float
+                    latest_orientation = struct.unpack('<f', data)
                 elif len(data) == 12:  # Expecting at least 12 bytes for 3 floats
                     latest_rpms = struct.unpack('<fff', data)
                 
@@ -77,18 +77,7 @@ class RobotUDPClient:
         if self.client_socket:
             self.client_socket.close()
             self.client_socket = None
-
-def twist_to_rpm(twist, wheel_radius=0.01431, wheel_distance=0.0311):
-    # Convert Twist message to RPM for three-wheeled robot
-    vx = twist.linear.x  # Forward velocity
-    vy = twist.linear.y  # Sideways velocity 
-    wz = twist.angular.z  # Angular velocity
-    
-    rpm_left = (-wheel_distance * wz  + COS_30 * vx + 0.5 * vy) * OMEGA_TO_RPM / wheel_radius
-    rpm_right = (-wheel_distance * wz - COS_30 * vx + 0.5 * vy) * OMEGA_TO_RPM / wheel_radius
-    rpm_back = (-wheel_distance * wz - vx) * OMEGA_TO_RPM / wheel_radius
-    
-    return rpm_left, rpm_right, rpm_back
+            
 
 class SingleRobotUDPNode(Node):
     def __init__(self): 
@@ -97,13 +86,14 @@ class SingleRobotUDPNode(Node):
         
         self.get_logger().info(f"Waiting to Start")
         self.declare_parameter('robot_name', 'vsss_robot')
-        self.declare_parameter('robot_ip', '192.168.0.221')
-        self.declare_parameter('robot_port', 8081)    
+        self.declare_parameter('robot_ip', '0.0.0.0')
+        self.declare_parameter('communication_port', 8081)    
         self.latest_setpoints = [0, 0, 0]
+        self.robot_yaw = 0.0
 
         name = self.get_parameter('robot_name').value
         ip = self.get_parameter('robot_ip').value
-        port = self.get_parameter('robot_port').value
+        port = self.get_parameter('communication_port').value
         
         node_name = self.get_fully_qualified_name()
         cmd_vel_topic = self.resolve_topic_name('cmd_vel')
@@ -117,7 +107,7 @@ class SingleRobotUDPNode(Node):
         self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
         self.get_logger().info(f"Subscribed to {cmd_vel_topic} for {name} ({ip}:{port})")
         
-        self.telemetry_pub = self.create_publisher(Quaternion, 'telemetry', 10)
+        self.telemetry_pub = self.create_publisher(Float32, 'telemetry', 10)
         self.get_logger().info(f"Publishing telemetry to {telemetry_topic} for {name} ({ip}:{port})")
         
         self.rpms_pub = self.create_publisher(Float32MultiArray, 'rpms', 10)
@@ -139,13 +129,11 @@ class SingleRobotUDPNode(Node):
         if orientation_data:
             # Publish received telemetry
             
-            orientation_msg = Quaternion()
-            orientation_msg.x = orientation_data[0]
-            orientation_msg.y = orientation_data[1]
-            orientation_msg.z = orientation_data[2]
-            orientation_msg.w = orientation_data[3]
+            orientation_msg = Float32()
+            self.robot_yaw = math.radians(orientation_data[0])  # Update global yaw variable
+            orientation_msg.data = self.robot_yaw
             self.telemetry_pub.publish(orientation_msg)
-            self.get_logger().info(f"Received telemetry: {orientation_msg.x:.2f}, {orientation_msg.y:.2f}, {orientation_msg.z:.2f}, {orientation_msg.w:.2f}")
+            self.get_logger().info(f"Received telemetry: {orientation_msg.data:.2f}")
         
         if rpms_data:
             rpms_msg = Float32MultiArray()
@@ -173,11 +161,27 @@ class SingleRobotUDPNode(Node):
         super().destroy_node()
 
     def cmd_vel_callback(self, msg):
-        rpm_left, rpm_right, rpm_back = twist_to_rpm(msg)
+        rpm_left, rpm_right, rpm_back = self.twist_to_rpm(msg)
         self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
         sent = self.client.send_floats(rpm_left, rpm_right, rpm_back)
 
         self.get_logger().info(f"Sent: F={rpm_left:.2f} R={rpm_right:.2f} L={rpm_back:.2f}") 
+        
+    def twist_to_rpm(self, twist, wheel_radius=0.01431, wheel_distance=0.0311):
+        # Convert Twist message to RPM for three-wheeled robot
+        vx = twist.linear.x  # Forward velocity
+        vy = twist.linear.y  # Sideways velocity 
+        wz = twist.angular.z  # Angular velocity
+
+        # Transform the twist to the frame of the robot
+        vx_t = vx * math.cos(self.robot_yaw) + vy * math.sin(self.robot_yaw)
+        vy_t = vx * -math.sin(self.robot_yaw) + vy * math.cos(self.robot_yaw)
+        
+        rpm_left = (-wheel_distance * wz  + COS_30 * vx_t + 0.5 * vy_t) * OMEGA_TO_RPM / wheel_radius
+        rpm_right = (-wheel_distance * wz - COS_30 * vx_t + 0.5 * vy_t) * OMEGA_TO_RPM / wheel_radius
+        rpm_back = (-wheel_distance * wz - vx_t) * OMEGA_TO_RPM / wheel_radius
+        
+        return rpm_left, rpm_right, rpm_back
 
 def main(args=None):
     rclpy.init(args=args)

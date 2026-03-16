@@ -2,12 +2,12 @@ robot_0:
   communication_node_robot_0:
     ros__parameters:
       robot_name: "vsss_robot"
-      robot_ip: "192.168.0.220"
-      communication_port: 8000
+      robot_ip: "192.168.0.161"
+      communication_port: 8081
 
 robot_1:
   communication_node_robot_1:
     ros__parameters:
       robot_name: "gancho"
-      robot_ip: "192.168.0.221"
+      robot_ip: "0,0,0,0"
       communication_port: 8000
