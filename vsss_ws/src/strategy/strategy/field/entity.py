@@ -9,6 +9,7 @@ class Entity:
         self.real_theta = 0.0
         self.real_vx = 0.0
         self.real_vy = 0.0
+        self.real_angular_vel = 0.0
         self.weight = 0.0
 
         # --- ESTIMATED STATE (vision/detection) ---
@@ -83,9 +84,14 @@ class Entity:
     def apply_physics(self, dt):
         self.real_x += self.real_vx * dt
         self.real_y += self.real_vy * dt
+        self.real_theta += self.real_angular_vel * dt
+
+        # Angle normalization
+        self.real_theta = math.atan2(math.sin(self.real_theta), math.cos(self.real_theta))
 
         self.real_vx *= constants.FRICTION
         self.real_vy *= constants.FRICTION
+        self.real_angular_vel *= constants.FRICTION
 
     def request_prediction(self, seconds_in_future):
         if self.is_predicting:

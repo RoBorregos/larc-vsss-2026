@@ -66,13 +66,15 @@ class Robot(Entity):
     def _simulation_move(self, msg):
         new_vx = msg.linear.x + random.gauss(0, abs(msg.linear.x) * constants.MOVEMENT_NOISE)
         new_vy = msg.linear.y + random.gauss(0, abs(msg.linear.y) * constants.MOVEMENT_NOISE)
+        new_angular_vel = msg.angular.z + random.gauss(0, constants.MOVEMENT_NOISE)
 
         if math.fabs(new_vx) <= constants.MIN_SPEED: new_vx = 0
         if math.fabs(new_vy) <= constants.MIN_SPEED: new_vy = 0
+        if math.fabs(new_angular_vel) <= constants.MIN_SPEED: new_angular_vel = 0
 
         self.real_vx = new_vx
         self.real_vy = new_vy
-        self.real_theta_vel = msg.angular.z
+        self.real_angular_vel = msg.angular.z
 
     def _simulation_kick(self, msg):
         if msg.data:
@@ -87,9 +89,14 @@ class Robot(Entity):
     def stop(self):
         self.ros_handler.publish_stop(self.id, True)
 
-    def move(self, speed, angle):
+    def move(self, speed, angle, facing_target_deg):
         self.ros_handler.publish_stop(self.id, False)
-        self.ros_handler.publish_omni_move(self.id, speed, angle)
+
+        target_rad = math.radians(facing_target_deg)
+        diff = self.theta - target_rad
+        facing_error = (diff + math.pi) % (2 * math.pi) - math.pi
+
+        self.ros_handler.publish_omni_move(self.id, speed, angle, facing_error)
 
     def kicker(self, active):
         self.ros_handler.publish_kicker(self.id, active)

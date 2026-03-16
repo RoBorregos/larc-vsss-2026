@@ -8,6 +8,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from vsss_vision.srv import Prediction
 from std_msgs.msg import Bool
+from . import constants
 
 class RosHandler(Node):
     def __init__(self, infield_objects):
@@ -33,8 +34,6 @@ class RosHandler(Node):
             pose = self._fetch_transform(frame_id)
             if pose:
                 self.current_poses[frame_id] = pose
-
-
 
     def _fetch_transform(self, frame_name):
         try:
@@ -67,7 +66,7 @@ class RosHandler(Node):
         msg = self.bridge.cv2_to_imgmsg(cv_image, encoding="bgr8")
         self.image_pub.publish(msg)
 
-    def publish_omni_move(self, robot_id, speed, angle):
+    def publish_omni_move(self, robot_id, speed, angle, facing_error):
         topic_name = f'/strategy/robot_{robot_id}/cmd_vel'
         if topic_name not in self.publishers_map:
             self.publishers_map[topic_name] = self.create_publisher(Twist, topic_name, 10)
@@ -75,7 +74,8 @@ class RosHandler(Node):
         msg = Twist()
         msg.linear.x = float(speed * math.cos(angle))
         msg.linear.y = float(speed * math.sin(angle))
-        msg.angular.z = 0.0
+
+        msg.angular.z = float(constants.ROBOT_KP_ANGULAR_MOVEMENT * facing_error)
         self.publishers_map[topic_name].publish(msg)
 
     def publish_kicker(self, robot_id, active):
