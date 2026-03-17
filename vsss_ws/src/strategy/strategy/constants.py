@@ -9,8 +9,10 @@ KICK_FORCE = 0.3          # Force applied to the ball when the ball is kicked
 FIELD_WIDTH = 1.5
 FIELD_HEIGHT = 1.3
 
-ROBOT_RADIUS = 3.75
-BALL_RADIUS = 2.135
+ROBOT_RADIUS_CM = 3.75
+BALL_RADIUS_CM = 2.1335
+ROBOT_SLIT_LENGTH = 0.05
+ROBOT_SLIT_DEPTH = 0.0115
 
 # --- Navigation & Control Thresholds ---
 ANGLE_THRESHOLD_MIN = 15    # Tolerance in degrees for alignment when the distance is to the maximum

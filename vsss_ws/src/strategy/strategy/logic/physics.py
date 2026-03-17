@@ -1,8 +1,6 @@
-from bdb import effective
-
 from .utils import angle_between
 from .. import constants
-from ..field.ball import Ball
+import numpy as np
 import math
 
 def check_wall_collision(entity, goal_callback, canvas):
@@ -70,7 +68,6 @@ def get_axes(entity):
         (-math.sin(angle), math.cos(angle))
     ]
 
-
 def project_entity_axes(entity, axis):
     # Split vectors into x and y components
     ax, ay = axis
@@ -84,23 +81,49 @@ def project_entity_axes(entity, axis):
     # The apothem of the robot
     r = entity.real_radius
     angle = entity.theta
+    center = np.array([cx, cy])
 
     # Calculate the vectors from the robot center to the edges
-    dx = math.cos(angle) * r
-    dy = math.sin(angle) * r
-    ux = -math.sin(angle) * r
-    uy = math.cos(angle) * r
+    rotational_matrix = np.array([
+        [math.cos(angle), -math.sin(angle)],
+        [math.sin(angle), math.cos(angle)]
+    ])
 
-    # Combinate the field coordinates, with the vectors of the robot center to the edges
-    corners = [
-        (cx + dx + ux, cy + dy + uy),
-        (cx + dx - ux, cy + dy - uy),
-        (cx - dx + ux, cy - dy + uy),
-        (cx - dx - ux, cy - dy - uy)
-    ]
+    direction = np.array([
+        [1, 1],  # TR
+        [1, -1],  # BR
+        [-1, -1],  # BL
+        [-1, 1]  # TL
+    ])
 
-    # Project each of the 4 corners onto the axis using the Dot Product
-    projections = [px * ax + py * ay for px, py in corners]
+    corners = (direction * r) @ rotational_matrix.T + center
+
+    ellipse_a = constants.ROBOT_SLIT_DEPTH
+    ellipse_b = constants.ROBOT_SLIT_LENGTH / 2
+    amount_of_steps = 10
+
+    x_values = np.linspace(-ellipse_b, ellipse_b, amount_of_steps)
+    y_values = (ellipse_a / ellipse_b) * np.sqrt(ellipse_b ** 2 - x_values ** 2)
+    slit_coordinates = np.column_stack((x_values, y_values))
+
+    offset = np.array([
+        r * math.cos(angle),
+        r * math.sin(angle),
+    ])
+    angle += math.pi / 2
+    rotational_matrix = np.array([
+        [math.cos(angle), -math.sin(angle)],
+        [math.sin(angle), math.cos(angle)]
+    ])
+
+    rotated_slits = slit_coordinates @ rotational_matrix.T + center + offset
+
+    points = np.vstack((corners, rotated_slits))
+    if entity.role == 'attacker':
+        print(points.tolist())
+
+    # Project each of the points onto the axis using the Dot Product
+    projections = [px * ax + py * ay for px, py in points]
     return [min(projections), max(projections)]
 
 def kick_ball(ball, robot):

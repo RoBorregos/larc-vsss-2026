@@ -58,9 +58,9 @@
         "focus": 0.0
     },
     "color_calibration": {
-        "bilateral_sigma": 35.925926208496094,
+        "bilateral_sigma": 100.0,
         "blue_boost": 1.0,
-        "clahe_clip_limit": 0.41148146986961365,
+        "clahe_clip_limit": 1.0,
         "gamma_correction_s": 1.0,
         "gamma_correction_v": 1.0,
         "green_boost": 1.0,
@@ -293,7 +293,7 @@
         "h_max": 180.0,
         "h_min": 0.0,
         "s_max": 255.0,
-        "s_min": 15.11111068725586,
+        "s_min": 0.0,
         "v_max": 255.0,
         "v_min": 0.0
     },

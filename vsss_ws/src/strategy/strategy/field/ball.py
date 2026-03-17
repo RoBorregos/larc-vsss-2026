@@ -12,8 +12,8 @@ class Ball(Entity):
         super().__init__(ros_handler, ball_id)
         self.id = 20
         self.weight = 48
-        self.screen_radius = constants.BALL_RADIUS * constants.DISPLAY_SCALE
-        self.real_radius = constants.BALL_RADIUS / 100
+        self.screen_radius = constants.BALL_RADIUS_CM * constants.DISPLAY_SCALE
+        self.real_radius = constants.BALL_RADIUS_CM / 100
         self.real_x = start_x
         self.real_y = start_y
         self.real_theta = start_theta
