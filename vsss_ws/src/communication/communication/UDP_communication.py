@@ -141,9 +141,10 @@ class SingleRobotUDPNode(Node):
             self.rpms_pub.publish(rpms_msg)
             self.get_logger().info(f"Received RPMs: F={rpms_msg.data[0]:.2f}, R={rpms_msg.data[1]:.2f}, L={rpms_msg.data[2]:.2f}")
     
-    def stop_callback(self):
-        self.get_logger().info("Stop command received, sending zero RPMs")
-        self.client.send_floats(0.0, 0.0, 0.0)
+    def stop_callback(self, msg):
+        if msg.data:
+            self.get_logger().info("Stop command received, sending zero RPMs")
+            self.client.send_floats(0.0, 0.0, 0.0)
         
     def kicker_callback(self, msg):
         if msg.data:
