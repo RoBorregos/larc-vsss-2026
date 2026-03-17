@@ -4,10 +4,6 @@
 #include <Adafruit_Sensor.h>
 #include "MotorController.h"
 
-// Replace with your server/router ,etc 
-const char* ssid = "vsss_r";
-const char* password = "vsss1234";
-
 // UDP Server
 WiFiUDP udp;
 const int localPort = 8081;
