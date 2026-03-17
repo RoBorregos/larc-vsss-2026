@@ -8,12 +8,9 @@ from std_msgs.msg import Float32MultiArray, Bool, Float32
 import socket
 import struct
 import math
+import sys
 
-BETA = math.radians(30)  # degrees
-GAMA = 0 # degrees
-OMEGA_TO_RPM = 60 / (2 * math.pi)  # Conversion factor from rad/s to RPM
-COS_30 = math.cos(BETA) 
-
+from communication.constants import BETA, GAMA, OMEGA_TO_RPM, COS_30, SIN_30
 
 class RobotUDPClient:
     def __init__(self, robot_ip, robot_port):
@@ -47,9 +44,9 @@ class RobotUDPClient:
             try:
                 data, _ = self.client_socket.recvfrom(buffer_size)
                 
-                if len(data) == 4:  # Expecting at least 4 bytes for 1 float
+                if len(data) == sys.getsizeof(float):  # Expecting at least 4 bytes for 1 float
                     latest_orientation = struct.unpack('<f', data)
-                elif len(data) == 12:  # Expecting at least 12 bytes for 3 floats
+                elif len(data) == 3 * sys.getsizeof(float):  # Expecting at least 12 bytes for 3 floats
                     latest_rpms = struct.unpack('<fff', data)
                 
             except BlockingIOError:
@@ -59,13 +56,13 @@ class RobotUDPClient:
         
         return latest_orientation, latest_rpms
 
-    def send_floats(self, float1, float2, float3, float4=0.0):
+    def udp_command(self, rpm_left, rpm_right , rpm_back, kicker=0.0):
         if not self.client_socket:
             print("UDP socket not available.")
             return False
         try:
             # Pack both floats into a single UDP packet
-            packed_data = struct.pack('<ffff', float1, float2, float3, float4)
+            packed_data = struct.pack('<ffff', rpm_left, rpm_right, rpm_back, kicker)
             self.client_socket.sendto(packed_data, (self.robot_ip, self.robot_port))
             
         except socket.error as e:
@@ -144,15 +141,15 @@ class SingleRobotUDPNode(Node):
     def stop_callback(self, msg):
         if msg.data:
             self.get_logger().info("Stop command received, sending zero RPMs")
-            self.client.send_floats(0.0, 0.0, 0.0)
+            self.client.udp_command(0.0, 0.0, 0.0)
         
     def kicker_callback(self, msg):
         if msg.data:
             self.get_logger().info("Kicker command received, sending kicker signal")
-            self.client.send_floats(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 1.0)
+            self.client.udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 1.0)
         else: 
             self.get_logger().info("Kicker release command received, sending normal setpoints")
-            self.client.send_floats(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 0.0)
+            self.client.udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 0.0)
             
         
     def destroy_node(self):
@@ -164,9 +161,9 @@ class SingleRobotUDPNode(Node):
     def cmd_vel_callback(self, msg):
         rpm_left, rpm_right, rpm_back = self.twist_to_rpm(msg)
         self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
-        sent = self.client.send_floats(rpm_left, rpm_right, rpm_back)
+        sent = self.client.udp_command(rpm_left, rpm_right, rpm_back)
 
-        self.get_logger().info(f"Sent: F={rpm_left:.2f} R={rpm_right:.2f} L={rpm_back:.2f}") 
+        self.get_logger().info(f"Sent: L={rpm_left:.2f} R={rpm_right:.2f} B={rpm_back:.2f}") 
         
     def twist_to_rpm(self, twist, wheel_radius=0.01431, wheel_distance=0.0311):
         # Convert Twist message to RPM for three-wheeled robot
@@ -178,8 +175,8 @@ class SingleRobotUDPNode(Node):
         vx_t = vx * math.cos(self.robot_yaw) + vy * math.sin(self.robot_yaw)
         vy_t = vx * -math.sin(self.robot_yaw) + vy * math.cos(self.robot_yaw)
         
-        rpm_left = (-wheel_distance * wz  + COS_30 * vx_t + 0.5 * vy_t) * OMEGA_TO_RPM / wheel_radius
-        rpm_right = (-wheel_distance * wz - COS_30 * vx_t + 0.5 * vy_t) * OMEGA_TO_RPM / wheel_radius
+        rpm_left = (-wheel_distance * wz  + COS_30 * vx_t + SIN_30 * vy_t) * OMEGA_TO_RPM / wheel_radius
+        rpm_right = (-wheel_distance * wz - COS_30 * vx_t + SIN_30 * vy_t) * OMEGA_TO_RPM / wheel_radius
         rpm_back = (-wheel_distance * wz - vx_t) * OMEGA_TO_RPM / wheel_radius
         
         return rpm_left, rpm_right, rpm_back
