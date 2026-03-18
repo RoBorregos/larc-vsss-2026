@@ -3,7 +3,7 @@ from typing import List
 from ..field.ball import Ball
 from ..field.robot import Robot
 from . import roles
-from .utils import distance_to_goal, distance_between, angle_between, angle_between_relative, get_dynamic_threshold
+from .utils import distance_to_goal, distance_between, angle_between, angle_between_relative, get_dynamic_threshold, clamp
 from .. import constants
 from .path_planning import *
 import time
@@ -92,8 +92,9 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         dx_ball = ball.x - defender.x
         dy_ball = ball.y - defender.y
         global_angle = math.atan2(dy_ball, dx_ball)
+        orientation = clamp(math.degrees(global_angle), -180, 180)
 
-    defender.move(speed, move_angle, math.degrees(global_angle))
+        defender.move(speed, move_angle, orientation)
 
     if helper:
         target_x = attacker.x - constants.HELPER_FOLLOW_DISTANCE
