@@ -14,9 +14,9 @@ def approach_side(robot, target_x, target_y, obstacle_x, obstacle_y):
     cross = (vector_target[0] * vector_obstacle[1]) - (vector_target[1] * vector_obstacle[0]);
 
     if cross > 0:
-        return 1
-    else:
         return -1
+    else:
+        return 1
 
 
 def attractive_vector(robot, target_x, target_y):
@@ -39,26 +39,24 @@ def is_obstacle_blocking(robot, obstacle, target_x, target_y):
     ty = target_y - robot.y
     t_norm = math.hypot(tx, ty)
 
-    # Avoid division by 0 if the robot is the same
     if t_norm == 0: return False
 
     tx /= t_norm
     ty /= t_norm
 
-    # Position of the obstacle relaltive to the robot
+    # Position of the obstacle relative to the robot
     ox = obstacle.x - robot.x
     oy = obstacle.y - robot.y
 
     # Check if it is in front or behind
     projection = ox * tx + oy * ty
 
-    if projection <= 0:
+    if projection <= 0 or projection > t_norm:
         return False
 
     closest_x = robot.x + projection * tx
     closest_y = robot.y + projection * ty
 
-    # Find the distance to the obstacle center
     perp_dist = math.hypot(obstacle.x - closest_x, obstacle.y - closest_y)
     return perp_dist < constants.BLOCKING_WIDTH
 

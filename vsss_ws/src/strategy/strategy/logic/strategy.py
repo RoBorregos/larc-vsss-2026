@@ -41,21 +41,21 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         target_y = ball.y - constants.BEHIND_BALL_OFFSET * math.sin(attacker.theta)
 
         path_to_target_blocked = False
-        entities = [ball, *team_robots, *enemy_robots]
+        entities = [*team_robots, *enemy_robots]
         for entity in entities:
             entity_blocking = is_obstacle_blocking(attacker, entity, target_x, target_y)
-            if entity_blocking: path_to_target_blocked = True
+            if entity_blocking:
+                print(f"Blocked by entity: {entity.id}")
+                path_to_target_blocked = True
 
         if (math.fabs(relative_angle_deg) > get_dynamic_threshold(distance)
                 or distance > constants.DISTANCE_TO_BALL_THRESHOLD
                 or path_to_target_blocked):
-            print(f"X offset {(constants.BEHIND_BALL_OFFSET * math.cos(attacker.theta)):0.2} Y offset {(constants.BEHIND_BALL_OFFSET * math.sin(attacker.theta)):0.2}")
 
             fx, fy = field(attacker, target_x, target_y, enemy_robots, team_robots, ball)
             speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
         else:
             move_angle = global_angle
-            print(f"Moving to {math.degrees(global_angle)}")
 
         attacker.move(speed, move_angle, math.degrees(0))
 
