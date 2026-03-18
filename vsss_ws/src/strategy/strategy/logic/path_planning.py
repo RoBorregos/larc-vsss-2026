@@ -1,28 +1,22 @@
 import math
 from .. import constants
 from . import utils
+import numpy as np
 
+def approach_side(robot, target_x, target_y, obstacle_x, obstacle_y):
+    pos_robot = np.array([robot.x, robot.y])
+    pos_target = np.array([target_x, target_y])
+    pos_obstacle = np.array([obstacle_x, obstacle_y])
 
-def approach_side(robot, target_x, target_y, attacking_right=True):
-    if robot.id in constants.ROBOT_VORTEX_SIDE:
-        return constants.ROBOT_VORTEX_SIDE[robot.id]
+    vector_target = pos_robot - pos_target
+    vector_obstacle = pos_obstacle - pos_robot
 
-    # Define goal objective
-    goal_x = constants.FIELD_WIDTH / 2 if attacking_right else -constants.FIELD_WIDTH / 2
-    goal_y = 0
+    cross = (vector_target[0] * vector_obstacle[1]) - (vector_target[1] * vector_obstacle[0]);
 
-    # Find relative vectors to the target
-    bgx = goal_x - target_x
-    bgy = goal_y - target_y
-
-    brx = robot.x - target_x
-    bry = robot.y - target_y
-
-    cross = bgx * bry - bgy * brx
-    side = 1 if cross > 0 else -1
-
-    constants.ROBOT_VORTEX_SIDE[robot.id] = side
-    return side
+    if cross > 0:
+        return 1
+    else:
+        return -1
 
 
 def attractive_vector(robot, target_x, target_y):
@@ -45,6 +39,7 @@ def is_obstacle_blocking(robot, obstacle, target_x, target_y):
     ty = target_y - robot.y
     t_norm = math.hypot(tx, ty)
 
+    # Avoid division by 0 if the robot is the same
     if t_norm == 0: return False
 
     tx /= t_norm
@@ -81,7 +76,7 @@ def rolling_vector(robot, obstacle, target_x, target_y):
     # Make the robot
     rx = dx / dist
     ry = dy / dist
-    side = approach_side(robot, target_x, target_y)
+    side = approach_side(robot, target_x, target_y, obstacle.x, obstacle.y)
 
     tang_x = -ry * side
     tang_y = rx * side
