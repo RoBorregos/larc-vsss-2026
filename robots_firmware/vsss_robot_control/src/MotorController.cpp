@@ -50,8 +50,6 @@ void MotorController::setMotor() {
     pcnt_counter_resume(pulse_counter_);
 
     Serial.println("Motor started");
-
-    ledcWrite(PWM_channel_, 128);
 }
 
 void MotorController::newSetpoint(float sp) {
@@ -59,12 +57,13 @@ void MotorController::newSetpoint(float sp) {
 }
 
 float MotorController::readEncoder() {
+    int sec_to_min = 60;
     int16_t count;
 
     pcnt_get_counter_value(pulse_counter_, &count);
     pcnt_counter_clear(pulse_counter_);
 
-    float rpm = (count * 60) / (ENC_RESOLUTION_ * SAMPLING_TIME_);
+    float rpm = (count * sec_to_min) / (ENC_RESOLUTION_ * SAMPLING_TIME_);
 
     return rpm;
 }
@@ -75,6 +74,11 @@ float MotorController::pid(float rpm) {
     differential_error_ = (error - last_error_) / SAMPLING_TIME_;
     integral_error_ += error * SAMPLING_TIME_;
     integral_error_ = constrain(integral_error_, -MAX_INTEGRAL_ERROR_, MAX_INTEGRAL_ERROR_);
+    
+    if (first_interation_) {
+        differential_error_ = 0;
+        first_interation_ = false;
+    }
 
     float correction = kp_ * error + ki_ * differential_error_ + kd_ * integral_error_;
 

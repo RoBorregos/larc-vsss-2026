@@ -34,6 +34,8 @@ private:
 
     float last_correction_ = 0;
 
+    bool first_interation_ = true;
+
 public:
     MotorController(uint8_t in1, uint8_t in2, uint8_t PWM, uint8_t PWM_channel, 
                     uint8_t enc1, uint8_t enc2, pcnt_unit_t unit, float sampling_time_);
