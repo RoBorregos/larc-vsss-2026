@@ -6,7 +6,7 @@
 
 class MotorController {
 private:
-    static constexpr int PWM_FREQUENCY_ = 20000;
+    static constexpr int PWM_FREQUENCY_ = 5000;
     static constexpr int PWM_RESOLUTION_ = 8;
     static constexpr int MAX_PWM_VALUE_ = 255;
     static constexpr float ENC_RESOLUTION_ = 4 * 350;
@@ -22,17 +22,16 @@ private:
     uint8_t enc2_;
     pcnt_unit_t pulse_counter_;
 
-    float setpoint_ = 0;
+    float setpoint_ = 20;
 
-    float kp_;
-    float ki_;
-    float kd_;
+    float kp_ = 1;
+    float ki_ = 0;
+    float kd_ = 0;
 
     float last_error_ = 0;
     float integral_error_ = 0;
     float differential_error_ = 0;
 
-    float rpm_lecture_ = 0;
     float last_correction_ = 0;
 
 public:
@@ -41,9 +40,10 @@ public:
 
     void setMotor();
     void newSetpoint(float sp);
-    void readEncoder();
-    float pid();
+    float readEncoder();
+    float pid(float rpm);
     void move(float pwm);
+    void stop();
 };
 
 #endif

@@ -3,10 +3,7 @@
 MotorController::MotorController(uint8_t in1, uint8_t in2, uint8_t PWM, uint8_t PWM_channel, 
                                 uint8_t enc1, uint8_t enc2, pcnt_unit_t unit, float sampling_time)
     : in1_(in1), in2_(in2), PWM_(PWM), PWM_channel_(PWM_channel), 
-    enc1_(enc1), enc2_(enc2), pulse_counter_(unit), SAMPLING_TIME_(sampling_time) 
-    {
-        setMotor();
-    } 
+    enc1_(enc1), enc2_(enc2), pulse_counter_(unit), SAMPLING_TIME_(sampling_time) {} 
 
 void MotorController::setMotor() {
     pinMode(in1_, OUTPUT);
@@ -51,24 +48,29 @@ void MotorController::setMotor() {
     pcnt_counter_clear(pulse_counter_);
 
     pcnt_counter_resume(pulse_counter_);
+
+    Serial.println("Motor started");
+
+    ledcWrite(PWM_channel_, 128);
 }
 
 void MotorController::newSetpoint(float sp) {
     setpoint_ = sp;
 }
 
-void MotorController::readEncoder() {
+float MotorController::readEncoder() {
     int16_t count;
 
     pcnt_get_counter_value(pulse_counter_, &count);
     pcnt_counter_clear(pulse_counter_);
 
-    float vel = (count * 60) / (ENC_RESOLUTION_ * SAMPLING_TIME_);
-    rpm_lecture_ = vel;
+    float rpm = (count * 60) / (ENC_RESOLUTION_ * SAMPLING_TIME_);
+
+    return rpm;
 }
 
-float MotorController::pid() {
-    float error = setpoint_ - rpm_lecture_;
+float MotorController::pid(float rpm) {
+    float error = setpoint_ - rpm;
 
     differential_error_ = (error - last_error_) / SAMPLING_TIME_;
     integral_error_ += error * SAMPLING_TIME_;
@@ -77,11 +79,6 @@ float MotorController::pid() {
     float correction = kp_ * error + ki_ * differential_error_ + kd_ * integral_error_;
 
     last_error_ = error;  
-
-    correction += last_correction_;
-
-    last_correction_ = correction;
-
     return correction;
 }
 
@@ -102,4 +99,10 @@ void MotorController::move(float pwm) {
         ledcWrite(PWM_channel_, abs(pwm));
     }
 
+}
+
+void MotorController::stop() {
+    digitalWrite(in1_, HIGH);
+    digitalWrite(in2_, HIGH);
+    ledcWrite(PWM_channel_, 0);
 }
