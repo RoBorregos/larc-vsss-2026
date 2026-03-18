@@ -75,7 +75,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
             top_limit = constants.ZONE_GOAL["MIDPOINT_OFFSET"]
             bottom_limit = -constants.ZONE_GOAL["MIDPOINT_OFFSET"]
 
-            target_y = max(min(ball.y, top_limit), bottom_limit)
+            target_y = clamp(ball.y, bottom_limit, top_limit)
 
             error_y = target_y - defender.y
             if abs(error_y) > constants.GOALKEEPER_Y_THRESHOLD:
@@ -92,9 +92,8 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         dx_ball = ball.x - defender.x
         dy_ball = ball.y - defender.y
         global_angle = math.atan2(dy_ball, dx_ball)
-        orientation = clamp(math.degrees(global_angle), -180, 180)
 
-        defender.move(speed, move_angle, orientation)
+        defender.move(speed, move_angle, math.degrees(global_angle))
 
     if helper:
         target_x = attacker.x - constants.HELPER_FOLLOW_DISTANCE
