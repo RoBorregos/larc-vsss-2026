@@ -3,7 +3,7 @@ from typing import List
 from ..field.ball import Ball
 from ..field.robot import Robot
 from . import roles
-from .utils import distance_to_goal, distance_between, angle_between, angle_between_relative, get_dynamic_threshold
+from .utils import distance_to_goal, distance_between, angle_between, angle_between_relative, get_dynamic_threshold, clamp
 from .. import constants
 from .path_planning import *
 import time
@@ -49,24 +49,35 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
             move_angle = global_angle
             print(f"Moving to {math.degrees(global_angle)}")
 
-        attacker.move(speed, move_angle, math.degrees(global_angle))
+        attacker.move(speed, move_angle, math.degrees(0))
 
 
     if defender:
-        dx=0
-        dy=0
+        dx = 0
+        dy = 0
 
         left_limit  = -constants.ZONE_GOAL["x"] - constants.ZONE_GOAL["LEFT_PADDING"]
         right_limit = -constants.ZONE_GOAL["x"] + constants.ZONE_GOAL["RIGHT_PADDING"]
 
+    
         if left_limit > defender.x or right_limit < defender.x:
             target_x = (left_limit + right_limit) / 2
             target_y = 0
 
             fx, fy = field(attacker, target_x, target_y, enemy_robots, team_robots, ball)
             speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
+
+        
+            global_angle = math.atan2(fy, fx)
+
         else:
-            error_y = ball.y - defender.y
+       
+            top_limit = constants.ZONE_GOAL["MIDPOINT_OFFSET"]
+            bottom_limit = -constants.ZONE_GOAL["MIDPOINT_OFFSET"]
+
+            target_y = clamp(ball.y, bottom_limit, top_limit)
+
+            error_y = target_y - defender.y
             if abs(error_y) > constants.GOALKEEPER_Y_THRESHOLD:
                 dy = 1 if error_y > 0 else -1
 
@@ -77,7 +88,12 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
                 move_angle = 0
                 speed = 0
 
-        defender.move(speed, move_angle, 0)
+      
+        dx_ball = ball.x - defender.x
+        dy_ball = ball.y - defender.y
+        global_angle = math.atan2(dy_ball, dx_ball)
+
+        defender.move(speed, move_angle, math.degrees(global_angle))
 
     if helper:
         target_x = attacker.x - constants.HELPER_FOLLOW_DISTANCE
