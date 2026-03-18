@@ -59,7 +59,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         left_limit  = -constants.ZONE_GOAL["x"] - constants.ZONE_GOAL["LEFT_PADDING"]
         right_limit = -constants.ZONE_GOAL["x"] + constants.ZONE_GOAL["RIGHT_PADDING"]
 
-    # 🚨 FUERA DEL ÁREA → usar path planning completo
+    
         if left_limit > defender.x or right_limit < defender.x:
             target_x = (left_limit + right_limit) / 2
             target_y = 0
@@ -67,11 +67,11 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
             fx, fy = field(attacker, target_x, target_y, enemy_robots, team_robots, ball)
             speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
 
-        # 🔥 orientación alineada al vector (NO a la pelota)
+        
             global_angle = math.atan2(fy, fx)
 
         else:
-        # 🧱 DENTRO DEL ÁREA → comportamiento de portero
+       
             top_limit = constants.ZONE_GOAL["MIDPOINT_OFFSET"]
             bottom_limit = -constants.ZONE_GOAL["MIDPOINT_OFFSET"]
 
@@ -88,7 +88,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
                 move_angle = 0
                 speed = 0
 
-        # 👀 mirar SIEMPRE la pelota dentro del área
+      
         dx_ball = ball.x - defender.x
         dy_ball = ball.y - defender.y
         global_angle = math.atan2(dy_ball, dx_ball)
