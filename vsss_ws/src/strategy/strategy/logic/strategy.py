@@ -107,8 +107,15 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         defender.move(speed, move_angle, math.degrees(global_angle))
         
     if helper:
+    
         target_x = attacker.x - constants.HELPER_FOLLOW_DISTANCE
-        target_y = attacker.y
+        
+        if ball.y >= attacker.y:
+            offset = -constants.HELPER_FOLLOW_DISTANCE / 2
+        else:
+            offset = constants.HELPER_FOLLOW_DISTANCE / 2
+
+        target_y = attacker.y + offset
 
         move_dx = target_x - helper.x
         move_dy = target_y - helper.y
@@ -116,6 +123,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
 
         move_angle = 0
         speed = 0
+
         if distance > constants.HELPER_MINIMUM_DISTANCE_TO_ATTACKER:
             fx, fy = field(helper, target_x, target_y, enemy_robots, team_robots, ball)
             speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
