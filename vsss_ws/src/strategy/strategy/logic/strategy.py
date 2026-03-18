@@ -59,6 +59,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         left_limit  = -constants.ZONE_GOAL["x"] - constants.ZONE_GOAL["LEFT_PADDING"]
         right_limit = -constants.ZONE_GOAL["x"] + constants.ZONE_GOAL["RIGHT_PADDING"]
 
+        
     
         if left_limit > defender.x or right_limit < defender.x:
             target_x = (left_limit + right_limit) / 2
@@ -71,17 +72,19 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
             global_angle = math.atan2(fy, fx)
 
         else:
-       
+            
             top_limit = constants.ZONE_GOAL["MIDPOINT_OFFSET"]
             bottom_limit = -constants.ZONE_GOAL["MIDPOINT_OFFSET"]
 
             target_y = clamp(ball.y, bottom_limit, top_limit)
+            target_x = (left_limit + right_limit) / 2
 
-            error_y = target_y - defender.y
-            if abs(error_y) > constants.GOALKEEPER_Y_THRESHOLD:
-                dy = 1 if error_y > 0 else -1
+            dx = target_x - defender.x
+            dy = target_y - defender.y
 
-            if dx != 0 or dy != 0:
+            distance = math.hypot(dx, dy)
+            math.degrees(global_angle)
+            if distance > constants.GOALKEEPER_Y_THRESHOLD:
                 move_angle = math.atan2(dy, dx)
                 speed = constants.BASE_SPEED
             else:
@@ -94,7 +97,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         global_angle = math.atan2(dy_ball, dx_ball)
 
         defender.move(speed, move_angle, math.degrees(global_angle))
-
+        
     if helper:
         target_x = attacker.x - constants.HELPER_FOLLOW_DISTANCE
         target_y = attacker.y
