@@ -39,6 +39,48 @@ def draw_field(canvas, draw_context, width, height):
     canvas.create_rectangle(*rect_field, fill="#000000", outline="white", width=2)
     draw_context.rectangle(rect_field, fill="#000000", outline="white", width=2)
 
+    # Top Left Corner
+    corner_tl_x1 = constants.LEFT_PADDING + constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE
+    corner_tl_y1 = constants.UPPER_PADDING
+    corner_tl_x2 = constants.LEFT_PADDING
+    corner_tl_y2 = constants.UPPER_PADDING + constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE
+    draw_context.line([(corner_tl_x1, corner_tl_y1), (corner_tl_x2, corner_tl_y2)], fill="white", width=2)
+    canvas.create_line(corner_tl_x1, corner_tl_y1, corner_tl_x2, corner_tl_y2, fill="white", width=2)
+
+    # Top Right Corner
+    corner_tr_x1 = (constants.LEFT_PADDING
+                    + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE
+                    - constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE)
+    corner_tr_y1 = constants.UPPER_PADDING
+    corner_tr_x2 = constants.LEFT_PADDING + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE
+    corner_tr_y2 = constants.UPPER_PADDING + constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE
+    draw_context.line([(corner_tr_x1, corner_tr_y1), (corner_tr_x2, corner_tr_y2)], fill="white", width=2)
+    canvas.create_line(corner_tr_x1, corner_tr_y1, corner_tr_x2, corner_tr_y2, fill="white", width=2)
+
+    # Bottom Left Corner
+    corner_bl_x1 = constants.LEFT_PADDING + constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE
+    corner_bl_y1 = constants.UPPER_PADDING + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
+    corner_bl_x2 = constants.LEFT_PADDING
+    corner_bl_y2 = (constants.UPPER_PADDING
+                    + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
+                    - constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE)
+
+    draw_context.line([(corner_bl_x1, corner_bl_y1), (corner_bl_x2, corner_bl_y2)], fill="white", width=2)
+    canvas.create_line(corner_bl_x1, corner_bl_y1, corner_bl_x2, corner_bl_y2, fill="white", width=2)
+
+    # Bottom Right Corner
+    corner_br_x1 = (constants.LEFT_PADDING
+                    + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE
+                    - constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE)
+    corner_br_y1 = constants.UPPER_PADDING + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
+    corner_br_x2 = constants.LEFT_PADDING + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE
+    corner_br_y2 = (constants.UPPER_PADDING
+                    + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
+                    - constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE)
+
+    draw_context.line([(corner_br_x1, corner_br_y1), (corner_br_x2, corner_br_y2)], fill="white", width=2)
+    canvas.create_line(corner_br_x1, corner_br_y1, corner_br_x2, corner_br_y2, fill="white", width=2)
+
     # Center line
     line_center = [
         constants.LEFT_PADDING + width / 2,
