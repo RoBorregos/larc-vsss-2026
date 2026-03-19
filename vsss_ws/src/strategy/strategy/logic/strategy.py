@@ -60,7 +60,6 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
 
         goal_x = constants.ZONE_GOAL["x"]
         goal_y = 0
-
         dx_goal = goal_x - attacker.x
         dy_goal = goal_y - attacker.y
         goal_angle = math.atan2(dy_goal, dx_goal)
