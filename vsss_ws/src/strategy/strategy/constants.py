@@ -74,7 +74,7 @@ DISTANCE_TO_BALL_THRESHOLD = 0.3
 ZONE_GOAL = {
     "x": DISPLAY_FIELD_WIDTH / 100 / 2,
     "y": 0,
-    "LEFT_PADDING": 0.07,
+    "LEFT_PADDING": 0.15,
     "RIGHT_PADDING": 0.15,
     "MIDPOINT_OFFSET": 0.10
 }
@@ -149,6 +149,7 @@ TEAM_INFLUENCE_RADIUS = 0.14 # Distance where team robots start influencing the 
 INFLUENCE_RADIUS = 0.17 # Distance where enemy robots start influencing the field
 BALL_INFLUENCE_RADIUS = 0.12 # Distance where the ball start influencing the field
 ROBOT_VORTEX_SIDE = {} # Variable to store the assigned vortex side for each robot when blocking is detected
+OPTIMAL_ROUTE = False # Set to True to enable optimal route calculation (currently not implemented)
 
 # --- Robot Movement & Precision ---
 MOVEMENT_NOISE = 0.2      # Deviation based on a Gaussian distribution
