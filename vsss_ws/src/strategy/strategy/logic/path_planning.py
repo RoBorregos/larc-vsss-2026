@@ -124,6 +124,9 @@ def repulsion(robot, obstacle, influence_radius, canvas=None):
     if dist > influence_radius or dist == 0:
         return 0.0, 0.0
 
+    if influence_radius == 0:
+        return 0.0, 0.0
+        
     rx = dx / dist
     ry = dy / dist
 
