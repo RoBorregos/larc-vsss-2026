@@ -80,7 +80,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
             target_x = (left_limit + right_limit) / 2
             target_y = 0
 
-            fx, fy = field(attacker, target_x, target_y, enemy_robots, team_robots, ball)
+            fx, fy = field(defender, target_x, target_y, enemy_robots, team_robots, ball)
             speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
 
         

@@ -124,11 +124,14 @@ def repulsion(robot, obstacle, influence_radius, canvas=None):
     if dist > influence_radius or dist == 0:
         return 0.0, 0.0
 
+    if influence_radius == 0:
+        return 0.0, 0.0
+        
     rx = dx / dist
     ry = dy / dist
 
-    ratio = dist / influence_radius
-    strength = constants.ENEMY_REPULSIVE_GAIN * utils.clamp(1 - ratio, 0, 1)
+    sigma = influence_radius / 2.0
+    strength = constants.ENEMY_REPULSIVE_GAIN * math.exp(-dist / sigma)
     return rx * strength, ry * strength
 
 def wall_repulsion(robot):
