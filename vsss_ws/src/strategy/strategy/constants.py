@@ -150,7 +150,7 @@ INFLUENCE_RADIUS = 0.17 # Distance where enemy robots start influencing the fiel
 BALL_INFLUENCE_RADIUS = 0.12 # Distance where the ball start influencing the field
 ROBOT_VORTEX_SIDE = {} # Variable to store the assigned vortex side for each robot when blocking is detected
 OPTIMAL_ROUTE = False # Set to True to enable optimal route calculation (currently not implemented)
-
+OBSTACLE_SAFETY_MARGIN = 0.03
 # --- Robot Movement & Precision ---
 MOVEMENT_NOISE = 0.2      # Deviation based on a Gaussian distribution
 MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets to 0

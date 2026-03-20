@@ -59,9 +59,39 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
 
 
         goal_x = constants.ZONE_GOAL["x"]
-        goal_y = 0
-        dx_goal = goal_x - attacker.x
-        dy_goal = goal_y - attacker.y
+        goal_half = constants.ZONE_GOAL["MIDPOINT_OFFSET"]
+
+        top_post = (goal_x,  goal_half)
+        bottom_post = (goal_x, -goal_half)
+
+        aim_x = goal_x
+        aim_y = 0  # por defecto: centro
+
+        blocking_enemy = None
+        # --- Detectar obstáculo bloqueando tiro al centro ---
+        for enemy in enemy_robots:
+            if is_obstacle_blocking(ball, enemy, goal_x, 0):
+                blocking_enemy = enemy
+                break
+
+        # --- Si hay bloqueo, apuntar al hueco ---
+        if blocking_enemy is not None:
+
+            dist_top = abs(blocking_enemy.y - goal_half)
+            dist_bottom = abs(blocking_enemy.y + goal_half)
+
+            if dist_top < dist_bottom:
+                chosen_post = top_post
+            else:
+                chosen_post = bottom_post
+
+            # Punto medio entre obstáculo y poste
+            aim_x = (blocking_enemy.x + chosen_post[0]) / 2
+            aim_y = (blocking_enemy.y + chosen_post[1]) / 2
+
+        # --- Orientación final ---
+        dx_goal = aim_x - attacker.x
+        dy_goal = aim_y - attacker.y
         goal_angle = math.atan2(dy_goal, dx_goal)
 
         attacker.move(speed, move_angle, math.degrees(goal_angle))

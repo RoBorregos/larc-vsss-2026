@@ -32,11 +32,10 @@ def attractive_vector(robot, target_x, target_y):
     dy /= dist
     return constants.ATTRACTIVE_GAIN * dx, constants.ATTRACTIVE_GAIN * dy
 
-
-def is_obstacle_blocking(robot, obstacle, target_x, target_y):
+def is_obstacle_blocking(entity, obstacle, target_x, target_y):
     # Target vector
-    tx = target_x - robot.x
-    ty = target_y - robot.y
+    tx = target_x - entity.x
+    ty = target_y - entity.y
     t_norm = math.hypot(tx, ty)
 
     if t_norm == 0: return False
@@ -45,8 +44,8 @@ def is_obstacle_blocking(robot, obstacle, target_x, target_y):
     ty /= t_norm
 
     # Position of the obstacle relative to the robot
-    ox = obstacle.x - robot.x
-    oy = obstacle.y - robot.y
+    ox = obstacle.x - entity.x
+    oy = obstacle.y - entity.y
 
     # Check if it is in front or behind
     projection = ox * tx + oy * ty
@@ -54,11 +53,13 @@ def is_obstacle_blocking(robot, obstacle, target_x, target_y):
     if projection <= 0 or projection > t_norm:
         return False
 
-    closest_x = robot.x + projection * tx
-    closest_y = robot.y + projection * ty
+    closest_x = entity.x + projection * tx
+    closest_y = entity.y + projection * ty
 
     perp_dist = math.hypot(obstacle.x - closest_x, obstacle.y - closest_y)
-    return perp_dist < constants.BLOCKING_WIDTH
+
+    safety = 2 * constants.ROBOT_RADIUS + constants.OBSTACLE_SAFETY_MARGIN  # margin
+    return perp_dist < (constants.BLOCKING_WIDTH + safety)
 
 
 def rolling_vector(robot, obstacle, target_x, target_y):
