@@ -49,16 +49,22 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
                 path_to_target_blocked = True
 
         if (math.fabs(relative_angle_deg) > get_dynamic_threshold(distance)
-                or distance > constants.DISTANCE_TO_BALL_THRESHOLD
-                or path_to_target_blocked):
+            or distance > constants.DISTANCE_TO_BALL_THRESHOLD
+            or path_to_target_blocked):
 
             fx, fy = field(attacker, target_x, target_y, enemy_robots, team_robots, ball)
             speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
         else:
             move_angle = global_angle
 
-        attacker.move(speed, move_angle, math.degrees(0))
 
+        goal_x = constants.ZONE_GOAL["x"]
+        goal_y = 0
+        dx_goal = goal_x - attacker.x
+        dy_goal = goal_y - attacker.y
+        goal_angle = math.atan2(dy_goal, dx_goal)
+
+        attacker.move(speed, move_angle, math.degrees(goal_angle))
 
     if defender:
         dx = 0
