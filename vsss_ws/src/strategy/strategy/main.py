@@ -9,6 +9,7 @@ from . import constants
 from strategy.field import field
 from PIL import Image, ImageDraw
 from .logic.strategy import strategy
+from .logic.enemy_strategy import enemy_strategy
 from .logic.object_handler import ObjectHandler
 from .ros_handler import RosHandler
 from .logic.utils import *
@@ -49,7 +50,7 @@ def main():
         {"id": 3, "x": -0.4, "y": 0.4, "theta": math.pi / 2},
         {"id": 4, "x": -0.3, "y": -0.3, "theta": math.pi / 2},
         {"id": 12, "x": 0.3, "y": 0.3, "theta": -math.pi / 2},
-        {"id": 17, "x": 0.4, "y": 0, "theta": -math.pi / 2},
+        {"id": 17, "x": 0.6, "y": 0, "theta": -math.pi / 2},
         {"id": 18, "x": 0.3, "y": -0.3, "theta": -math.pi / 2},
     ]
 
@@ -93,6 +94,7 @@ def main():
         ball = object_handler.get_ball()
 
         strategy(ball, team_robots, enemy_robots)
+        enemy_strategy(ball, enemy_robots)
 
         for robot in team_robots:
             path_planning.repulsion(robot, robot, constants.TEAM_INFLUENCE_RADIUS, canvas)
