@@ -25,7 +25,7 @@ class RobotUDPClient:
         print("Setting up UDP socket...")
         try:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.client_socket.setblocking(False)
+            
             print(f"UDP socket ready for {self.robot_ip}:{self.robot_port}")
             
             self.client_socket.bind(('', self.local_port))
@@ -34,34 +34,25 @@ class RobotUDPClient:
             print(f"Socket error: {e}")
             self.client_socket = None
 
-    def communication_init(self, buffer_size = 2048):
-        print("Waiting for answer to initialization message", end="")
+    def communication_init(self, buffer_size=2048):
+        self.client_socket.settimeout(0.2) # Un poco más de tiempo para la red
+        packed_ping = struct.pack('<i', 50056)
+        
+        print("Handshake", end="")
         while True:
-            if self.client_socket:
-                try:
-                    print(".", end="")
-                    
-                    packed_data = struct.pack('<i', 50056)
-                    self.client_socket.sendto(packed_data, (self.robot_ip, self.robot_port))
-                    
-                    time.sleep(0.5)
+            try:
+                self.client_socket.sendto(packed_ping, (self.robot_ip, self.robot_port))
+                print(".", end="", flush=True)
                 
-                    init = None
-                    
-                    data, _ = self.client_socket.recvfrom(buffer_size)
-                    
-                    if len(data) == INIT_PACKET_SIZE:
-                        init = struct.unpack('i', data);
-                        
-                    if (init == 50057):
+                data, addr = self.client_socket.recvfrom(buffer_size)
+                if len(data) == 4:
+                    val = struct.unpack('<i', data)[0]
+                    if val == 50057:
                         break
-                    
-                except socket.error as e:
-                    print(f"Socket error during send: {e}")
-                    pass
-                
-        print("Communication established successfully")
-                    
+            except socket.timeout:
+                # Espera un poco antes de volver a bombardear a la ESP32
+                time.sleep(0.05) 
+                continue
             
             
             
@@ -78,7 +69,7 @@ class RobotUDPClient:
                 data, _ = self.client_socket.recvfrom(buffer_size)
                 
                 if len(data) == STATE_PACKET_SIZE: # Expecting 16 bytes for 4 floats
-                    state = struct.unpack('<ffff', data);
+                    state = struct.unpack('<ffff', data)
                 
             except BlockingIOError:
                 break  # No more data to read
@@ -178,10 +169,10 @@ class SingleRobotUDPNode(Node):
     def kicker_callback(self, msg):
         if msg.data:
             self.get_logger().info("Kicker command received, sending kicker signal")
-            self.client.send_udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 1.0)
+            self.client.send_udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], True)
         else: 
             self.get_logger().info("Kicker release command received, sending normal setpoints")
-            self.client.send_udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 0.0)
+            self.client.send_udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], False)
             
         
     def destroy_node(self):
