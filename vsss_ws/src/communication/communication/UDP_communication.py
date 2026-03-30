@@ -53,6 +53,8 @@ class RobotUDPClient:
                 # Espera un poco antes de volver a bombardear a la ESP32
                 time.sleep(0.05) 
                 continue
+        
+        self.client_socket.setblocking(False)
             
             
             
@@ -109,7 +111,7 @@ class SingleRobotUDPNode(Node):
         self.declare_parameter('robot_ip', '0.0.0.0')
         self.declare_parameter('robot_port', 8081)    
         self.declare_parameter('local_port', 8081)
-        self.latest_setpoints = [0, 0, 0]
+        self.latest_setpoints = [0.0, 0.0, 0.0]
         self.robot_yaw = 0.0
 
         name = self.get_parameter('robot_name').value
@@ -153,7 +155,7 @@ class SingleRobotUDPNode(Node):
             yaw_message = Float32()
             rpm_msg = Float32MultiArray()
             
-            self.robot_yaw = state[0]
+            self.robot_yaw = float(state[0])
             yaw_message.data = state[0]
             rpm_msg.data = [state[1], state[2], state[3], self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2]]
             
@@ -182,6 +184,7 @@ class SingleRobotUDPNode(Node):
         super().destroy_node()
 
     def cmd_vel_callback(self, msg):
+        self.get_logger().info(f"Received cmd_vel: linear=({msg.linear.x:.2f}, {msg.linear.y:.2f}), angular=({msg.angular.z:.2f})")
         rpm_left, rpm_right, rpm_back = self.twist_to_rpm(msg)
         self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
         sent = self.client.send_udp_command(rpm_left, rpm_right, rpm_back)

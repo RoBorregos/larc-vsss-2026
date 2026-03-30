@@ -2,7 +2,7 @@ robot_0:
   communication_node_robot_0:
     ros__parameters:
       robot_name: "vsss_robot"
-      robot_ip: "192.168.1.178"
+      robot_ip: "192.168.0.201"
       robot_port: 8081
       local_port: 8081
 
