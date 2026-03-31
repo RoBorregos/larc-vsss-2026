@@ -28,8 +28,8 @@ wl_status_t Communication::configComms() {
 bool Communication::commsInit() {
     Serial.println("Waiting for handshake...");
     bool connected = false;
-    int recMagicNumber = 50056;
-    int sendMaginNumber = 50057;
+    int pingNumber = 50056;
+    int pongNumber = 50057;
     
     while (!connected) {
         int packetSize = udp_.parsePacket();
@@ -37,12 +37,12 @@ bool Communication::commsInit() {
             robotInitPacket ping;
             udp_.read((uint8_t*)&ping, sizeof(ping));
 
-            if (ping.msg == recMagicNumber) {
+            if (ping.msg == pingNumber) {
 
                 IPAddress remoteIp = udp_.remoteIP();
                 uint16_t remotePort = udp_.remotePort();
 
-                robotInitPacket pong = {sendMaginNumber};
+                robotInitPacket pong = {pongNumber};
                 
                 for(int i = 0; i < 3; i++) {
                     udp_.beginPacket(remoteIp, remotePort);
@@ -53,7 +53,7 @@ bool Communication::commsInit() {
                 connected = true;
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(100)); // Evita saturar el RTOS
+        vTaskDelay(pdMS_TO_TICKS(100)); 
     }
 
     Serial.println("Handshake received!");

@@ -10,7 +10,7 @@ import struct
 import math
 import time
 
-from communication.constants import OMEGA_TO_RPM, COS_30, SIN_30, STATE_PACKET_SIZE, INIT_PACKET_SIZE
+from communication.constants import OMEGA_TO_RPM, BETA, STATE_PACKET_SIZE, INIT_PACKET_SIZE, DEFAULT_PORT
 
 class RobotUDPClient:
     def __init__(self, robot_ip, robot_port, local_port):
@@ -35,8 +35,11 @@ class RobotUDPClient:
             self.client_socket = None
 
     def communication_init(self, buffer_size=2048):
+
+        ping_number = 50056
+        pong_number = 50057
         self.client_socket.settimeout(0.2) # Un poco más de tiempo para la red
-        packed_ping = struct.pack('<i', 50056)
+        packed_ping = struct.pack('<i', ping_number)
         
         print("Handshake", end="")
         while True:
@@ -45,12 +48,12 @@ class RobotUDPClient:
                 print(".", end="", flush=True)
                 
                 data, addr = self.client_socket.recvfrom(buffer_size)
-                if len(data) == 4:
+                if len(data) == INIT_PACKET_SIZE:
                     val = struct.unpack('<i', data)[0]
-                    if val == 50057:
+                    if val == pong_number:
                         break
             except socket.timeout:
-                # Espera un poco antes de volver a bombardear a la ESP32
+                
                 time.sleep(0.05) 
                 continue
         
@@ -109,8 +112,8 @@ class SingleRobotUDPNode(Node):
         self.get_logger().info(f"Waiting to Start")
         self.declare_parameter('robot_name', 'vsss_robot')
         self.declare_parameter('robot_ip', '0.0.0.0')
-        self.declare_parameter('robot_port', 8081)    
-        self.declare_parameter('local_port', 8081)
+        self.declare_parameter('robot_port', DEFAULT_PORT)    
+        self.declare_parameter('local_port', DEFAULT_PORT)
         self.latest_setpoints = [0.0, 0.0, 0.0]
         self.robot_yaw = 0.0
 
@@ -201,8 +204,8 @@ class SingleRobotUDPNode(Node):
         vx_t = vx * math.cos(self.robot_yaw) + vy * math.sin(self.robot_yaw)
         vy_t = vx * -math.sin(self.robot_yaw) + vy * math.cos(self.robot_yaw)
         
-        rpm_left = (-wheel_distance * wz  + COS_30 * vx_t + SIN_30 * vy_t) * OMEGA_TO_RPM / wheel_radius
-        rpm_right = (-wheel_distance * wz - COS_30 * vx_t + SIN_30 * vy_t) * OMEGA_TO_RPM / wheel_radius
+        rpm_left = (-wheel_distance * wz  + math.cos(BETA) * vx_t + math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
+        rpm_right = (-wheel_distance * wz - math.cos(BETA) * vx_t + math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
         rpm_back = (-wheel_distance * wz - vx_t) * OMEGA_TO_RPM / wheel_radius
         
         return rpm_left, rpm_right, rpm_back
