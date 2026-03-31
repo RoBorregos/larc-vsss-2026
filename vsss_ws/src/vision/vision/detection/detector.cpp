@@ -144,7 +144,8 @@ namespace {
 	}
 }
 
-Detector::Detector(GUI *gui, AppData *app_data, BlobCalibrator* blob_calibrator): gui(gui), app_data(app_data), blob_calibrator(blob_calibrator) {
+Detector::Detector(GUI *gui, AppData *app_data, BlobCalibrator* blob_calibrator, std::shared_ptr<RosHandler> ros_handler):
+	gui(gui), app_data(app_data), blob_calibrator(blob_calibrator), ros_handler(std::move(ros_handler)) {
 
 }
 
@@ -165,7 +166,7 @@ void Detector::on_debug_mouse(const int event, const int x, const int y, int fla
 	data->calibrator->handle_click(global_x, global_y);
 }
 
-cv::cuda::GpuMat Detector::get_blob_mask(const cv::cuda::GpuMat &hsv_image) {
+cv::cuda::GpuMat Detector::get_blob_mask(const cv::cuda::GpuMat &hsv_image, bool debug_mode) {
 	const auto& p = app_data->mask_params;
 
 	const cv::Scalar lower(p.h_min, p.s_min, p.v_min);
@@ -174,19 +175,22 @@ cv::cuda::GpuMat Detector::get_blob_mask(const cv::cuda::GpuMat &hsv_image) {
 	cv::cuda::GpuMat mask;
 	cv::cuda::inRange(hsv_image, lower, upper, mask);
 
-	#ifdef DEBUG_MODE
+	if (debug_mode) {
 		cv::Mat mask_host;
 		cudaDeviceSynchronize();
 		mask.download(mask_host);
 		cv::imshow("Mask S+V: ", mask_host);
-	#endif
+	}
+
 	return mask;
 }
 
 cv::Mat Detector::get_label_map() {
+	bool debug_mode = ros_handler->get_parameter("debug_mode").as_bool();
+
 	const cv::cuda::GpuMat hsv_image = gui->get_image(cv::COLOR_BGR2HSV);
 
-	const cv::cuda::GpuMat blob_mask = get_blob_mask(hsv_image);
+	const cv::cuda::GpuMat blob_mask = get_blob_mask(hsv_image, debug_mode);
 	const cv::cuda::GpuMat label_map = launch_color_segmentation(hsv_image, blob_mask);
 
 	cv::Mat label_map_host;
@@ -510,6 +514,8 @@ void Detector::display_debug(cv::Mat& label_map, const std::vector<std::shared_p
 }
 
 std::pair<std::vector<RobotPatch>, std::optional<BallPatch>> Detector::update() {
+	bool debug_mode = ros_handler->get_parameter("debug_mode").as_bool();
+
 	cv::Mat label_map = get_label_map();
 	std::vector<std::shared_ptr<Patch>> patches = get_patches(label_map);
 
@@ -528,9 +534,9 @@ std::pair<std::vector<RobotPatch>, std::optional<BallPatch>> Detector::update() 
 	std::vector<RobotPatch> robot_patches = get_robot_patches(patches);
 	get_robot_data(robot_patches);
 
-	#ifdef DEBUG_MODE
+	if (debug_mode) {
 		display_debug(label_map, patches, robot_patches, ball_patch);
-	#endif
+	}
 
 	return { robot_patches, ball_patch };
 }
