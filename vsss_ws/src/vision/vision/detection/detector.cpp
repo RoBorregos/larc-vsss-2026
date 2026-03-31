@@ -210,7 +210,7 @@ void Detector::get_patches(const cv::Mat& label_map) {
 		cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 		for (const auto& cnt : contours) {
-			if (cv::contourArea(cnt) > 10) {
+			if (cv::contourArea(cnt) > PATCH_MIN_AREA) {
 				const cv::Moments m = cv::moments(cnt);
 				if (m.m00 == 0) continue;
 				const cv::Rect bbox = cv::boundingRect(cnt);

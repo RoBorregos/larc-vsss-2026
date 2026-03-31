@@ -91,6 +91,7 @@ private:
 
 	static constexpr int MINIMUM_DISTANCE = 20;
 	static constexpr int MAX_ITERATIONS = 1000;
+    static constexpr int PATCH_MIN_AREA = 10;
 public:
 	Detector(GUI* gui, AppData* app_data, BlobCalibrator* blob_calibrator, std::shared_ptr<RosHandler> ros_handler);
 
