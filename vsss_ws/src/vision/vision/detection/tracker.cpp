@@ -299,19 +299,17 @@ void Tracker::display_debug_image(int width, int height) {
 		}
 	}
 
-	#ifdef DEBUG_MODE
-		cv::cuda::GpuMat gpu_image = gui->get_image();
+	cv::cuda::GpuMat gpu_image = gui->get_image();
 
-		cv::Mat image;
-		cudaDeviceSynchronize();
-		gpu_image.download(image);
-		cv::Mat overlay = coordinates->get_warped_image(image);
+	cv::Mat image;
+	cudaDeviceSynchronize();
+	gpu_image.download(image);
+	cv::Mat overlay = coordinates->get_warped_image(image);
 
-		cv::Mat result;
-		double alpha = 0.3;
-		double beta = 1.0 - alpha;
-		double gamma = 0.0;
-		cv::addWeighted(map, beta, overlay, alpha, gamma, result);
-		cv::imshow("Kalman view", result);
-	#endif
+	cv::Mat result;
+	double alpha = 0.3;
+	double beta = 1.0 - alpha;
+	double gamma = 0.0;
+	cv::addWeighted(map, alpha, overlay, beta, gamma, result);
+	cv::imshow("Kalman view", result);
 }

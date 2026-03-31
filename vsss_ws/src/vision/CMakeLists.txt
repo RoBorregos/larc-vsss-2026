@@ -26,8 +26,6 @@ find_package(sensor_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(std_msgs REQUIRED)
 
-# add_definitions(-DDEBUG_MODE)
-
 rosidl_generate_interfaces(${PROJECT_NAME}
         "vision/ros/msg/EntityState.msg"
         "vision/ros/srv/Prediction.srv"

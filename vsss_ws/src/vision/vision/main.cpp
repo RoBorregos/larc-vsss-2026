@@ -16,12 +16,6 @@
 
 #define KEY_ESC 27
 
-bool use_camera = false;
-const auto camera_id = "/dev/vsss_cam";
-// const std::string file_path = "/media/ikercsv/Files/Projects/larc-vsss-2026/media/image.jpeg";
-const std::string file_path = "/ros2_ws/vsss/vsss_ws/src/vision/media/log/raw_2026-02-24_04-18-37.avi";
-const bool record_video = false;
-
 bool is_video_file(const std::string& path) {
     std::string p = path;
     std::transform(p.begin(), p.end(), p.begin(), ::tolower);
@@ -66,32 +60,53 @@ std::string get_timestamped_filename(std::string prefix) {
     return base_path + prefix + "_" + std::string(buffer) + ".avi";
 }
 
+inline void noop() {};
+
 int main(int argc, char * argv[]) {
     std::cout << "[INFO] OPENCV VERSION: " << CV_VERSION << std::endl;
     std::cout << "[INFO] CUDA DEVICES: " << cv::cuda::getCudaEnabledDeviceCount() << std::endl;
-    std::cout << "[INFO] OPENCV BUILD:" << cv::getBuildInformation() << std::endl;
 
     rclcpp::init(argc, argv);
 
+    AppData app_data;
+    Drawer drawer;
+    Coordinates coordinates(&app_data);
     const std::string window_name = "VSSS";
     cv::namedWindow(window_name);
+    GUI gui(&app_data, &drawer, window_name);
+    Tracker tracker(&coordinates, &gui, &drawer);
+    auto ros_handler = std::make_shared<RosHandler>(&app_data, &tracker);
 
-    std::set<int> infield_objects = {1, 3, 4, 12, 17, 18, 20};
+    ros_handler->declare_parameter("use_camera", false);
+    ros_handler->declare_parameter("simulator", false);
+    ros_handler->declare_parameter("record_video", false);
+    ros_handler->declare_parameter("debug_mode", false);
+    ros_handler->declare_parameter("camera_id", "/dev/vsss_cam");
+    ros_handler->declare_parameter("file_path", "/ros2_ws/vsss/vsss_ws/src/vision/media/log/raw_2026-02-24_04-18-37.avi");
 
+
+    bool use_camera = ros_handler->get_parameter("use_camera").as_bool();
+    app_data.simulator = ros_handler->get_parameter("simulator").as_bool();
+    bool record_video = ros_handler->get_parameter("record_video").as_bool();
+    bool debug_mode = ros_handler->get_parameter("debug_mode").as_bool();
+    std::string camera_id = ros_handler->get_parameter("camera_id").as_string();
+    std::string file_path = ros_handler->get_parameter("file_path").as_string();
+
+    app_data.calibration_filename = app_data.get_calibration_path(app_data.simulator);
+
+    RCLCPP_INFO(ros_handler->get_logger(), "MODE: %s | RECORDING: %s",
+                app_data.simulator ? "SIMULATOR" : (use_camera ? "CAMERA" : "FILE"),
+                record_video ? "ON" : "OFF");
+
+    std::set<int> infield_objects = {2, 7, 9, 11, 17, 18, 20};
     cv::VideoCapture cap;
     cv::VideoWriter raw_writer;
     cv::VideoWriter processed_writer;
 
-    AppData app_data;
-    Drawer drawer;
-    GUI gui(&app_data, &drawer, window_name);
-    Coordinates coordinates(&app_data);
-    Tracker tracker(&coordinates, &gui, &drawer);
     BlobCalibrator blob_calibrator(&gui, &app_data);
     ColorCalibrator color_calibrator(&gui, &app_data);
     CameraCalibrator camera_calibrator(&app_data, &cap, &use_camera);
-    Detector detector(&gui, &app_data, &blob_calibrator);
-    auto ros_handler = std::make_shared<RosHandler>(&app_data, &tracker);
+    Detector detector(&gui, &app_data, &blob_calibrator, ros_handler);
 
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(ros_handler);
@@ -114,14 +129,10 @@ int main(int argc, char * argv[]) {
 
     if (use_camera) {
         int index = get_camera_index(camera_id);
-        if (index != -1) {
-            cap.open(index, cv::CAP_V4L2);
-        } else {
-            cap.open(0, cv::CAP_V4L2);
-        }
+        cap.open((index != -1) ? index : 0, cv::CAP_V4L2);
 
         if (!cap.isOpened()) {
-            std::cerr << "[ERROR] Could not open camera" << std::endl;
+            RCLCPP_ERROR(ros_handler->get_logger(), "Could not open camera!");
             return -1;
         }
 
@@ -134,13 +145,8 @@ int main(int argc, char * argv[]) {
         frame_height = (int)cap.get(cv::CAP_PROP_FRAME_HEIGHT);
         fps = cap.get(cv::CAP_PROP_FPS);
 
-        std::cout << "fps from camera: " << fps << std::endl;
-
     } else if (app_data.simulator) {
-        cv::Mat sim_frame = ros_handler->get_latest_frame();
-        if (!sim_frame.empty()) {
-            image = sim_frame;
-        }
+        noop();
     } else {
         if (is_video_file(file_path)) {
             cap.open(file_path);
@@ -160,26 +166,18 @@ int main(int argc, char * argv[]) {
 
     if (record_video && frame_width > 0 && frame_height > 0) {
         int fourcc = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
-
-        std::string raw_filename = get_timestamped_filename("raw");
-        std::string proc_filename = get_timestamped_filename("processed");
-
-        raw_writer.open(raw_filename, fourcc, fps, cv::Size(frame_width, frame_height), true);
-        processed_writer.open(proc_filename, fourcc, fps, cv::Size(frame_width, frame_height), true);
+        raw_writer.open(get_timestamped_filename("raw"), fourcc, fps, cv::Size(frame_width, frame_height), true);
+        processed_writer.open(get_timestamped_filename("processed"), fourcc, fps, cv::Size(frame_width, frame_height), true);
     }
 
     cv::setMouseCallback(window_name, InterfaceManager::on_mouse, &interface_manager);
-
     cv::Mat processed_frame_cpu;
 
     while (rclcpp::ok()) {
-	    gui.fps_timer.start();
+        gui.fps_timer.start();
 
         if (use_camera) {
-            cv::Mat temp;
-            cap >> temp;
-            if (temp.empty()) break;
-            image = temp;
+            cap >> image;
         } else if (app_data.simulator) {
             cv::Mat sim_frame = ros_handler->get_latest_frame();
             if (!sim_frame.empty()) {
@@ -188,31 +186,26 @@ int main(int argc, char * argv[]) {
                 frame_height = image.rows;
             }
         } else if (cap.isOpened() && !app_data.paused) {
-            cv::Mat temp;
-            cap >> temp;
-            if (!temp.empty()) image = temp;
-            else { cap.set(cv::CAP_PROP_POS_FRAMES, 0); cap >> image; }
+            cap >> image;
+            if (image.empty()) { // Loop video
+                cap.set(cv::CAP_PROP_POS_FRAMES, 0);
+                cap >> image;
+            }
         }
 
         if (image.empty()) {
-            if (app_data.simulator) {
-                executor.spin_some();
-                continue;
-            }
+            if (app_data.simulator) { executor.spin_some(); continue; }
             break;
         };
 
-        if (raw_writer.isOpened()) {
-            if (image.size() == cv::Size(frame_width, frame_height)) {
-                raw_writer.write(image);
-            }
-        }
+        if (raw_writer.isOpened()) raw_writer.write(image);
 
         gui.upload_frame(image);
-
-        std::pair<std::vector<RobotPatch>, std::optional<BallPatch>> detections = detector.update();
+        auto detections = detector.update();
         tracker.update(detections.first, detections.second);
-        tracker.display_debug_image(image.cols, image.rows);
+        if (debug_mode) {
+            tracker.display_debug_image(image.cols, image.rows);
+        }
 
         interface_manager.draw_interface();
 
@@ -220,11 +213,9 @@ int main(int argc, char * argv[]) {
             cv::cuda::GpuMat gpu_result = gui.get_image();
             cudaDeviceSynchronize();
             gpu_result.download(processed_frame_cpu);
-
             if (processed_frame_cpu.size() != cv::Size(frame_width, frame_height)) {
                 cv::resize(processed_frame_cpu, processed_frame_cpu, cv::Size(frame_width, frame_height));
             }
-
             processed_writer.write(processed_frame_cpu);
         }
 
@@ -234,12 +225,10 @@ int main(int argc, char * argv[]) {
         if (cv::waitKey(delay) == KEY_ESC) break;
     }
 
-    std::cout << "[INFO] Closing resources..." << std::endl;
     if (cap.isOpened()) cap.release();
     if (raw_writer.isOpened()) raw_writer.release();
     if (processed_writer.isOpened()) processed_writer.release();
     cv::destroyAllWindows();
     rclcpp::shutdown();
-
     return 0;
 }

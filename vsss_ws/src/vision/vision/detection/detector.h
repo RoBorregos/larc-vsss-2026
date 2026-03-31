@@ -18,6 +18,7 @@
 #include "app_settings.h"
 #include "robot_identities.h"
 #include "color_segmentation.cuh"
+#include "ros_handler.h"
 
 enum class TeamColor { NONE, BLUE, YELLOW };
 enum class PatchColor { RED, GREEN, CYAN, MAGENTA, UNKNOWN };
@@ -60,6 +61,7 @@ private:
 	GUI* gui;
 	AppData* app_data;
 	BlobCalibrator* blob_calibrator;
+	std::shared_ptr<RosHandler> ros_handler;
 
 	std::set<std::string> window_names;
 
@@ -73,7 +75,7 @@ private:
 	std::vector<RobotPatch> get_clustered_robot_patches(const std::vector<std::shared_ptr<Patch>>& clustered_patches);
 	void get_robot_data(std::vector<RobotPatch>& robot_patches);
 
-	[[nodiscard]] cv::cuda::GpuMat get_blob_mask(const cv::cuda::GpuMat& hsv_image);
+	[[nodiscard]] cv::cuda::GpuMat get_blob_mask(const cv::cuda::GpuMat& hsv_image, bool debug_mode);
 
 	cv::Mat visualize_labels(const cv::Mat& label_map);
 
@@ -83,7 +85,7 @@ private:
 	static constexpr int MINIMUM_DISTANCE = 20;
 	static constexpr int MAX_ITERATIONS = 1000;
 public:
-	Detector(GUI* gui, AppData* app_data, BlobCalibrator* blob_calibrator);
+	Detector(GUI* gui, AppData* app_data, BlobCalibrator* blob_calibrator, std::shared_ptr<RosHandler> ros_handler);
 
 	[[nodiscard]] std::pair<std::vector<RobotPatch>, std::optional<BallPatch>> update();
 	void upload_calibrations(const std::vector<ColorCalibration>& color_calibrations);
