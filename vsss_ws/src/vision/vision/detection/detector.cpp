@@ -199,8 +199,7 @@ cv::Mat Detector::get_label_map() {
 	return label_map_host;
 }
 
-std::vector<std::shared_ptr<Patch>> Detector::get_patches(const cv::Mat& label_map) {
-	std::vector<std::shared_ptr<Patch>> patches;
+void Detector::get_patches(const cv::Mat& label_map) {
 	int id = 0;
 
 	for (int color = 1; color <= 7; color++) {
@@ -211,12 +210,10 @@ std::vector<std::shared_ptr<Patch>> Detector::get_patches(const cv::Mat& label_m
 		cv::findContours(mask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 		for (const auto& cnt : contours) {
-			const double area = cv::contourArea(cnt);
-
-			if (area > 10) {
+			if (cv::contourArea(cnt) > 10) {
 				const cv::Moments m = cv::moments(cnt);
 				if (m.m00 == 0) continue;
-				cv::Rect bbox = cv::boundingRect(cnt);
+				const cv::Rect bbox = cv::boundingRect(cnt);
 				const cv::Point2d center(m.m10 / m.m00, m.m01 / m.m00);
 				auto p = std::make_shared<Patch>();
 
@@ -262,17 +259,16 @@ std::vector<std::shared_ptr<Patch>> Detector::get_patches(const cv::Mat& label_m
 			[](const std::shared_ptr<Patch>& p) { return !p->valid; }),
 		patches.end()
 	);
-	return patches;
 }
 
-std::vector<RobotPatch> Detector::get_robot_patches(std::vector<std::shared_ptr<Patch>>& patches) {
-	std::vector<RobotPatch> isolated_robots = get_isolated_robot_patches(patches);
+void Detector::get_robot_patches() {
+	get_isolated_robot_patches();
 	std::vector<RobotPatch> clustered_robots;
 
 	std::vector<std::shared_ptr<Patch>> clustered_patches;
 	std::vector<std::shared_ptr<Patch>> isolated_patches;
 
-	for (const auto& robot : isolated_robots) {
+	for (const auto& robot : robot_patches) {
 		isolated_patches.insert(isolated_patches.end(), robot.patches.begin(), robot.patches.end());
 	}
 
@@ -290,19 +286,11 @@ std::vector<RobotPatch> Detector::get_robot_patches(std::vector<std::shared_ptr<
 		compare_by_id
 	);
 
-	clustered_robots = get_clustered_robot_patches(clustered_patches);
-
-	std::vector<RobotPatch> all_robots;
-	all_robots.reserve(clustered_robots.size() + isolated_robots.size());
-
-	all_robots.insert(all_robots.end(), clustered_robots.begin(), clustered_robots.end());
-	all_robots.insert(all_robots.end(), isolated_robots.begin(), isolated_robots.end());
-
-	return all_robots;
+	get_clustered_robot_patches(clustered_patches);
 }
 
-std::optional<BallPatch> Detector::get_ball_patch(const std::vector<std::shared_ptr<Patch>>& patches) {
-	if (patches.empty()) return std::nullopt;
+void Detector::get_ball_patch() {
+	if (patches.empty()) return;
 	BallPatch ball;
 
 	int orange_occurrences = 0;
@@ -318,7 +306,8 @@ std::optional<BallPatch> Detector::get_ball_patch(const std::vector<std::shared_
 	if (orange_occurrences == 1 && last_orange) {
 		ball.patch = last_orange;
 		ball.center = last_orange->centroid;
-		return ball;
+		ball_patch = ball;
+		return;
 	}
 
 	// Program Panic!!!!!!!!!!!
@@ -345,21 +334,19 @@ std::optional<BallPatch> Detector::get_ball_patch(const std::vector<std::shared_
 		if (is_isolated) {
 			ball.patch = p1;
 			ball.center = p1->centroid;
-			return ball;
+			ball_patch = ball;
+			return;
 		}
 	}
-
-	return std::nullopt;
 }
 
-std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<std::shared_ptr<Patch>>& clustered_patches) {
-	std::vector<std::shared_ptr<Patch>> patches = clustered_patches;
+void Detector::get_clustered_robot_patches(std::vector<std::shared_ptr<Patch>> clustered_patches) {
 	std::vector<RobotPatch> robot_candidates;
 	std::vector<RobotRelationship> relationship;
 	int iterations = 0;
 
-	while (!patches.empty()) {
-		if ((iterations++) > MAX_ITERATIONS) return {};
+	while (!clustered_patches.empty()) {
+		if ((iterations++) > MAX_ITERATIONS) return;
 		std::vector<std::shared_ptr<Patch>> parents;
 		std::vector<std::shared_ptr<Patch>> children;
 
@@ -370,7 +357,7 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 		std::vector<std::shared_ptr<Patch>> child_1_candidates;
 		std::vector<std::shared_ptr<Patch>> child_2_candidates;
 
-		for (const auto& p : patches) {
+		for (const auto& p : clustered_patches) {
 			if (p->parent) {
 				parents.emplace_back(p);
 			} else {
@@ -379,11 +366,17 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 		}
 
 		if (parents.empty()) {
-			return {};
+			return;
 		}
 
 		if ((parents.size() * 2) != children.size()) {
-			return {};
+			std::cout << "uneven " << parents.size() << " " << children.size() << std::endl;
+			if (parents.size() == 1 && children.size() == 3) { // Edge case where the clustered robot is alone with the ball
+				std::cout << "1:3" << std::endl;
+				get_single_robot_with_ball(parents.at(0), children);
+			}
+
+			return;
 		}
 
 		parent = parents.front();
@@ -412,15 +405,114 @@ std::vector<RobotPatch> Detector::get_clustered_robot_patches(const std::vector<
 		robot.patches = {parent, child_1, child_2};
 		robot_candidates.push_back(robot);
 
-		remove_patch_by_id(patches, parent->id);
-		remove_patch_by_id(patches, child_1->id);
-		remove_patch_by_id(patches, child_2->id);
+		remove_patch_by_id(clustered_patches, parent->id);
+		remove_patch_by_id(clustered_patches, child_1->id);
+		remove_patch_by_id(clustered_patches, child_2->id);
 	}
 
-	return robot_candidates;
+	robot_patches.insert(
+		robot_patches.end(),
+		robot_candidates.begin(),
+		robot_candidates.end()
+	);
 }
 
-void Detector::get_robot_data(std::vector<RobotPatch>& robot_patches) {
+void Detector::get_single_robot_with_ball(const std::shared_ptr<Patch>& parent, std::vector<std::shared_ptr<Patch>>& children) {
+	std::cout << children.size() << std::endl;
+	if (children.size() != 3) return;
+
+	int red_patch_count = 0;
+	std::shared_ptr<Patch> red_patch;
+	for (const auto& child : children) {
+		if (child->color == Color_ID::RED) {
+			red_patch_count++;
+			red_patch = child;
+		}
+	}
+
+	if (red_patch_count == 0 || red_patch_count > 2) return; // Edge case where vision failed to detect patches right
+
+	if (red_patch_count == 1) {
+		std::cout << "One detected" << std::endl;
+		BallPatch ball;
+		ball.patch = red_patch;
+		ball.center = red_patch->centroid;
+
+		ball_patch = ball;
+
+		remove_patch_by_id(children, red_patch->id);
+
+		RobotPatch robot;
+		robot.parent = parent;
+		robot.children = children;
+		robot.patches = { parent, children.at(0), children.at(1) };
+
+		robot_patches.push_back(robot);
+		return;
+	}
+
+	/* There are two possible cases here, one where they are
+	X = stands for a patch with color other than red
+	R = stands for a patch with color red
+
+	* Consecutive
+	  X - R - R
+	      P
+
+	* Intermediate
+	  R - X - R
+	      P
+
+	In the consecutive case, the ball is the farthest from the X.
+	In the intermediate there is no easy way to know using only centroids.
+	See flaws of using only centroids in the documentation
+	*/
+
+	std::cout << "Two detected" << std::endl;
+
+	std::shared_ptr<Patch> x;
+	std::shared_ptr<Patch> r1;
+	std::shared_ptr<Patch> r2;
+
+	for (const auto& child : children) {
+		if (child->color != Color_ID::RED) {
+			x = child;
+		} else {
+			if (!r1) {
+				r1 = child;
+			} else {
+				r2 = child;
+			}
+		}
+	}
+
+	const double d1 = std::pow(x->centroid.x - r1->centroid.x, 2) + std::pow(x->centroid.y - r1->centroid.y, 2);
+	const double d2 = std::pow(x->centroid.x - r2->centroid.x, 2) + std::pow(x->centroid.y - r2->centroid.y, 2);
+
+	std::shared_ptr<Patch> final_ball_patch;
+	std::shared_ptr<Patch> robot_red_patch;
+
+	if (d1 > d2) {
+		final_ball_patch = r1;
+		robot_red_patch = r2;
+	} else {
+		final_ball_patch = r2;
+		robot_red_patch = r1;
+	}
+
+	BallPatch ball;
+	ball.patch = final_ball_patch;
+	ball.center = final_ball_patch->centroid;
+	ball_patch = ball;
+
+	RobotPatch robot;
+	robot.parent = parent;
+	robot.children = { x, robot_red_patch };
+	robot.patches = { parent, x, robot_red_patch };
+	robot_patches.push_back(robot);
+}
+
+void Detector::get_robot_data() {
     for (auto& robot_patch : robot_patches) {
        robot_patch.center = find_geometric_median(robot_patch);
 
@@ -514,12 +606,16 @@ void Detector::display_debug(cv::Mat& label_map, const std::vector<std::shared_p
 }
 
 std::pair<std::vector<RobotPatch>, std::optional<BallPatch>> Detector::update() {
+	robot_patches.clear();
+	patches.clear();
+	ball_patch = std::nullopt;
+
 	bool debug_mode = ros_handler->get_parameter("debug_mode").as_bool();
 
 	cv::Mat label_map = get_label_map();
-	std::vector<std::shared_ptr<Patch>> patches = get_patches(label_map);
+	get_patches(label_map);
 
-	std::optional<BallPatch> ball_patch = get_ball_patch(patches);
+	get_ball_patch();
 
 	if (ball_patch.has_value()) {
 		int target_id = ball_patch.value().patch->id;
@@ -531,8 +627,8 @@ std::pair<std::vector<RobotPatch>, std::optional<BallPatch>> Detector::update() 
 		patches.erase(it, patches.end());
 	}
 
-	std::vector<RobotPatch> robot_patches = get_robot_patches(patches);
-	get_robot_data(robot_patches);
+	get_robot_patches();
+	get_robot_data();
 
 	if (debug_mode) {
 		display_debug(label_map, patches, robot_patches, ball_patch);
@@ -574,9 +670,7 @@ cv::Mat Detector::visualize_labels(const cv::Mat& label_map) {
 	return colored_img;
 }
 
-std::vector<RobotPatch> Detector::get_isolated_robot_patches(std::vector<std::shared_ptr<Patch>>& patches) {
-	std::vector<RobotPatch> isolated_robots;
-
+void Detector::get_isolated_robot_patches() {
 	std::vector<std::shared_ptr<Patch>> parents;
 	std::vector<std::shared_ptr<Patch>> children;
 
@@ -614,10 +708,8 @@ std::vector<RobotPatch> Detector::get_isolated_robot_patches(std::vector<std::sh
 				robot_patch.patches.push_back(parent);
 				robot_patch.patches.push_back(candidates[0]);
 				robot_patch.patches.push_back(candidates[1]);
-				isolated_robots.push_back(robot_patch);
+				robot_patches.push_back(robot_patch);
 			}
 		}
 	}
-
-	return isolated_robots;
 }
