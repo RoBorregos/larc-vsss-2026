@@ -173,6 +173,8 @@ int main(int argc, char * argv[]) {
     cv::setMouseCallback(window_name, InterfaceManager::on_mouse, &interface_manager);
     cv::Mat processed_frame_cpu;
 
+    app_data.fps = fps;
+
     while (rclcpp::ok()) {
         gui.fps_timer.start();
 
