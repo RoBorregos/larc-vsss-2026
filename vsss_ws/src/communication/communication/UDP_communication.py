@@ -8,67 +8,95 @@ from std_msgs.msg import Float32MultiArray, Bool, Float32
 import socket
 import struct
 import math
-import sys
+import time
 
-from communication.constants import BETA, GAMA, OMEGA_TO_RPM, COS_30, SIN_30
+from communication.constants import OMEGA_TO_RPM, BETA, STATE_PACKET_SIZE, INIT_PACKET_SIZE, DEFAULT_PORT
 
 class RobotUDPClient:
-    def __init__(self, robot_ip, robot_port):
+    def __init__(self, robot_ip, robot_port, local_port):
         self.robot_ip = robot_ip
         self.robot_port = robot_port
         self.client_socket = None
+        self.local_port = local_port
         self.connect()
+        self.communication_init()
 
     def connect(self):
         print("Setting up UDP socket...")
         try:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.client_socket.setblocking(False)
+            
             print(f"UDP socket ready for {self.robot_ip}:{self.robot_port}")
             
-            self.client_socket.bind(('', 8081))
+            self.client_socket.bind(('', self.local_port))
+            
         except socket.error as e:
             print(f"Socket error: {e}")
             self.client_socket = None
+
+    def communication_init(self, buffer_size=2048):
+
+        ping_number = 50056
+        pong_number = 50057
+        self.client_socket.settimeout(0.2) # Un poco más de tiempo para la red
+        packed_ping = struct.pack('<i', ping_number)
+        
+        print("Handshake", end="")
+        while True:
+            try:
+                self.client_socket.sendto(packed_ping, (self.robot_ip, self.robot_port))
+                print(".", end="", flush=True)
+                
+                data, addr = self.client_socket.recvfrom(buffer_size)
+                if len(data) == INIT_PACKET_SIZE:
+                    val = struct.unpack('<i', data)[0]
+                    if val == pong_number:
+                        break
+            except socket.timeout:
+                
+                time.sleep(0.05) 
+                continue
+        
+        self.client_socket.setblocking(False)
+            
+            
             
     def receive_telemetry(self, buffer_size=2048):
         
-        latest_orientation = None
-        latest_rpms = None
+        state = None
         
         if not self.client_socket:
             print("UDP socket not available.")
-            return None, None
+            return None
         
         while True:
             try:
                 data, _ = self.client_socket.recvfrom(buffer_size)
                 
-                if len(data) == sys.getsizeof(float):  # Expecting at least 4 bytes for 1 float
-                    latest_orientation = struct.unpack('<f', data)
-                elif len(data) == 3 * sys.getsizeof(float):  # Expecting at least 12 bytes for 3 floats
-                    latest_rpms = struct.unpack('<fff', data)
+                if len(data) == STATE_PACKET_SIZE: # Expecting 16 bytes for 4 floats
+                    state = struct.unpack('<ffff', data)
                 
             except BlockingIOError:
                 break  # No more data to read
             except socket.error as e:
                 print(f"Socket error during receive: {e}")
         
-        return latest_orientation, latest_rpms
+        return state
 
-    def udp_command(self, rpm_left, rpm_right , rpm_back, kicker=0.0):
+    def send_udp_command(self, rpm_left, rpm_right , rpm_back, kicker=False, stop=False):
         if not self.client_socket:
             print("UDP socket not available.")
             return False
         try:
             # Pack both floats into a single UDP packet
-            packed_data = struct.pack('<ffff', rpm_left, rpm_right, rpm_back, kicker)
+            packed_data = struct.pack('<fffbb', rpm_left, rpm_right, rpm_back, kicker, stop)
             self.client_socket.sendto(packed_data, (self.robot_ip, self.robot_port))
             
         except socket.error as e:
             print(f"Socket error during send: {e}")
             return False
         return True
+
 
     def close(self):
         if self.client_socket:
@@ -84,72 +112,72 @@ class SingleRobotUDPNode(Node):
         self.get_logger().info(f"Waiting to Start")
         self.declare_parameter('robot_name', 'vsss_robot')
         self.declare_parameter('robot_ip', '0.0.0.0')
-        self.declare_parameter('communication_port', 8081)    
-        self.latest_setpoints = [0, 0, 0]
+        self.declare_parameter('robot_port', DEFAULT_PORT)    
+        self.declare_parameter('local_port', DEFAULT_PORT)
+        self.latest_setpoints = [0.0, 0.0, 0.0]
         self.robot_yaw = 0.0
 
         name = self.get_parameter('robot_name').value
         ip = self.get_parameter('robot_ip').value
-        port = self.get_parameter('communication_port').value
+        robot_port = self.get_parameter('robot_port').value
+        local_port = self.get_parameter('local_port').value
         
         node_name = self.get_fully_qualified_name()
         cmd_vel_topic = self.resolve_topic_name('cmd_vel')
-        rpms_topic = self.resolve_topic_name('rpms')
-        telemetry_topic = self.resolve_topic_name('telemetry')
+        rpms_topic = self.resolve_topic_name('encoders')
+        telemetry_topic = self.resolve_topic_name('bno')
         
-        self.get_logger().info(f"{node_name} Started with values name: {name}, connection->({ip}:{port})")
-        self.client = RobotUDPClient(ip, port)
+        self.get_logger().info(f"{node_name} Started with values name: {name}, connection->({ip}:{robot_port})")
+        self.client = RobotUDPClient(ip, robot_port, local_port)
+        self.get_logger().info(f"Communication established")
 
         self.get_logger().info(f"Waiting to Start")
         self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
-        self.get_logger().info(f"Subscribed to {cmd_vel_topic} for {name} ({ip}:{port})")
+        self.get_logger().info(f"Subscribed to {cmd_vel_topic} for {name} ({ip}:{robot_port})")
         
-        self.telemetry_pub = self.create_publisher(Float32, 'telemetry', 10)
-        self.get_logger().info(f"Publishing telemetry to {telemetry_topic} for {name} ({ip}:{port})")
+        self.telemetry_pub = self.create_publisher(Float32, 'bno', 10)
+        self.get_logger().info(f"Publishing telemetry to {telemetry_topic} for {name} ({ip}:{robot_port})")
         
-        self.rpms_pub = self.create_publisher(Float32MultiArray, 'rpms', 10)
-        self.get_logger().info(f"Publishing RPMs to {rpms_topic} for {name} ({ip}:{port})")
+        self.rpms_pub = self.create_publisher(Float32MultiArray, 'encoders', 10)
+        self.get_logger().info(f"Publishing RPMs to {rpms_topic} for {name} ({ip}:{robot_port})")
         
         self.create_subscription(Bool, 'stop', self.stop_callback, 10)
-        self.get_logger().info(f"Subscribed to stop commands on {self.resolve_topic_name('stop')} for {name} ({ip}:{port})")
+        self.get_logger().info(f"Subscribed to stop commands on {self.resolve_topic_name('stop')} for {name} ({ip}:{robot_port})")
         
         self.create_subscription(Bool, 'kicker', self.kicker_callback, 10)
-        self.get_logger().info(f"Subscribed to kicker commands on {self.resolve_topic_name('kicker')} for {name} ({ip}:{port})")
+        self.get_logger().info(f"Subscribed to kicker commands on {self.resolve_topic_name('kicker')} for {name} ({ip}:{robot_port})")
         
         self.create_timer(0.02, self.receive_telemetry_timer_callback)  # 50 Hz for telemetry
         
 
     def receive_telemetry_timer_callback(self):
         # Attempt to receive telemetry data
-        orientation_data, rpms_data = self.client.receive_telemetry()
+        state = self.client.receive_telemetry()
         
-        if orientation_data:
-            # Publish received telemetry
+        if state:
+            yaw_message = Float32()
+            rpm_msg = Float32MultiArray()
             
-            orientation_msg = Float32()
-            self.robot_yaw = math.radians(orientation_data[0])  # Update global yaw variable
-            orientation_msg.data = self.robot_yaw
-            self.telemetry_pub.publish(orientation_msg)
-            self.get_logger().info(f"Received telemetry: {orientation_msg.data:.2f}")
-        
-        if rpms_data:
-            rpms_msg = Float32MultiArray()
-            rpms_msg.data = [rpms_data[0], rpms_data[1], rpms_data[2], self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2]]
-            self.rpms_pub.publish(rpms_msg)
-            self.get_logger().info(f"Received RPMs: F={rpms_msg.data[0]:.2f}, R={rpms_msg.data[1]:.2f}, L={rpms_msg.data[2]:.2f}")
+            self.robot_yaw = float(state[0])
+            yaw_message.data = state[0]
+            rpm_msg.data = [state[1], state[2], state[3], self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2]]
+            
+            self.telemetry_pub.publish(yaw_message)
+            self.rpms_pub.publish(rpm_msg)
+            
     
     def stop_callback(self, msg):
         if msg.data:
             self.get_logger().info("Stop command received, sending zero RPMs")
-            self.client.udp_command(0.0, 0.0, 0.0)
+            self.client.send_udp_command(0.0, 0.0, 0.0)
         
     def kicker_callback(self, msg):
         if msg.data:
             self.get_logger().info("Kicker command received, sending kicker signal")
-            self.client.udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 1.0)
+            self.client.send_udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], True)
         else: 
             self.get_logger().info("Kicker release command received, sending normal setpoints")
-            self.client.udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], 0.0)
+            self.client.send_udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], False)
             
         
     def destroy_node(self):
@@ -159,9 +187,10 @@ class SingleRobotUDPNode(Node):
         super().destroy_node()
 
     def cmd_vel_callback(self, msg):
+        self.get_logger().info(f"Received cmd_vel: linear=({msg.linear.x:.2f}, {msg.linear.y:.2f}), angular=({msg.angular.z:.2f})")
         rpm_left, rpm_right, rpm_back = self.twist_to_rpm(msg)
         self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
-        sent = self.client.udp_command(rpm_left, rpm_right, rpm_back)
+        sent = self.client.send_udp_command(rpm_left, rpm_right, rpm_back)
 
         self.get_logger().info(f"Sent: L={rpm_left:.2f} R={rpm_right:.2f} B={rpm_back:.2f}") 
         
@@ -175,8 +204,8 @@ class SingleRobotUDPNode(Node):
         vx_t = vx * math.cos(self.robot_yaw) + vy * math.sin(self.robot_yaw)
         vy_t = vx * -math.sin(self.robot_yaw) + vy * math.cos(self.robot_yaw)
         
-        rpm_left = (-wheel_distance * wz  + COS_30 * vx_t + SIN_30 * vy_t) * OMEGA_TO_RPM / wheel_radius
-        rpm_right = (-wheel_distance * wz - COS_30 * vx_t + SIN_30 * vy_t) * OMEGA_TO_RPM / wheel_radius
+        rpm_left = (-wheel_distance * wz  + math.cos(BETA) * vx_t + math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
+        rpm_right = (-wheel_distance * wz - math.cos(BETA) * vx_t + math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
         rpm_back = (-wheel_distance * wz - vx_t) * OMEGA_TO_RPM / wheel_radius
         
         return rpm_left, rpm_right, rpm_back

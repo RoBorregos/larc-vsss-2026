@@ -38,8 +38,11 @@ public:
     Communication(const char *ssid, const char *password, int local_port);
 
     wl_status_t configComms();
+    bool commsInit();
+    bool udpReceiveInit(robotInitPacket *init);
+    void udpSendInit(robotInitPacket init);
     bool udpReceiveCmd(robotCmdPacket *cmd);
-    void udpSendMessage(float yaw, float rpm_left, float rpm_right, float rpm_back);
+    void udpSendState(robotStatePacket state);
 };
 
 #endif

@@ -2,6 +2,7 @@
 #include <unity.h>
 
 void test_connection();
+void test_communication();
 
 void setup() {
     delay(2000);

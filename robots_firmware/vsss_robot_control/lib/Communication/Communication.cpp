@@ -25,30 +25,58 @@ wl_status_t Communication::configComms() {
     return WiFi.status();
 }
 
+bool Communication::commsInit() {
+    Serial.println("Waiting for handshake...");
+    bool connected = false;
+    int pingNumber = 50056;
+    int pongNumber = 50057;
+    
+    while (!connected) {
+        int packetSize = udp_.parsePacket();
+        if (packetSize == sizeof(robotInitPacket)) {
+            robotInitPacket ping;
+            udp_.read((uint8_t*)&ping, sizeof(ping));
 
-bool Communication::udpReceiveCmd(robotCmdPacket *cmd) {
-    int packet = udp_.parsePacket();
-    if (packet == cmdPacketSize_) {
+            if (ping.msg == pingNumber) {
 
-        robotCmdPacket cmd;
+                IPAddress remoteIp = udp_.remoteIP();
+                uint16_t remotePort = udp_.remotePort();
 
-        udp_.read((uint8_t*) &cmd, cmdPacketSize_);
-
-        return true;
-    } else if (packet > 0) {
-        Serial.print("bad packet");
-        udp_.flush();
+                robotInitPacket pong = {pongNumber};
+                
+                for(int i = 0; i < 3; i++) {
+                    udp_.beginPacket(remoteIp, remotePort);
+                    udp_.write((uint8_t*)&pong, sizeof(pong));
+                    udp_.endPacket();
+                    delay(10); 
+                }
+                connected = true;
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(100)); 
     }
-    return false;
+
+    Serial.println("Handshake received!");
+    return true;
 }
 
-void Communication::udpSendMessage(float yaw, float rpm_left, float rpm_right, float rpm_back) {
-    robotStatePacket state;
+bool Communication::udpReceiveCmd(robotCmdPacket *cmd) {
+    bool newPacket = false;
+    int packetSize;
+    
+    while ((packetSize = udp_.parsePacket()) > 0) {
+        if (packetSize == cmdPacketSize_) {
+            udp_.read((uint8_t*) cmd, cmdPacketSize_);
+            newPacket = true;
+        } else {
+            udp_.flush();
+        }
+    }
 
-    state.yaw = yaw;
-    state.rpm_left = rpm_left;
-    state.rpm_right = rpm_right;
-    state.rpm_back = rpm_back;
+    return newPacket;
+}
+
+void Communication::udpSendState(robotStatePacket state) {
 
     udp_.beginPacket(udp_.remoteIP(), udp_.remotePort());
     udp_.write((uint8_t*)&state, statePacketSize_);
