@@ -15,7 +15,7 @@ from .ros_handler import RosHandler
 from .logic.utils import *
 from .logic import path_planning
 
-simulation = True
+simulation = False
 team = "YELLOW"
 
 
@@ -46,12 +46,12 @@ def main():
 
     infield_objects = [
         {"id": 20, "x": 0, "y": 0, "theta": 0},
-        {"id": 1, "x": -0.3, "y": 0.3, "theta": math.pi / 2},
-        {"id": 3, "x": -0.4, "y": 0.4, "theta": math.pi / 2},
-        {"id": 4, "x": -0.3, "y": -0.3, "theta": math.pi / 2},
-        {"id": 12, "x": 0.3, "y": 0.3, "theta": -math.pi / 2},
-        {"id": 17, "x": 0.6, "y": 0, "theta": -math.pi / 2},
-        {"id": 18, "x": 0.3, "y": -0.3, "theta": -math.pi / 2},
+        {"id": 2, "x": -0.3, "y": 0.3, "theta": 0},
+        {"id": 7, "x": -0.4, "y": 0.4, "theta": 0},
+        {"id": 9, "x": -0.3, "y": -0.3, "theta": 0},
+        {"id": 11, "x": 0.3, "y": 0.3, "theta": 0},
+        {"id": 17, "x": 0.6, "y": 0, "theta": 0},
+        {"id": 18, "x": 0.3, "y": -0.3, "theta": 0},
     ]
 
     ros_handler = RosHandler(infield_objects)
@@ -102,15 +102,16 @@ def main():
             path_planning.repulsion(robot, robot, constants.INFLUENCE_RADIUS, canvas)
         path_planning.repulsion(ball, ball, constants.BALL_INFLUENCE_RADIUS, canvas)
 
-        object_handler.update(canvas)
-        object_handler.draw(canvas, draw_context)
+        object_handler.update(canvas, simulation)
+        object_handler.draw(canvas, draw_context, simulation)
 
-        if current_time - last_pub_time >= (1000 / pub_hz):
+        if current_time - last_pub_time >= (1000 / pub_hz) and simulation:
             cv_image = get_frame_from_buffer(image_buffer, scale_factor=0.5)
             ros_handler.publish_image(cv_image)
             last_pub_time = current_time
 
-        root.after(10, loop)
+        root.after(20, loop)
+
 
     loop()
     root.mainloop()

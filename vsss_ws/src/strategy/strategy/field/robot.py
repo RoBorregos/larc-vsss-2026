@@ -101,7 +101,7 @@ class Robot(Entity):
     def kicker(self, active):
         self.ros_handler.publish_kicker(self.id, active)
 
-    def draw(self, canvas, draw_context):
+    def draw(self, canvas, draw_context, simulation):
         screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)
         size = constants.ROBOT_RADIUS * 2 * constants.DISPLAY_SCALE
 
@@ -123,9 +123,7 @@ class Robot(Entity):
 
         canvas.create_polygon(rotated_points_tk, fill=self.main_color, outline="black")
 
-        draw_context.polygon(rotated_points_pil, fill=self.main_color, outline="black")
-        self._draw_identification_marks(canvas, draw_context, screen_x, screen_y, size)
-
+        if (simulation): draw_context.polygon(rotated_points_pil, fill=self.main_color, outline="black")
         self._draw_identification_marks(canvas, draw_context, screen_x, screen_y, size)
 
         text_offset = size / 2 + constants.TEXT_OFFSET
@@ -193,7 +191,6 @@ class Robot(Entity):
                         ry = random.randint(int(bbox[1]), int(bbox[3]))
 
                         dot_color = random.choice([(0, 0, 0), (255, 255, 255)])
-
                         draw_context.point((rx, ry), fill=dot_color)
 
     def _generate_noisy_texture(self, w, h, base_hex_color, intensity=30):

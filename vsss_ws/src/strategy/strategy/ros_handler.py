@@ -37,13 +37,11 @@ class RosHandler(Node):
 
     def _fetch_transform(self, frame_name):
         try:
-            now = self.get_clock().now()
-
             trans = self.tf_buffer.lookup_transform(
                 'field',
                 frame_name,
                 rclpy.time.Time(),
-                timeout=rclpy.duration.Duration(seconds=0.01)
+                timeout=rclpy.duration.Duration(seconds=0.0)
             )
 
             return {
@@ -51,7 +49,8 @@ class RosHandler(Node):
                     'y': trans.transform.translation.y,
                     'theta': self._quaternion_to_yaw(trans.transform.rotation)
                 }
-        except TransformException:
+        except TransformException as e:
+            print("err", e)
             return None
 
     def get_pose(self, frame_name):

@@ -24,7 +24,7 @@ class Ball(Entity):
         pass
 
 
-    def draw(self, canvas, draw_context):
+    def draw(self, canvas, draw_context, simulation):
         screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)
 
         bbox = [
@@ -41,9 +41,10 @@ class Ball(Entity):
             width=10,
             tags="ball",
         )
-        draw_context.ellipse(
-            bbox,
-            fill="orange",
-            outline="black",
-            width=1
-        )
+        if simulation:
+            draw_context.ellipse(
+                bbox,
+                fill="orange",
+                outline="black",
+                width=1
+            )
