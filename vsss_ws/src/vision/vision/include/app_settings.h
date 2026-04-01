@@ -77,6 +77,7 @@ struct AppData {
 	std::string current_color = "None";
 	bool simulator = true;
 	bool debug_mode = false;
+	float fps = 60.0;
 
 	std::string get_calibration_path(bool simulator) {
 		char* env_path = std::getenv("VSSS_CALIBRATION_PATH");

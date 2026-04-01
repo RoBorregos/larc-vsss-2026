@@ -44,54 +44,57 @@ ObjectType Tracker::Entity::team() const {
 }
 
 void Tracker::Entity::update(const std::optional<cv::Point2f> observed_pos, const std::optional<double> observed_facing) {
-	if (!initialized && observed_pos.has_value()) {
-		init(observed_pos.value(), observed_facing.value_or(0.0));
-	}
+    if (!initialized && observed_pos.has_value()) {
+        init(observed_pos.value(), observed_facing.value_or(0.0));
+    }
 
-	if (!initialized) return;
+    if (!initialized) return;
 
-	total_frames++;
-	cv::Mat prediction = kf.predict();
+    total_frames++;
 
-	if (observed_pos.has_value()) {
-		measurement.at<float>(0) = observed_pos->x;
-		measurement.at<float>(1) = observed_pos->y;
-		kf.correct(measurement);
+    kf.predict();
 
-		pos.x = kf.statePost.at<float>(0);
-		pos.y = kf.statePost.at<float>(1);
+    if (observed_pos.has_value()) {
+        measurement.at<float>(0) = observed_pos->x;
+        measurement.at<float>(1) = observed_pos->y;
 
-		blind_frames = 0;
-		visible = true;
-		seen_frames++;
-	} else {
-		pos.x = prediction.at<float>(0);
-		pos.y = prediction.at<float>(1);
-		blind_frames++;
-		visible = false;
-	}
+        kf.correct(measurement);
 
-	if (total_frames > 0) {
-		accuracy = static_cast<float>(seen_frames) / static_cast<float>(total_frames);
-	}
+        blind_frames = 0;
+        visible = true;
+        seen_frames++;
+    } else {
+        kf.statePre.copyTo(kf.statePost);
 
-	vel.x = kf.statePost.at<float>(2);
-	vel.y = kf.statePost.at<float>(3);
+        blind_frames++;
+        visible = false;
+    }
 
-	if (observed_facing.has_value()) {
-		const double raw_angle = observed_facing.value();
+    constexpr float VELOCITY_DAMPING = 0.95f;
+    kf.statePost.at<float>(2) *= VELOCITY_DAMPING;
+    kf.statePost.at<float>(3) *= VELOCITY_DAMPING;
 
-		const double x_curr = std::cos(facing);
-		const double y_curr = std::sin(facing);
+    pos.x = kf.statePost.at<float>(0);
+    pos.y = kf.statePost.at<float>(1);
+    vel.x = kf.statePost.at<float>(2);
+    vel.y = kf.statePost.at<float>(3);
 
-		const double x_new = std::cos(raw_angle);
-		const double y_new = std::sin(raw_angle);
+    if (total_frames > 0) {
+        accuracy = static_cast<float>(seen_frames) / static_cast<float>(total_frames);
+    }
 
-		const double x_final = (1.0 - FACING_ALPHA) * x_curr + (FACING_ALPHA * x_new);
-		const double y_final = (1.0 - FACING_ALPHA) * y_curr + (FACING_ALPHA * y_new);
+    if (observed_facing.has_value()) {
+        const double raw_angle = observed_facing.value();
+        const double x_curr = std::cos(facing);
+        const double y_curr = std::sin(facing);
+        const double x_new = std::cos(raw_angle);
+        const double y_new = std::sin(raw_angle);
 
-		facing = std::atan2(y_final, x_final);
-	}
+        const double x_final = (1.0 - FACING_ALPHA) * x_curr + (FACING_ALPHA * x_new);
+        const double y_final = (1.0 - FACING_ALPHA) * y_curr + (FACING_ALPHA * y_new);
+
+        facing = std::atan2(y_final, x_final);
+    }
 }
 
 Tracker::Tracker(Coordinates* coordinates, GUI* gui, Drawer* drawer, AppData* app_data) {
@@ -114,7 +117,6 @@ void Tracker::update(const std::vector<RobotPatch>& detected_robots, const std::
 	}
 
 	ball.update(ball_pos, std::nullopt);
-
 
 	std::map<int, bool> seen_this_frame;
 	for (const auto& pair : robots) {
