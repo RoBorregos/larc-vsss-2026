@@ -74,7 +74,7 @@ int main(int argc, char * argv[]) {
     const std::string window_name = "VSSS";
     cv::namedWindow(window_name);
     GUI gui(&app_data, &drawer, window_name);
-    Tracker tracker(&coordinates, &gui, &drawer);
+    Tracker tracker(&coordinates, &gui, &drawer, &app_data);
     auto ros_handler = std::make_shared<RosHandler>(&app_data, &tracker);
 
     ros_handler->declare_parameter("use_camera", false);
@@ -87,8 +87,8 @@ int main(int argc, char * argv[]) {
 
     bool use_camera = ros_handler->get_parameter("use_camera").as_bool();
     app_data.simulator = ros_handler->get_parameter("simulator").as_bool();
+    app_data.debug_mode = ros_handler->get_parameter("debug_mode").as_bool();
     bool record_video = ros_handler->get_parameter("record_video").as_bool();
-    bool debug_mode = ros_handler->get_parameter("debug_mode").as_bool();
     std::string camera_id = ros_handler->get_parameter("camera_id").as_string();
     std::string file_path = ros_handler->get_parameter("file_path").as_string();
 
@@ -203,9 +203,7 @@ int main(int argc, char * argv[]) {
         gui.upload_frame(image);
         auto detections = detector.update();
         tracker.update(detections.first, detections.second);
-        if (debug_mode) {
-            tracker.display_debug_image(image.cols, image.rows);
-        }
+        tracker.display_debug_image(image.cols, image.rows);
 
         interface_manager.draw_interface();
 

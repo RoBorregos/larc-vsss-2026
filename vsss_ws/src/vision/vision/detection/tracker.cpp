@@ -94,10 +94,11 @@ void Tracker::Entity::update(const std::optional<cv::Point2f> observed_pos, cons
 	}
 }
 
-Tracker::Tracker(Coordinates* coordinates, GUI* gui, Drawer* drawer) {
+Tracker::Tracker(Coordinates* coordinates, GUI* gui, Drawer* drawer, AppData* app_data) {
 	this->coordinates = coordinates;
 	this->gui = gui;
 	this->drawer = drawer;
+	this->app_data = app_data;
 	ball.id = 20;
 }
 
@@ -281,6 +282,14 @@ void Tracker::display_debug_image(int width, int height) {
 		cv::Scalar ball_color = ball.visible ? cv::Scalar(0, 165, 255) : cv::Scalar(0, 0, 180);
 		cv::circle(map, ball_px, 6, ball_color, -1);
 
+		cv::Scalar color = ball.visible ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 255, 255);
+		drawer->circle(
+			coordinates->warped_to_pixel(ball_px, width, height),
+			DRAW_RADIUS,
+			DRAW_THICKNESS,
+			color, Drawer::Layer::MARKINGS
+		);
+
 		auto now = std::chrono::steady_clock::now();
 		std::chrono::duration<double> elapsed = now - last_prediction_time;
 
@@ -306,10 +315,12 @@ void Tracker::display_debug_image(int width, int height) {
 	gpu_image.download(image);
 	cv::Mat overlay = coordinates->get_warped_image(image);
 
-	cv::Mat result;
-	double alpha = 0.3;
-	double beta = 1.0 - alpha;
-	double gamma = 0.0;
-	cv::addWeighted(map, alpha, overlay, beta, gamma, result);
-	cv::imshow("Kalman view", result);
+	if (app_data->debug_mode) {
+		cv::Mat result;
+		double alpha = 0.3;
+		double beta = 1.0 - alpha;
+		double gamma = 0.0;
+		cv::addWeighted(map, alpha, overlay, beta, gamma, result);
+		cv::imshow("Kalman view", result);
+	}
 }
