@@ -89,7 +89,6 @@ class Entity:
         angle = -vision_pose['theta']
 
         self.real_theta = math.atan2(math.sin(angle), math.cos(angle)) + math.pi / 2
-        print(f"{self.id}: {self.real_theta * 180 / math.pi:.2f}°")
 
     def apply_physics(self, dt):
         self.real_x += self.real_vx * dt

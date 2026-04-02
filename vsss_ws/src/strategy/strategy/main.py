@@ -15,7 +15,7 @@ from .ros_handler import RosHandler
 from .logic.utils import *
 from .logic import path_planning
 
-simulation = False
+simulation = True
 team = "YELLOW"
 
 
@@ -94,7 +94,7 @@ def main():
         ball = object_handler.get_ball()
 
         strategy(ball, team_robots, enemy_robots)
-        enemy_strategy(ball, enemy_robots)
+        if simulation: enemy_strategy(ball, enemy_robots)
 
         for robot in team_robots:
             path_planning.repulsion(robot, robot, constants.TEAM_INFLUENCE_RADIUS, canvas)
