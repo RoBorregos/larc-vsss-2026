@@ -13,9 +13,9 @@ def generate_launch_description():
                 'use_camera': True,
                 'simulator': False,
                 'record_video': False,
-                'debug_mode': True,
+                'debug_mode': False,
                 'camera_id': '/dev/vsss_cam',
-                'file_path': '/ros2_ws/vsss/vsss_ws/src/vision/media/log/raw_2026-02-24_04-18-37.avi'
+                'file_path': '/ros2_ws/vsss/vsss_ws/src/vision/media/log/raw_2026-04-01_02-43-26.avi'
             }]
         )
     ])
