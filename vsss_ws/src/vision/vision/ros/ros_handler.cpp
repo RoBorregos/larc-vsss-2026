@@ -95,16 +95,17 @@ void RosHandler::publish_tfs(const rclcpp::Time & now) {
     tf_broadcaster->sendTransform(t_ball);
 
     for (const auto& [id, robot] : tracker->robots) {
-       geometry_msgs::msg::TransformStamped t_robot;
-       t_robot.header.stamp = now;
-       t_robot.header.frame_id = "field";
-       t_robot.child_frame_id = "robot_" + std::to_string(id);
-       t_robot.transform.translation.x = robot.pos.x;
-       t_robot.transform.translation.y = robot.pos.y;
-       t_robot.transform.translation.z = 0.0;
-       t_robot.transform.rotation.z = sin(robot.facing / 2.0);
-       t_robot.transform.rotation.w = cos(robot.facing / 2.0);
-       tf_broadcaster->sendTransform(t_robot);
+    	geometry_msgs::msg::TransformStamped t_robot;
+    	t_robot.header.stamp = now;
+    	t_robot.header.frame_id = "field";
+    	t_robot.child_frame_id = "robot_" + std::to_string(id);
+    	t_robot.transform.translation.x = robot.pos.x;
+    	t_robot.transform.translation.y = robot.pos.y;
+    	t_robot.transform.translation.z = 0.0;
+    	t_robot.transform.rotation.z = sin(robot.facing / 2.0);
+    	t_robot.transform.rotation.w = cos(robot.facing / 2.0);
+    	tf_broadcaster->sendTransform(t_robot);
+    		std::this_thread::sleep_for(std::chrono::microseconds(1500));
     }
 }
 
@@ -191,7 +192,7 @@ void RosHandler::publish_field_markers(const rclcpp::Time & now) {
 
 	add_line(0.0, 0.65, 0.0, -0.65);
 	add_line(0.0, FieldSizes::HALF_WIDTH, 0.0, -FieldSizes::HALF_WIDTH);
-	
+
 	add_line(FieldSizes::GOAL_AREA_X,  FieldSizes::GOAL_AREA_HALF_WIDTH, FieldSizes::GOAL_AREA_X, -FieldSizes::GOAL_AREA_HALF_WIDTH);
 	add_line(FieldSizes::GOAL_AREA_X,  FieldSizes::GOAL_AREA_HALF_WIDTH, FieldSizes::HALF_LENGTH,  FieldSizes::GOAL_AREA_HALF_WIDTH);
 	add_line(FieldSizes::GOAL_AREA_X, -FieldSizes::GOAL_AREA_HALF_WIDTH, FieldSizes::HALF_LENGTH, -FieldSizes::GOAL_AREA_HALF_WIDTH);
@@ -263,6 +264,7 @@ void RosHandler::publish_legacy_messages() const {
 		robot_message.velocity.linear.y = robot.second.vel.y;
 
 		publisher->publish(robot_message);
+    	std::this_thread::sleep_for(std::chrono::microseconds(1500));
 	}
 }
 
