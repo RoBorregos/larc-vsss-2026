@@ -19,6 +19,7 @@ private:
     Coordinates* coordinates;
     GUI* gui;
     Drawer* drawer;
+    AppData* app_data;
     std::set<int> infield_objects;
 
     std::chrono::steady_clock::time_point last_prediction_time;
@@ -51,7 +52,7 @@ public:
         [[nodiscard]] ObjectType team() const;
     };
 
-    Tracker(Coordinates* coordinates, GUI* gui, Drawer* drawer);
+    Tracker(Coordinates* coordinates, GUI* gui, Drawer* drawer, AppData* app_data);
     void upload_infield_objects(const std::set<int>& infield_objects);
     Entity ball;
     std::map<int, Entity> robots;

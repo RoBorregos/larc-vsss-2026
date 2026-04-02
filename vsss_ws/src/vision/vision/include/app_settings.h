@@ -76,6 +76,7 @@ struct AppData {
 	AppState current_state = AppState::MAIN_MENU;
 	std::string current_color = "None";
 	bool simulator = true;
+	bool debug_mode = false;
 
 	std::string get_calibration_path(bool simulator) {
 		char* env_path = std::getenv("VSSS_CALIBRATION_PATH");
