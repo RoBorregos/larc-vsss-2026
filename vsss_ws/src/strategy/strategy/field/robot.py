@@ -3,7 +3,7 @@ import rclpy
 import random
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
-from std_msgs.msg import Bool
+from std_msgs.msg import Bool, Float32
 from .entity import Entity
 from .. import constants
 import numpy as np
@@ -36,28 +36,36 @@ class Robot(Entity):
         self.sub_kicker = None
         self.sub_stop = None
 
-        if simulation:
-            self.subscribe_to_topics()
+        self.subscribe_to_topics(simulation)
 
-    def subscribe_to_topics(self):
-        self.sub_cmd_vel = self.ros_handler.create_subscription(
-            Twist,
-            f'/strategy/robot_{self.id}/cmd_vel',
-            self._simulation_move,
-            10
-        )
-        self.sub_kicker = self.ros_handler.create_subscription(
-            Bool,
-            f'/strategy/robot_{self.id}/kicker',
-            self._simulation_kick,
-            10
-        )
-        self.sub_stop = self.ros_handler.create_subscription(
-            Bool,
-            f'/strategy/robot_{self.id}/stop',
-            self._simulation_stop,
-            10
-        )
+    def subscribe_to_topics(self, simulation):
+        if simulation:
+            self.sub_cmd_vel = self.ros_handler.create_subscription(
+                Twist,
+                f'/strategy/robot_{self.id}/cmd_vel',
+                self._simulation_move,
+                10
+            )
+            self.sub_kicker = self.ros_handler.create_subscription(
+                Bool,
+                f'/strategy/robot_{self.id}/kicker',
+                self._simulation_kick,
+                10
+            )
+            self.sub_stop = self.ros_handler.create_subscription(
+                Bool,
+                f'/strategy/robot_{self.id}/stop',
+                self._simulation_stop,
+                10
+            )
+        else:
+            self.sub_ball = self.ros_handler.create_subscription(
+                Float32,
+                f'/communication/robot_{self.id}/bno',
+                self._communication_bno,
+                10
+            )
+
 
     def destroy(self, canvas):
         if self.sub_cmd_vel:
@@ -86,6 +94,10 @@ class Robot(Entity):
         self.real_vx = new_vx
         self.real_vy = new_vy
         self.real_angular_vel = msg.angular.z
+
+    def _communication_bno(self, msg):
+        if msg.data:
+            self.real_theta = msg.data
 
     def _simulation_kick(self, msg):
         if msg.data:

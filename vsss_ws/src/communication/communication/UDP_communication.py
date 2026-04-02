@@ -25,11 +25,11 @@ class RobotUDPClient:
         print("Setting up UDP socket...")
         try:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            
+
             print(f"UDP socket ready for {self.robot_ip}:{self.robot_port}")
-            
+
             self.client_socket.bind(('', self.local_port))
-            
+
         except socket.error as e:
             print(f"Socket error: {e}")
             self.client_socket = None
@@ -40,13 +40,13 @@ class RobotUDPClient:
         pong_number = 50057
         self.client_socket.settimeout(0.2) # Un poco más de tiempo para la red
         packed_ping = struct.pack('<i', ping_number)
-        
+
         print("Handshake", end="")
         while True:
             try:
                 self.client_socket.sendto(packed_ping, (self.robot_ip, self.robot_port))
                 print(".", end="", flush=True)
-                
+
                 data, addr = self.client_socket.recvfrom(buffer_size)
                 if len(data) == INIT_PACKET_SIZE:
                     val = struct.unpack('<i', data)[0]
@@ -102,17 +102,15 @@ class RobotUDPClient:
         if self.client_socket:
             self.client_socket.close()
             self.client_socket = None
-            
 
 class SingleRobotUDPNode(Node):
-    def __init__(self): 
+    def __init__(self):
         super().__init__('single_robot_udp_node')
         # Parameters should be loaded from external YAML config via ROS2 launch or CLI
-        
         self.get_logger().info(f"Waiting to Start")
         self.declare_parameter('robot_name', 'vsss_robot')
         self.declare_parameter('robot_ip', '0.0.0.0')
-        self.declare_parameter('robot_port', DEFAULT_PORT)    
+        self.declare_parameter('robot_port', DEFAULT_PORT)
         self.declare_parameter('local_port', DEFAULT_PORT)
         self.latest_setpoints = [0.0, 0.0, 0.0]
         self.robot_yaw = 0.0
@@ -121,12 +119,14 @@ class SingleRobotUDPNode(Node):
         ip = self.get_parameter('robot_ip').value
         robot_port = self.get_parameter('robot_port').value
         local_port = self.get_parameter('local_port').value
-        
+
+        print("Parameters {}, {}, {}, {}".format(name, ip, robot_port, local_port))
+
         node_name = self.get_fully_qualified_name()
         cmd_vel_topic = self.resolve_topic_name('cmd_vel')
         rpms_topic = self.resolve_topic_name('encoders')
         telemetry_topic = self.resolve_topic_name('bno')
-        
+
         self.get_logger().info(f"{node_name} Started with values name: {name}, connection->({ip}:{robot_port})")
         self.client = RobotUDPClient(ip, robot_port, local_port)
         self.get_logger().info(f"Communication established")
@@ -134,19 +134,19 @@ class SingleRobotUDPNode(Node):
         self.get_logger().info(f"Waiting to Start")
         self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
         self.get_logger().info(f"Subscribed to {cmd_vel_topic} for {name} ({ip}:{robot_port})")
-        
+
         self.telemetry_pub = self.create_publisher(Float32, 'bno', 10)
         self.get_logger().info(f"Publishing telemetry to {telemetry_topic} for {name} ({ip}:{robot_port})")
-        
+
         self.rpms_pub = self.create_publisher(Float32MultiArray, 'encoders', 10)
         self.get_logger().info(f"Publishing RPMs to {rpms_topic} for {name} ({ip}:{robot_port})")
-        
+
         self.create_subscription(Bool, 'stop', self.stop_callback, 10)
         self.get_logger().info(f"Subscribed to stop commands on {self.resolve_topic_name('stop')} for {name} ({ip}:{robot_port})")
-        
+
         self.create_subscription(Bool, 'kicker', self.kicker_callback, 10)
         self.get_logger().info(f"Subscribed to kicker commands on {self.resolve_topic_name('kicker')} for {name} ({ip}:{robot_port})")
-        
+
         self.create_timer(0.02, self.receive_telemetry_timer_callback)  # 50 Hz for telemetry
         
 

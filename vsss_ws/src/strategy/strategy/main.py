@@ -15,7 +15,7 @@ from .ros_handler import RosHandler
 from .logic.utils import *
 from .logic import path_planning
 
-simulation = True
+simulation = False
 team = "YELLOW"
 
 
