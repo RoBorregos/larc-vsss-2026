@@ -45,7 +45,6 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         for entity in entities:
             entity_blocking = is_obstacle_blocking(attacker, entity, target_x, target_y)
             if entity_blocking:
-                print(f"Blocked by entity: {entity.id}")
                 path_to_target_blocked = True
 
         if (math.fabs(relative_angle_deg) > get_dynamic_threshold(distance)

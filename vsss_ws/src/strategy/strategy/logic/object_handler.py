@@ -21,8 +21,9 @@ class ObjectHandler:
 
         self._init_objects()
 
-    def update(self, canvas):
+    def update(self, canvas, simulation):
         current_time = time.time()
+
         dt = current_time - self.last_update_time
 
         if dt <= 0:
@@ -35,12 +36,15 @@ class ObjectHandler:
             if new_pose:
                 entity.update_from_vision(new_pose, dt)
                 entity.request_prediction(seconds_in_future=0.5)
+                if not simulation:
+                    entity.set_display_pose(new_pose)
 
-            entity.apply_physics(dt)
+            if simulation: entity.apply_physics(dt)
 
-        ball = self.get_ball()
-        robots = self.get_all_robots()
-        resolve_physics([ball, *robots], self.goal_callback, canvas)
+        if simulation:
+            ball = self.get_ball()
+            robots = self.get_all_robots()
+            resolve_physics([ball, *robots], self.goal_callback, canvas)
 
         self.last_update_time = current_time
 
@@ -77,13 +81,13 @@ class ObjectHandler:
 
         finish_and_reset(10)
 
-    def draw(self, canvas, draw_context):
+    def draw(self, canvas, draw_context, simulation):
         if self.in_goal_callback: return
         width = canvas.winfo_width()
         height = canvas.winfo_height()
 
         for entity in self.entities.values():
-            entity.draw(canvas, draw_context)
+            entity.draw(canvas, draw_context, simulation)
 
     def _init_objects(self):
         for infield_object in self.infield_objects:
