@@ -58,7 +58,7 @@ def is_obstacle_blocking(entity, obstacle, target_x, target_y):
 
     perp_dist = math.hypot(obstacle.x - closest_x, obstacle.y - closest_y)
 
-    safety = 2 * constants.ROBOT_RADIUS + constants.OBSTACLE_SAFETY_MARGIN  # margin
+    safety = 2 * constants.ROBOT_RADIUS + constants.OBSTACLE_SAFETY_MARGIN * 2
     return perp_dist < (constants.BLOCKING_WIDTH + safety)
 
 
@@ -83,8 +83,8 @@ def rolling_vector(robot, obstacle, target_x, target_y):
     influence = 1 - dist / vortex_radius
     ratio = utils.clamp(influence, 0, 1)
 
-    tang_strength = constants.VORTEX_GAIN * ratio
-    radial_strength = constants.ENEMY_REPULSIVE_GAIN * constants.EXPAND_REPULSIVE_GAIN * ratio
+    tang_strength = constants.VORTEX_GAIN * (1 + 2 * ratio)
+    radial_strength = constants.ENEMY_REPULSIVE_GAIN * constants.EXPAND_REPULSIVE_GAIN * (0.5 + ratio)
 
     fx = tang_x * tang_strength + rx * radial_strength
     fy = tang_y * tang_strength + ry * radial_strength
@@ -122,17 +122,14 @@ def repulsion(robot, obstacle, influence_radius, canvas=None):
             )
             canvas.tag_raise(tag_name)
 
-    if dist > influence_radius or dist == 0:
+    if dist == 0:
         return 0.0, 0.0
 
-    if influence_radius == 0:
-        return 0.0, 0.0
-        
     rx = dx / dist
     ry = dy / dist
 
-    sigma = influence_radius / 2.0
-    strength = constants.ENEMY_REPULSIVE_GAIN * math.exp(-dist / sigma)
+    strength = constants.ENEMY_REPULSIVE_GAIN * math.exp(-dist / influence_radius)
+
     return rx * strength, ry * strength
 
 def wall_repulsion(robot):
@@ -160,14 +157,24 @@ def wall_repulsion(robot):
     return fx, fy
 
 
-def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=True):
+def field(robot, target_x, target_y, enemies, teammates, ball, role=None):
     blocking_detected = False
     total_x = 0.0
     total_y = 0.0
 
     # Repulsion for each enemy (fx, fy) are accumulated in total_x and total_y
     for enemy in enemies:
-        if is_obstacle_blocking(robot, enemy, target_x, target_y):
+        dx = enemy.x - robot.x
+        dy = enemy.y - robot.y
+        dist = math.hypot(dx, dy)
+
+        angle_to_enemy = math.atan2(dy, dx)
+        angle_diff = math.atan2(math.sin(angle_to_enemy - robot.theta),
+                                math.cos(angle_to_enemy - robot.theta))
+
+        front_block = abs(angle_diff) < math.radians(30)  # 🔥 tunable
+
+        if is_obstacle_blocking(robot, enemy, target_x, target_y) or front_block:
             blocking_detected = True
             fx, fy = rolling_vector(robot, enemy, target_x, target_y)
         else:
@@ -189,8 +196,70 @@ def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=T
             total_y += fy
 
     if ball:
-        if is_obstacle_blocking(robot, ball, target_x, target_y):
-            fx, fy = rolling_vector(robot, ball, target_x, target_y)
+
+        dx = ball.x - robot.x
+        dy = ball.y - robot.y
+        dist = math.hypot(dx, dy)
+
+        forward_x = math.cos(robot.theta)
+        forward_y = math.sin(robot.theta)
+
+        dot = dx * forward_x + dy * forward_y
+
+        angle_to_ball = math.atan2(dy, dx)
+        angle_diff = math.atan2(math.sin(angle_to_ball - robot.theta),
+                                math.cos(angle_to_ball - robot.theta))
+        angle_diff_deg = abs(math.degrees(angle_diff))
+
+        if not hasattr(robot, "has_ball"):
+            robot.has_ball = False
+
+        if not robot.has_ball:
+            if (dist < constants.POSSESSION_DISTANCE_ENTER and
+                angle_diff_deg < constants.POSSESSION_ANGLE_ENTER and
+                dot > 0):
+                robot.has_ball = True
+        else:
+            if (dist > constants.POSSESSION_DISTANCE_KEEP or
+                angle_diff_deg > constants.POSSESSION_ANGLE_KEEP or
+                dot < 0):
+                robot.has_ball = False
+
+        has_possession = robot.has_ball
+
+        if role == "defender":
+            fx, fy = repulsion(robot, ball, constants.BALL_INFLUENCE_RADIUS)
+
+        elif role == "attacker":
+
+            min_enemy_dist = min(
+                [math.hypot(ball.x - e.x, ball.y - e.y) for e in enemies],
+                default=999)
+            
+            ball_contested = min_enemy_dist < constants.INFLUENCE_RADIUS
+
+            if has_possession:
+                fx, fy = attractive_vector(robot, ball.x, ball.y)
+
+            else:
+                if ball_contested:
+                    dx = ball.x - robot.x
+                    dy = ball.y - robot.y
+                    dist = math.hypot(dx, dy)
+
+                    if dist != 0:
+                        dx /= dist
+                        dy /= dist
+
+                    boost = constants.ATTRACTIVE_GAIN * 2.5
+                    fx, fy = dx * boost, dy * boost
+
+                else:
+                    if is_obstacle_blocking(robot, ball, target_x, target_y):
+                        fx, fy = rolling_vector(robot, ball, target_x, target_y)
+                    else:
+                        fx, fy = repulsion(robot, ball, constants.BALL_INFLUENCE_RADIUS)
+
         else:
             fx, fy = repulsion(robot, ball, constants.BALL_INFLUENCE_RADIUS)
 

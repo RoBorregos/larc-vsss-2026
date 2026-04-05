@@ -3,7 +3,7 @@ from typing import List
 from ..field.ball import Ball
 from ..field.robot import Robot
 from . import roles
-from .utils import distance_to_goal, distance_between, angle_between, angle_between_relative, get_dynamic_threshold, clamp
+from .utils import distance_between, angle_between, angle_between_relative, get_dynamic_threshold, clamp
 from .. import constants
 from .path_planning import *
 import time
@@ -30,72 +30,134 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         relative_angle_deg = math.degrees(relative_angle)
         distance = distance_between(attacker, ball)
 
-        if distance < constants.DISTANCE_TO_BALL_THRESHOLD and math.fabs(relative_angle_deg) < constants.ANGLE_THRESHOLD_MIN:
+        if distance < constants.DISTANCE_TO_BALL_THRESHOLD and abs(relative_angle_deg) < constants.ANGLE_THRESHOLD_MIN:
             attacker.kicker(True)
         else:
             attacker.kicker(False)
 
-        speed = constants.BASE_SPEED
+        dx_goal = constants.ZONE_GOAL["x"] - ball.x
+        dy_goal = constants.ZONE_GOAL["y"] - ball.y
 
-        target_x = ball.x - constants.BEHIND_BALL_OFFSET * math.cos(attacker.theta)
-        target_y = ball.y - constants.BEHIND_BALL_OFFSET * math.sin(attacker.theta)
+        dist_goal = math.hypot(dx_goal, dy_goal)
 
-        path_to_target_blocked = False
-        entities = [*team_robots, *enemy_robots]
-        for entity in entities:
-            entity_blocking = is_obstacle_blocking(attacker, entity, target_x, target_y)
-            if entity_blocking:
-                print(f"Blocked by entity: {entity.id}")
-                path_to_target_blocked = True
+        if dist_goal != 0:
+            dx_goal /= dist_goal
+            dy_goal /= dist_goal
 
-        if (math.fabs(relative_angle_deg) > get_dynamic_threshold(distance)
-            or distance > constants.DISTANCE_TO_BALL_THRESHOLD
-            or path_to_target_blocked):
+        target_x = ball.x - constants.BEHIND_BALL_OFFSET * dx_goal
+        target_y = ball.y - constants.BEHIND_BALL_OFFSET * dy_goal
 
-            fx, fy = field(attacker, target_x, target_y, enemy_robots, team_robots, ball)
-            speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
-        else:
-            move_angle = global_angle
-
+        has_possession = getattr(attacker, "has_ball", False)
 
         goal_x = constants.ZONE_GOAL["x"]
         goal_half = constants.ZONE_GOAL["MIDPOINT_OFFSET"]
 
-        top_post = (goal_x,  goal_half)
-        bottom_post = (goal_x, -goal_half)
+        top_angle = math.atan2(goal_half - ball.y, goal_x - ball.x)
+        bottom_angle = math.atan2(-goal_half - ball.y, goal_x - ball.x)
+
+        angle_min = min(top_angle, bottom_angle)
+        angle_max = max(top_angle, bottom_angle)
+
+        blocked_intervals = []
+
+        for enemy in enemy_robots:
+            dx = enemy.x - ball.x
+            dy = enemy.y - ball.y
+            dist = math.hypot(dx, dy)
+
+            if dist == 0:
+                continue
+
+            angle_to_enemy = math.atan2(dy, dx)
+
+            robot_radius = constants.ROBOT_RADIUS + constants.OBSTACLE_SAFETY_MARGIN
+            angle_width = math.atan2(robot_radius, dist)
+
+            block_start = max(angle_to_enemy - angle_width, angle_min)
+            block_end = min(angle_to_enemy + angle_width, angle_max)
+
+            if block_start < block_end:
+                blocked_intervals.append((block_start, block_end))
+
+        blocked_intervals.sort()
+
+        free_intervals = []
+        current_start = angle_min
+
+        for start, end in blocked_intervals:
+            if start > current_start:
+                free_intervals.append((current_start, start))
+            current_start = max(current_start, end)
+
+        if current_start < angle_max:
+            free_intervals.append((current_start, angle_max))
+
+        best_interval = None
+        best_score = -float('inf')
+
+        robot_angle = attacker.theta
+
+        for interval in free_intervals:
+            width = interval[1] - interval[0]
+            mid_angle = (interval[0] + interval[1]) / 2
+
+            angle_diff = math.atan2(math.sin(mid_angle - robot_angle),
+                                    math.cos(mid_angle - robot_angle))
+
+            score = width - 0.5 * abs(angle_diff)
+
+            if score > best_score:
+                best_score = score
+                best_interval = interval
+
+        if best_interval:
+            best_angle = (best_interval[0] + best_interval[1]) / 2
+        else:
+            best_angle = 0
+
+        dx_goal = math.cos(best_angle)
+        dy_goal = math.sin(best_angle)
+
+        t = (goal_x - ball.x) / dx_goal if dx_goal != 0 else 0
 
         aim_x = goal_x
-        aim_y = 0
-        
-        blocking_enemy = None
-        # --- Find obstacle blocking ---
-        for enemy in enemy_robots:
-            if is_obstacle_blocking(ball, enemy, goal_x, 0):
-                blocking_enemy = enemy
-                break
+        aim_y = ball.y + t * dy_goal
 
-        # --- If blocked, aim to a corner ---
-        if blocking_enemy is not None:
+        aim_y = clamp(aim_y, -goal_half + 0.02, goal_half - 0.02)
 
-            dist_top = abs(blocking_enemy.y - goal_half)
-            dist_bottom = abs(blocking_enemy.y + goal_half)
+        if not has_possession:
+            final_target_x = target_x
+            final_target_y = target_y
+        else:
+            final_target_x = aim_x
+            final_target_y = aim_y
 
-            if dist_top < dist_bottom:
-                chosen_post = top_post
+        fx, fy = field(attacker, final_target_x, final_target_y, enemy_robots, team_robots, ball, role='attacker')
+        speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
+
+        if not has_possession:
+
+            dx_ball = ball.x - attacker.x
+            dy_ball = ball.y - attacker.y
+
+            dx_goal = constants.ZONE_GOAL["x"] - attacker.x
+            dy_goal = constants.ZONE_GOAL["y"] - attacker.y
+
+            dx_orient = constants.W_BALL * dx_ball + constants.W_GOAL * dx_goal
+            dy_orient = constants.W_BALL * dy_ball + constants.W_GOAL * dy_goal
+            
+        else:
+            if distance < constants.POSSESSION_DISTANCE_ENTER:
+                dx_orient = aim_x - attacker.x
+                dy_orient = aim_y - attacker.y
             else:
-                chosen_post = bottom_post
+                dx_orient = final_target_x - attacker.x
+                dy_orient = final_target_y - attacker.y
 
-            # Midpoint between obstacle and corner
-            aim_x = (blocking_enemy.x + chosen_post[0]) / 2
-            aim_y = (blocking_enemy.y + chosen_post[1]) / 2
-
-        # --- Final orientation ---
-        dx_goal = aim_x - attacker.x
-        dy_goal = aim_y - attacker.y
-        goal_angle = math.atan2(dy_goal, dx_goal)
+        goal_angle = math.atan2(dy_orient, dx_orient)
 
         attacker.move(speed, move_angle, math.degrees(goal_angle))
-
+        
     if defender:
         dx = 0
         dy = 0
@@ -109,7 +171,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
             target_x = (left_limit + right_limit) / 2
             target_y = 0
 
-            fx, fy = field(defender, target_x, target_y, enemy_robots, team_robots, ball)
+            fx, fy = field(defender, target_x, target_y, enemy_robots, team_robots, ball, role='defender')
             speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
 
         
@@ -161,7 +223,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         speed = 0
 
         if distance > constants.HELPER_MINIMUM_DISTANCE_TO_ATTACKER:
-            fx, fy = field(helper, target_x, target_y, enemy_robots, team_robots, ball)
+            fx, fy = field(helper, target_x, target_y, enemy_robots, team_robots, ball, role='helper')
             speed, move_angle = resultant_vector(fx, fy, constants.BASE_SPEED)
 
         helper.move(speed, move_angle, 0)

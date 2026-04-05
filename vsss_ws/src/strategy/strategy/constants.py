@@ -13,7 +13,7 @@ ROBOT_RADIUS = 3.75
 BALL_RADIUS = 2.135
 
 # --- Navigation & Control Thresholds ---
-ANGLE_THRESHOLD_MIN = 15    # Tolerance in degrees for alignment when the distance is to the maximum
+ANGLE_THRESHOLD_MIN = 25    # Tolerance in degrees for alignment when the distance is to the maximum
 DISTANCE_THRESHOLD_MAX = 0.4 # Distance where the angle threshold is set to min
 
 ANGLE_THRESHOLD_MAX = 30
@@ -70,7 +70,7 @@ DOWN = 90
 UP = 270
 
 # --- Goal Post Geometry & Detection Areas ---
-DISTANCE_TO_BALL_THRESHOLD = 0.3
+DISTANCE_TO_BALL_THRESHOLD = 0.4
 ZONE_GOAL = {
     "x": DISPLAY_FIELD_WIDTH / 100 / 2,
     "y": 0,
@@ -146,11 +146,11 @@ VORTEX_GAIN = 3.0 # Strength of the tangential component in the rolling vector w
 ENEMY_REPULSIVE_GAIN = 1.2 # Strength of repulsion from enemy robots
 TEAM_REPULSION_GAIN = 0.45 # Strength of repulsion from team robots
 TEAM_INFLUENCE_RADIUS = 0.14 # Distance where team robots start influencing the field
-INFLUENCE_RADIUS = 0.17 # Distance where enemy robots start influencing the field
+INFLUENCE_RADIUS = 0.15 # Distance where enemy robots start influencing the field
 BALL_INFLUENCE_RADIUS = 0.12 # Distance where the ball start influencing the field
 ROBOT_VORTEX_SIDE = {} # Variable to store the assigned vortex side for each robot when blocking is detected
 OPTIMAL_ROUTE = False # Set to True to enable optimal route calculation (currently not implemented)
-OBSTACLE_SAFETY_MARGIN = 0.03
+OBSTACLE_SAFETY_MARGIN = 0.07
 # --- Robot Movement & Precision ---
 MOVEMENT_NOISE = 0.2      # Deviation based on a Gaussian distribution
 MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets to 0
@@ -164,3 +164,13 @@ REDUCE_ATTRACTION_IF_BLOCKED = 0.4
 # --- Measurements ---
 WEIGHT_CONVERSION = 0.01
 METER_TO_CM = 100
+
+# --- BALL POSSESSION ---
+POSSESSION_DISTANCE_ENTER = 0.30
+POSSESSION_ANGLE_ENTER = 15
+
+POSSESSION_DISTANCE_KEEP = 0.50
+POSSESSION_ANGLE_KEEP = 35
+
+W_BALL = 0.7
+W_GOAL = 0.3
