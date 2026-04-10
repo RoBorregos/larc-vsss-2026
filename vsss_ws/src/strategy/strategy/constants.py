@@ -108,29 +108,15 @@ class Color_ID:
 # Maps entity ID to a list of identifying colors
 BALL_ID = 20
 ROBOT_DATABASE = {
-    0:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.GREEN],
-    1:  [Color_ID.YELLOW, Color_ID.RED,     Color_ID.CYAN],
-    2:  [Color_ID.YELLOW, Color_ID.GREEN,   Color_ID.RED],
-    3:  [Color_ID.YELLOW, Color_ID.GREEN,   Color_ID.CYAN],
-    4:  [Color_ID.YELLOW, Color_ID.GREEN,   Color_ID.MAGENTA],
-    5:  [Color_ID.YELLOW, Color_ID.CYAN,    Color_ID.RED],
-    6:  [Color_ID.YELLOW, Color_ID.CYAN,    Color_ID.GREEN],
-    7:  [Color_ID.YELLOW, Color_ID.CYAN,    Color_ID.MAGENTA],
-    8:  [Color_ID.YELLOW, Color_ID.MAGENTA, Color_ID.GREEN],
-    9:  [Color_ID.YELLOW, Color_ID.MAGENTA, Color_ID.CYAN],
+    0:  256,
+    1:  272,
+    2:  273,
 
-    10: [Color_ID.BLUE, Color_ID.RED,     Color_ID.GREEN],
-    11: [Color_ID.BLUE, Color_ID.RED,     Color_ID.CYAN],
-    12: [Color_ID.BLUE, Color_ID.GREEN,   Color_ID.RED],
-    13: [Color_ID.BLUE, Color_ID.GREEN,   Color_ID.CYAN],
-    14: [Color_ID.BLUE, Color_ID.GREEN,   Color_ID.MAGENTA],
-    15: [Color_ID.BLUE, Color_ID.CYAN,    Color_ID.RED],
-    16: [Color_ID.BLUE, Color_ID.CYAN,    Color_ID.GREEN],
-    17: [Color_ID.BLUE, Color_ID.CYAN,    Color_ID.MAGENTA],
-    18: [Color_ID.BLUE, Color_ID.MAGENTA, Color_ID.GREEN],
-    19: [Color_ID.BLUE, Color_ID.MAGENTA, Color_ID.CYAN],
+    10: 955,
+    11: 771,
+    12: 939,
 
-    20: [Color_ID.ORANGE, Color_ID.NONE, Color_ID.NONE]
+    20: -1,
 }
 
 # --- PATH PLANNING ---

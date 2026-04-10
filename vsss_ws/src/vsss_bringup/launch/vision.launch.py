@@ -10,8 +10,8 @@ def generate_launch_description():
             output='screen',
             emulate_tty=True,
             parameters=[{
-                'use_camera': True,
-                'simulator': False,
+                'use_camera': False,
+                'simulator': True,
                 'record_video': False,
                 'debug_mode': False,
                 'camera_id': '/dev/vsss_cam',
