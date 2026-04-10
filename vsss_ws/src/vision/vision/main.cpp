@@ -98,7 +98,7 @@ int main(int argc, char * argv[]) {
                 app_data.simulator ? "SIMULATOR" : (use_camera ? "CAMERA" : "FILE"),
                 record_video ? "ON" : "OFF");
 
-    std::set<int> infield_objects = {2, 7, 9, 11, 17, 18, 20};
+    std::set<int> infield_objects = {0, 1, 2, 10, 11, 12, 20};
     cv::VideoCapture cap;
     cv::VideoWriter raw_writer;
     cv::VideoWriter processed_writer;

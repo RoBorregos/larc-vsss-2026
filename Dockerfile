@@ -81,6 +81,11 @@ RUN if [ "$GPU_MODEL" = "4050" ]; then \
     make install && \
     ldconfig
 
+# This is here because of time
+RUN apt-get update && apt-get install -y python3-pip
+RUN pip3 install opencv-contrib-python
+RUN pip3 install "numpy<2.0"
+
 # If this needs to change, do it after building opencv to avoid reinstalling
 ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 

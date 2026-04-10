@@ -15,7 +15,7 @@ from .ros_handler import RosHandler
 from .logic.utils import *
 from .logic import path_planning
 
-simulation = False
+simulation = True
 team = "YELLOW"
 
 
@@ -44,14 +44,14 @@ def main():
     image_buffer = Image.new("RGB", (int(canvas_w), int(canvas_h)), "black")
     draw_context = ImageDraw.Draw(image_buffer)
 
-    infield_objects = [
+    infield_objects = [ # Legacy structure because of time
         {"id": 20, "x": 0, "y": 0, "theta": 0},
-        {"id": 2, "x": -0.3, "y": 0.3, "theta": 0},
-        {"id": 7, "x": -0.4, "y": 0.4, "theta": 0},
-        {"id": 9, "x": -0.3, "y": -0.3, "theta": 0},
-        {"id": 11, "x": 0.3, "y": 0.3, "theta": 0},
-        {"id": 17, "x": 0.6, "y": 0, "theta": 0},
-        {"id": 18, "x": 0.3, "y": -0.3, "theta": 0},
+        {"id": 0, "x": -0.3, "y": 0.3, "theta": 0},
+        {"id": 1, "x": -0.4, "y": 0.4, "theta": 0},
+        {"id": 2, "x": -0.3, "y": -0.3, "theta": 0},
+        {"id": 10, "x": 0.3, "y": 0.3, "theta": 0},
+        {"id": 11, "x": 0.6, "y": 0, "theta": 0},
+        {"id": 12, "x": 0.3, "y": -0.3, "theta": 0},
     ]
 
     ros_handler = RosHandler(infield_objects)
