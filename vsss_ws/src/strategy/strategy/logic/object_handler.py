@@ -34,7 +34,7 @@ class ObjectHandler:
             new_pose = self.ros_handler.get_pose(frame_name)
 
             if new_pose:
-                entity.update_from_vision(new_pose, dt)
+                entity.update_from_vision(new_pose, dt, simulation)
                 entity.request_prediction(seconds_in_future=0.5)
                 if not simulation:
                     entity.set_display_pose(new_pose)
