@@ -7,7 +7,10 @@ from std_msgs.msg import Bool, Float32
 from .entity import Entity
 from .. import constants
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageTk
+import cv2
+
+ARUCO_DICT = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_ARUCO_ORIGINAL)
 
 class Robot(Entity):
     def __init__(self, ros_handler, robot_id, start_x, start_y, start_theta, simulation=False):
@@ -27,16 +30,20 @@ class Robot(Entity):
 
         self.kick_request = False
 
-        colors = constants.ROBOT_DATABASE.get(robot_id)
-        self.main_color = colors[0]
-        self.detail_colors = [colors[2], colors[1]]  # I don't know why, it just does + is not critical to find why
-        self.role = None
+        self.aruco_id = constants.ROBOT_DATABASE.get(robot_id)
+        self.main_color = "#0000FF" if robot_id >= 10 else "#FFFF00"
+        self._aruco_cache = None
 
+        self.role = None
         self.sub_cmd_vel = None
         self.sub_kicker = None
         self.sub_stop = None
 
         self.subscribe_to_topics(simulation)
+
+    def _hex_to_rgb(self, hex_color):
+        hex_color = hex_color.lstrip('#')
+        return tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
 
     def subscribe_to_topics(self, simulation):
         if simulation:
@@ -132,45 +139,79 @@ class Robot(Entity):
     def kicker(self, active):
         self.ros_handler.publish_kicker(self.id, active)
 
+    def _get_aruco_image(self, size):
+        if self._aruco_cache is not None:
+            return self._aruco_cache
+
+        marker_px = 200
+        img_aruco = cv2.aruco.generateImageMarker(ARUCO_DICT, self.aruco_id, marker_px)
+
+        aruco_pil = Image.fromarray(img_aruco).convert("RGBA")
+        data = np.array(aruco_pil)
+
+        rgb_team = self._hex_to_rgb(self.main_color)
+
+        black_areas = (data[:, :, 0:3] == [0, 0, 0]).all(axis=2)
+        white_areas = (data[:, :, 0:3] == [255, 255, 255]).all(axis=2)
+
+        if self.main_color == "#0000FF":  # BLUE
+            data[black_areas, 0:3] = rgb_team
+        else:
+            data[white_areas, 0:3] = rgb_team
+
+        self._aruco_cache = Image.fromarray(data)
+        return self._aruco_cache
+
     def draw(self, canvas, draw_context, simulation):
         screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)
         size = constants.ROBOT_RADIUS * 2 * constants.DISPLAY_SCALE
 
         half_size = size / 2
-        points = [
-            (-half_size, -half_size),
-            (half_size, -half_size),
-            (half_size, half_size),
-            (-half_size, half_size)
+        rect_points = [
+            (-half_size, -half_size), (half_size, -half_size),
+            (half_size, half_size), (-half_size, half_size)
         ]
 
-        rotated_points_tk = []
-        rotated_points_pil = []
-        for px, py in points:
+        rotated_tk = []
+        rotated_pil = []
+        for px, py in rect_points:
             rx = px * math.cos(self.real_theta) - py * math.sin(self.real_theta) + screen_x
             ry = px * math.sin(self.real_theta) + py * math.cos(self.real_theta) + screen_y
-            rotated_points_tk.extend([rx, ry])
-            rotated_points_pil.append((rx, ry))
+            rotated_tk.extend([rx, ry])
+            rotated_pil.append((rx, ry))
+
+        canvas.create_polygon(rotated_tk, fill=self.main_color, outline="black")
+
+        canvas.create_polygon(rotated_tk, fill="white", outline="black")
+        if simulation and draw_context:
+            draw_context.polygon(rotated_pil, fill="white", outline="black")
+
+        self._draw_aruco_on_contexts(canvas, draw_context, screen_x, screen_y, size)
 
         if self.is_moving:
             self._draw_movement_arrow(canvas, screen_x, screen_y)
 
-        canvas.create_polygon(rotated_points_tk, fill=self.main_color, outline="black")
-
-        if (simulation): draw_context.polygon(rotated_points_pil, fill=self.main_color, outline="black")
-        self._draw_identification_marks(canvas, draw_context, screen_x, screen_y, size)
-
-        text_offset = size / 2 + constants.TEXT_OFFSET
-        text_y = screen_y - text_offset
-
         if self.role:
-            canvas.create_text(
-                screen_x, text_y,
-                text=self.role,
-                fill="white",
-                font=("Arial", 10, "bold"),
-                anchor="s"
-            )
+            text_y = screen_y - (half_size + constants.TEXT_OFFSET)
+            canvas.create_text(screen_x, text_y, text=self.role, fill="white",
+                               font=("Arial", 10, "bold"), anchor="s")
+
+    def _draw_aruco_on_contexts(self, canvas, draw_context, cx, cy, size):
+        aruco_size = int(size * 0.875)
+        aruco_base = self._get_aruco_image(aruco_size)
+
+        angle_deg = -math.degrees(self.real_theta)
+        aruco_rotated = aruco_base.resize((aruco_size, aruco_size), Image.NEAREST).rotate(angle_deg, expand=True,
+                                                                                          resample=Image.BICUBIC)
+
+        off_x = int(cx - aruco_rotated.width / 2)
+        off_y = int(cy - aruco_rotated.height / 2)
+
+        if hasattr(draw_context, 'im'):
+            pass
+
+        self.tk_aruco_img = ImageTk.PhotoImage(aruco_rotated)
+        canvas.create_image(cx, cy, image=self.tk_aruco_img)
 
     def _draw_movement_arrow(self, canvas, cx, cy):
         arrow_len = 50
@@ -196,86 +237,22 @@ class Robot(Entity):
 
         canvas.create_polygon([end_x, end_y, h1_x, h1_y, h2_x, h2_y], fill=arrow_color, outline=arrow_color)
 
-    def _draw_identification_marks(self, canvas, draw_context, cx, cy, size):
-        mark_size = size * 0.5
-        half_size = size / 2
+    def _draw_aruco_on_contexts(self, canvas, draw_context, cx, cy, size):
+        aruco_size = int(size * 0.875)
+        aruco_base = self._get_aruco_image(aruco_size)
 
-        tex_w, tex_h = int(mark_size), int(mark_size)
+        angle_deg = -math.degrees(self.real_theta)
+        aruco_rotated = aruco_base.resize((aruco_size, aruco_size), Image.NEAREST).rotate(angle_deg, expand=True,
+                                                                                          resample=Image.BICUBIC)
+        off_x = int(cx - aruco_rotated.width / 2)
+        off_y = int(cy - aruco_rotated.height / 2)
 
-        marks_offsets = [
-            (-half_size, -half_size),
-            (half_size - mark_size, -half_size)
-        ]
+        if draw_context is not None:
+            try:
+                draw_context._image.paste(aruco_rotated, (off_x, off_y), aruco_rotated)
+            except AttributeError:
+                if hasattr(draw_context, 'paste'):
+                    draw_context.paste(aruco_rotated, (off_x, off_y), aruco_rotated)
 
-        for i, (ox, oy) in enumerate(marks_offsets):
-            if i < len(self.detail_colors) and self.detail_colors[i]:
-                base_color = self.detail_colors[i]
-
-                m_points = [
-                    (ox, oy),
-                    (ox + mark_size, oy),
-                    (ox + mark_size, oy + mark_size),
-                    (ox, oy + mark_size)
-                ]
-
-                rotated_m_tk = []
-                rotated_m_pil = []
-                for px, py in m_points:
-                    rx = px * math.cos(self.real_theta) - py * math.sin(self.real_theta) + cx
-                    ry = px * math.sin(self.real_theta) + py * math.cos(self.real_theta) + cy
-                    rotated_m_tk.extend([rx, ry])
-                    rotated_m_pil.append((rx, ry))
-
-                color_with_illumination = self._change_color_illumination(base_color,
-                                                                          intensity=constants.ILLUMINATION_INTENSITY)
-                m = canvas.create_polygon(rotated_m_tk, fill=color_with_illumination, outline="black")
-
-                texture = self._generate_noisy_texture(tex_w, tex_h, color_with_illumination,
-                                                       intensity=constants.ILLUMINATION_INTENSITY)
-
-                if texture:
-                    temporal_image = Image.new('RGBA', texture.size, (0, 0, 0, 0))
-                    temporal_drawing = ImageDraw.Draw(temporal_image)
-
-                    patch_points = [(0, 0), (tex_w, 0), (tex_w, tex_h), (0, tex_h)]
-                    temporal_drawing.polygon(patch_points, fill=color_with_illumination)
-
-                    codes_x = [p[0] for p in rotated_m_pil]
-                    codes_y = [p[1] for p in rotated_m_pil]
-
-                    draw_context.polygon(rotated_m_pil, fill=color_with_illumination, outline="black")
-
-                    bbox = [min(codes_x), min(codes_y), max(codes_x), max(codes_y)]
-                    for _ in range(int(mark_size * mark_size * constants.NOISE_RATE)):
-                        rx = random.randint(int(bbox[0]), int(bbox[2]))
-                        ry = random.randint(int(bbox[1]), int(bbox[3]))
-
-                        dot_color = random.choice([(0, 0, 0), (255, 255, 255)])
-                        draw_context.point((rx, ry), fill=dot_color)
-
-    def _generate_noisy_texture(self, w, h, base_hex_color, intensity=30):
-        if w <= 0 or h <= 0: return None
-
-        hex_color = base_hex_color.lstrip('#')
-        r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
-
-        img_array = np.full((int(h), int(w), 3), [r, g, b], dtype=np.uint8)
-
-        # Generate random noice and join both color arrays (normal + noise)
-        noise = np.random.normal(0, intensity, (int(h), int(w), 3))
-        noisy_array = np.clip(img_array + noise, 0, 255).astype(np.uint8)
-
-        return Image.fromarray(noisy_array, 'RGB')
-
-    def _change_color_illumination(self, hex_color, intensity=20):
-        if hex_color is None:
-            return None
-
-        hex_color = hex_color.lstrip('#')
-        r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
-
-        r = max(0, min(255, r + random.randint(-intensity, intensity)))
-        g = max(0, min(255, g + random.randint(-intensity, intensity)))
-        b = max(0, min(255, b + random.randint(-intensity, intensity)))
-
-        return f'#{r:02x}{g:02x}{b:02x}'
+        self.tk_aruco_img = ImageTk.PhotoImage(aruco_rotated)
+        canvas.create_image(cx, cy, image=self.tk_aruco_img)

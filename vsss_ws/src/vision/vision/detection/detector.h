@@ -71,23 +71,14 @@ private:
 	static void on_debug_mouse(int event, int x, int y, int flags, void* userdata);
 
 	cv::Mat get_label_map();
-	void get_patches(const cv::Mat& label_map);
-	void get_robot_patches();
-	void get_ball_patch();
-
-	void get_isolated_robot_patches();
-	void get_clustered_robot_patches(std::vector<std::shared_ptr<Patch>> clustered_patches);
-
-	void get_single_robot_with_ball(const std::shared_ptr<Patch>& parent, std::vector<std::shared_ptr<Patch>>& children);
-
-	void get_robot_data();
 
 	[[nodiscard]] cv::cuda::GpuMat get_blob_mask(const cv::cuda::GpuMat& hsv_image, bool debug_mode);
 
 	cv::Mat visualize_labels(const cv::Mat& label_map);
-
-	void display_debug(cv::Mat& label_map, const std::vector<std::shared_ptr<Patch>>& patches, const std::vector<RobotPatch>& robot_patches, std
-	                   ::optional<BallPatch>& ball_patch);
+	void detect_aruco_robots(const cv::Mat& frame);
+	void display_aruco_debug(const cv::Mat& original_frame);
+	void get_patches(const cv::Mat& label_map);
+	void get_ball_patch();
 
 	static constexpr int MINIMUM_DISTANCE = 20;
 	static constexpr int MAX_ITERATIONS = 1000;
