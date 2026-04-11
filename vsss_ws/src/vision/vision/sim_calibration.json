@@ -58,9 +58,9 @@
         "focus": 0.0
     },
     "color_calibration": {
-        "bilateral_sigma": 35.925926208496094,
+        "bilateral_sigma": 0.0,
         "blue_boost": 1.0,
-        "clahe_clip_limit": 0.41148146986961365,
+        "clahe_clip_limit": 1.0,
         "gamma_correction_s": 1.0,
         "gamma_correction_v": 1.0,
         "green_boost": 1.0,
@@ -423,20 +423,20 @@
     ],
     "roi_points": [
         [
-            584,
+            582,
+            526
+        ],
+        [
+            582,
+            10
+        ],
+        [
+            132,
             10
         ],
         [
             133,
-            9
-        ],
-        [
-            134,
-            525
-        ],
-        [
-            583,
-            525
+            528
         ]
     ],
     "yellow": [

@@ -39,56 +39,31 @@ struct RobotPatch {
     double facing{};
 };
 
-struct RobotSignature {
-    unsigned char parent;
-    unsigned char child_1;
-    unsigned char child_2;
-
-    constexpr bool operator==(const RobotSignature& other) const {
-        return parent == other.parent &&
-               child_1 == other.child_1 &&
-               child_2 == other.child_2;
-    }
-};
-
 struct RobotIdentity {
     int id;
-    RobotSignature signature;
+    int aruco_id;
 };
 
 namespace RobotIdentities {
     constexpr size_t TOTAL_ROBOTS = 21;
 
     constexpr std::array<RobotIdentity, TOTAL_ROBOTS> DATABASE = {{
-        {0, {Color_ID::YELLOW, Color_ID::RED,      Color_ID::GREEN}},
-        {1, {Color_ID::YELLOW, Color_ID::RED,      Color_ID::CYAN}},
-        {2, {Color_ID::YELLOW, Color_ID::GREEN,    Color_ID::RED}},
-        {3, {Color_ID::YELLOW, Color_ID::GREEN,    Color_ID::CYAN}},
-        {4, {Color_ID::YELLOW, Color_ID::GREEN,    Color_ID::MAGENTA}},
-        {5, {Color_ID::YELLOW, Color_ID::CYAN,     Color_ID::RED}},
-        {6, {Color_ID::YELLOW, Color_ID::CYAN,     Color_ID::GREEN}},
-        {7, {Color_ID::YELLOW, Color_ID::CYAN,     Color_ID::MAGENTA}},
-        {8, {Color_ID::YELLOW, Color_ID::MAGENTA,  Color_ID::GREEN}},
-        {9, {Color_ID::YELLOW, Color_ID::MAGENTA,  Color_ID::CYAN}},
+        {0, 256},
+        {1, 272},
+        {2, 273},
 
-        {10, {Color_ID::BLUE, Color_ID::RED,      Color_ID::GREEN}},
-        {11, {Color_ID::BLUE, Color_ID::RED,      Color_ID::CYAN}},
-        {12, {Color_ID::BLUE, Color_ID::GREEN,    Color_ID::RED}},
-        {13, {Color_ID::BLUE, Color_ID::GREEN,    Color_ID::CYAN}},
-        {14, {Color_ID::BLUE, Color_ID::GREEN,    Color_ID::MAGENTA}},
-        {15, {Color_ID::BLUE, Color_ID::CYAN,     Color_ID::RED}},
-        {16, {Color_ID::BLUE, Color_ID::CYAN,     Color_ID::GREEN}},
-        {17, {Color_ID::BLUE, Color_ID::CYAN,     Color_ID::MAGENTA}},
-        {18, {Color_ID::BLUE, Color_ID::MAGENTA,  Color_ID::GREEN}},
-        {19, {Color_ID::BLUE, Color_ID::MAGENTA,  Color_ID::CYAN}},
+        {10, 955},
+        {11, 771},
+        {12, 939},
 
-        {20, {Color_ID::ORANGE, Color_ID::NONE, Color_ID::NONE}}
+        {20, -1}
     }};
 
-    inline int get_id(unsigned char p, unsigned char c1, unsigned char c2) {
-        RobotSignature query = {p, c1, c2};
+    inline int get_robot_id_by_aruco(int aruco_id) {
         for (const auto& entry : DATABASE) {
-            if (entry.signature == query) return entry.id;
+            if (entry.aruco_id == aruco_id) {
+                return entry.id;
+            }
         }
         return -1;
     }

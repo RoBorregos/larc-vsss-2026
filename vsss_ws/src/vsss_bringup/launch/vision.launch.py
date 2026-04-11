@@ -10,10 +10,10 @@ def generate_launch_description():
             output='screen',
             emulate_tty=True,
             parameters=[{
-                'use_camera': False,
-                'simulator': True,
+                'use_camera': True,
+                'simulator': False,
                 'record_video': False,
-                'debug_mode': False,
+                'debug_mode': True,
                 'camera_id': '/dev/vsss_cam',
                 'file_path': '/ros2_ws/vsss/vsss_ws/src/vision/media/log/raw_2026-04-01_02-43-26.avi'
             }]

@@ -389,19 +389,19 @@
         "autoexposure": false,
         "autofocus": false,
         "brightness": 100.0,
-        "contrast": 100.0,
-        "exposure": 229.629638671875,
+        "contrast": 145.44444274902344,
+        "exposure": 81.48147583007813,
         "focus": 0.0
     },
     "color_calibration": {
-        "bilateral_sigma": 99.62963104248047,
-        "blue_boost": 1.0133333206176758,
-        "clahe_clip_limit": 1.0,
-        "gamma_correction_s": 0.7592592239379883,
-        "gamma_correction_v": 0.7962962985038757,
-        "green_boost": 1.100000023841858,
-        "red_boost": 0.9866666793823242,
-        "saturation": 1.1185184717178345
+        "bilateral_sigma": 100.0,
+        "blue_boost": 1.0,
+        "clahe_clip_limit": 0.9592593312263489,
+        "gamma_correction_s": 1.0,
+        "gamma_correction_v": 1.0,
+        "green_boost": 1.0,
+        "red_boost": 1.0,
+        "saturation": 1.0
     },
     "cyan": [
         {
@@ -1382,20 +1382,20 @@
     ],
     "roi_points": [
         [
-            584,
-            22
+            487,
+            62
         ],
         [
-            575,
-            507
+            77,
+            11
         ],
         [
-            156,
-            478
+            45,
+            508
         ],
         [
-            173,
-            13
+            474,
+            514
         ]
     ],
     "yellow": [
