@@ -1,14 +1,23 @@
-robot_9:
-  communication_node_robot_9:
+robot_0:
+  communication_node_robot_0:
     ros__parameters:
-      robot_name: "robot_9"
-      robot_ip: "192.168.0.56"
-      communication_port: 8081
+      robot_name: "vsss_robot"
+      robot_ip: "192.168.0.120"
+      robot_port: 8081
+      local_port: 8081
 
 robot_1:
   communication_node_robot_1:
     ros__parameters:
       robot_name: "gancho"
-      robot_ip: "0,0,0,0"
-      communication_port: 8000
+      robot_ip: "192.168.0.191"
+      robot_port: 8081
+      local_port: 8082
 
+robot_2:
+  communication_node_robot_2:
+    ros__parameters:
+      robot_name: "humble"
+      robot_ip: "192.168.0.xxx"
+      robot_port: 8081
+      local_port: 8083

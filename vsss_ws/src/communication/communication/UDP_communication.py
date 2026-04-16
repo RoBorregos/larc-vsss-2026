@@ -10,7 +10,7 @@ import struct
 import math
 import time
 
-from communication.constants import OMEGA_TO_RPM, BETA, STATE_PACKET_SIZE, INIT_PACKET_SIZE, DEFAULT_PORT
+from communication.constants import OMEGA_TO_RPM, BETA, STATE_PACKET_SIZE, INIT_PACKET_SIZE, DEFAULT_PORT, WATCHDOG_TIME
 
 class RobotUDPClient:
     def __init__(self, robot_ip, robot_port, local_port):
@@ -20,6 +20,7 @@ class RobotUDPClient:
         self.local_port = local_port
         self.connect()
         self.communication_init()
+
 
     def connect(self):
         print("Setting up UDP socket...")
@@ -33,6 +34,7 @@ class RobotUDPClient:
         except socket.error as e:
             print(f"Socket error: {e}")
             self.client_socket = None
+
 
     def communication_init(self, buffer_size=2048):
 
@@ -56,9 +58,7 @@ class RobotUDPClient:
                 
                 time.sleep(0.05) 
                 continue
-        
         self.client_socket.setblocking(False)
-            
             
             
     def receive_telemetry(self, buffer_size=2048):
@@ -82,6 +82,7 @@ class RobotUDPClient:
                 print(f"Socket error during receive: {e}")
         
         return state
+
 
     def send_udp_command(self, rpm_left, rpm_right , rpm_back, kicker=False, stop=False):
         if not self.client_socket:
@@ -114,6 +115,12 @@ class SingleRobotUDPNode(Node):
         self.declare_parameter('local_port', DEFAULT_PORT)
         self.latest_setpoints = [0.0, 0.0, 0.0]
         self.robot_yaw = 0.0
+        self.last_twist_received = Twist()
+        self.last_twist = Twist()
+        self.last_twist.linear.x = 0.0
+        self.last_twist.linear.y = 0.0
+        self.last_twist.angular.z = 0.0
+        self.dt = 0.02  # Control loop time step (50 Hz) 
 
         name = self.get_parameter('robot_name').value
         ip = self.get_parameter('robot_ip').value
@@ -125,8 +132,7 @@ class SingleRobotUDPNode(Node):
         node_name = self.get_fully_qualified_name()
         cmd_vel_topic = self.resolve_topic_name('cmd_vel')
         rpms_topic = self.resolve_topic_name('encoders')
-        telemetry_topic = self.resolve_topic_name('bno')
-
+        
         self.get_logger().info(f"{node_name} Started with values name: {name}, connection->({ip}:{robot_port})")
         self.client = RobotUDPClient(ip, robot_port, local_port)
         self.get_logger().info(f"Communication established")
@@ -134,10 +140,7 @@ class SingleRobotUDPNode(Node):
         self.get_logger().info(f"Waiting to Start")
         self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
         self.get_logger().info(f"Subscribed to {cmd_vel_topic} for {name} ({ip}:{robot_port})")
-
-        self.telemetry_pub = self.create_publisher(Float32, 'bno', 10)
-        self.get_logger().info(f"Publishing telemetry to {telemetry_topic} for {name} ({ip}:{robot_port})")
-
+        
         self.rpms_pub = self.create_publisher(Float32MultiArray, 'encoders', 10)
         self.get_logger().info(f"Publishing RPMs to {rpms_topic} for {name} ({ip}:{robot_port})")
 
@@ -148,28 +151,39 @@ class SingleRobotUDPNode(Node):
         self.get_logger().info(f"Subscribed to kicker commands on {self.resolve_topic_name('kicker')} for {name} ({ip}:{robot_port})")
 
         self.create_timer(0.02, self.receive_telemetry_timer_callback)  # 50 Hz for telemetry
+
+        self.create_timer(self.dt, self.control_loop_timer_callback)  # 50 Hz for control loop
         
+        self.last_packet_time = self.get_clock().now().nanoseconds
+
 
     def receive_telemetry_timer_callback(self):
         # Attempt to receive telemetry data
         state = self.client.receive_telemetry()
         
         if state:
-            yaw_message = Float32()
             rpm_msg = Float32MultiArray()
             
-            self.robot_yaw = float(state[0])
-            yaw_message.data = state[0]
             rpm_msg.data = [state[1], state[2], state[3], self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2]]
             
-            self.telemetry_pub.publish(yaw_message)
             self.rpms_pub.publish(rpm_msg)
-            
+
+            self.last_packet_time = self.get_clock().now().nanoseconds
+        else:
+            if self.get_clock().now().nanoseconds - self.last_packet_time >= WATCHDOG_TIME:
+                self.client.communication_init()
+                self.last_packet_time = self.get_clock().now().nanoseconds 
+
     
     def stop_callback(self, msg):
         if msg.data:
             self.get_logger().info("Stop command received, sending zero RPMs")
-            self.client.send_udp_command(0.0, 0.0, 0.0)
+            self.latest_setpoints = [0.0, 0.0, 0.0]
+            self.last_twist_received.linear.x = 0.0
+            self.last_twist_received.linear.y = 0.0
+            self.last_twist_received.angular.z = 0.0
+            self.client.send_udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], False, True)
+
         
     def kicker_callback(self, msg):
         if msg.data:
@@ -186,14 +200,42 @@ class SingleRobotUDPNode(Node):
             self.client.close()
         super().destroy_node()
 
+
     def cmd_vel_callback(self, msg):
         self.get_logger().info(f"Received cmd_vel: linear=({msg.linear.x:.2f}, {msg.linear.y:.2f}), angular=({msg.angular.z:.2f})")
-        rpm_left, rpm_right, rpm_back = self.twist_to_rpm(msg)
-        self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
-        sent = self.client.send_udp_command(rpm_left, rpm_right, rpm_back)
 
-        self.get_logger().info(f"Sent: L={rpm_left:.2f} R={rpm_right:.2f} B={rpm_back:.2f}") 
+        self.last_twist_received = msg
+
         
+    def control_loop_timer_callback(self):
+       twist = self.limit_accel(self.last_twist_received) 
+       
+       rpm_left, rpm_right, rpm_back = self.twist_to_rpm(twist)
+       self.get_logger().info(f"Rpm sent: L={rpm_left}, R={rpm_right}, B={rpm_back}")
+       self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
+       sent = self.client.send_udp_command(rpm_left, rpm_right, rpm_back)
+
+
+    def limit_accel(self, twist, max_linear=0.8, max_angular=2.5, ):
+        # Limit the acceleration of the robot to prevent abrupt changes
+        max_linear_change = max_linear * self.dt
+        max_angular_change = max_angular * self.dt
+
+        linear_x_diff = twist.linear.x - self.last_twist.linear.x
+        linear_y_diff = twist.linear.y - self.last_twist.linear.y
+        angular_z_diff = twist.angular.z - self.last_twist.angular.z
+
+        limited_linear_x = self.last_twist.linear.x + max(-max_linear_change, min(max_linear_change, linear_x_diff))
+        limited_linear_y = self.last_twist.linear.y + max(-max_linear_change, min(max_linear_change, linear_y_diff))
+        limited_angular_z = self.last_twist.angular.z + max(-max_angular_change, min(max_angular_change, angular_z_diff))
+        
+        self.last_twist.linear.x = limited_linear_x
+        self.last_twist.linear.y = limited_linear_y
+        self.last_twist.angular.z = limited_angular_z
+        
+        return self.last_twist
+
+
     def twist_to_rpm(self, twist, wheel_radius=0.01431, wheel_distance=0.0311):
         # Convert Twist message to RPM for three-wheeled robot
         vx = twist.linear.x  # Forward velocity
@@ -205,10 +247,11 @@ class SingleRobotUDPNode(Node):
         vy_t = vx * -math.sin(self.robot_yaw) + vy * math.cos(self.robot_yaw)
         
         rpm_left = (-wheel_distance * wz  + math.cos(BETA) * vx_t + math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
-        rpm_right = (-wheel_distance * wz - math.cos(BETA) * vx_t + math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
+        rpm_right = (-wheel_distance * wz + math.cos(BETA) * vx_t - math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
         rpm_back = (-wheel_distance * wz - vx_t) * OMEGA_TO_RPM / wheel_radius
         
         return rpm_left, rpm_right, rpm_back
+
 
 def main(args=None):
     rclpy.init(args=args)
@@ -220,6 +263,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
+
 
 if __name__ == '__main__':
     main()
