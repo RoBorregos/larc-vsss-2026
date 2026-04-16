@@ -89,6 +89,10 @@ class ObjectHandler:
         for entity in self.entities.values():
             entity.draw(canvas, draw_context, simulation)
 
+    def stop_robots(self):
+        for robot in self.get_all_robots():
+            robot.stop()
+
     def _init_objects(self):
         for infield_object in self.infield_objects:
             if infield_object["id"] == 20:

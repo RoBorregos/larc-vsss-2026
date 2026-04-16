@@ -13,7 +13,7 @@ last_print_time = 0
 def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
     global last_print_time
 
-    roles.select(team_robots, ball, 'LEFT')
+    roles.select(team_robots, ball, 'LEFT' if constants.ATTACKING_RIGHT else 'RIGHT')
 
     attacker = roles.get_attacker(team_robots)
     defender = roles.get_defender(team_robots)

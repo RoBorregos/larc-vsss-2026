@@ -6,7 +6,7 @@
 #include "PID.h"
 
 namespace {
-	float clamp(float value, float upper, float lower) {
+	float clamp(float value, float lower, float upper) {
     return min(upper, max(value, lower));
   }
 }
@@ -15,7 +15,8 @@ class Motor {
 private:
 	const int PWM_FREQUENCY = 20000;
 	const int PWM_RESOLUTION = 8;
-	
+
+	int id;
 	uint8_t in_a;
 	uint8_t in_b;
 	uint8_t in_pwm;
@@ -26,13 +27,14 @@ private:
 public:
 	Encoder enc;
 
-	Motor(uint8_t in_a, uint8_t in_b, uint8_t in_pwm, gpio_num_t pinENC): enc(pinENC, ENCODER_RESOLUTION) {
+	Motor(int id, uint8_t in_a, uint8_t in_b, uint8_t in_pwm, gpio_num_t pinENC): enc(pinENC, ENCODER_RESOLUTION) {
+		this->id = id;
 		this->in_a = in_a;
 		this->in_b = in_b;
 		this->in_pwm = in_pwm;
 
-		pid_parameters.kp = 0;
-	  pid_parameters.ki = 0;
+		pid_parameters.kp = 20;
+	  pid_parameters.ki = 250;
 	  pid_parameters.kd = 0;
 
 	  pid_parameters.one_direction_only = true;
@@ -44,6 +46,10 @@ public:
 		pinMode(in_a, OUTPUT);
 		pinMode(in_b, OUTPUT);
 		ledcAttach(in_pwm, PWM_FREQUENCY, PWM_RESOLUTION);
+
+		digitalWrite(in_a, LOW);
+		digitalWrite(in_b, LOW);
+		enc.begin();
 	}
 
 	void tick() {
@@ -56,15 +62,20 @@ public:
 
 	void set_pwm(int pwm_value) {
 		int pwm = clamp(pwm_value, -MAX_PWM_VALUE, MAX_PWM_VALUE);
-		enc.set_direction(pwm_value);
+		// enc.set_direction(pwm_value);
 
-		bool forward = pwm > 0;
-		bool backward = pwm < 0;
+		if (pwm_value > 0) {
+			digitalWrite(in_a, HIGH);
+			digitalWrite(in_b, LOW);			
+		} else if (pwm_value < 0) {
+			digitalWrite(in_a, LOW);
+			digitalWrite(in_b, HIGH);			
+		} else {
+			digitalWrite(in_a, LOW);
+			digitalWrite(in_b, LOW);
+		}
 
-		digitalWrite(in_a, forward);
-		digitalWrite(in_b, backward);
-
-		ledcWrite(in_pwm, pwm);
+		ledcWrite(in_pwm, abs(pwm));
 	}
 
 	void move(float new_rps) {
@@ -74,6 +85,7 @@ public:
 		}
 
 		float current_rps = enc.get_rps();
+
 		pid_parameters.error = new_rps - current_rps;
 		pid_parameters.target = new_rps;
 
@@ -81,6 +93,10 @@ public:
 		else pid_parameters.accept_type = PID_ACCEPT_NEGATIVES_ONLY;
 
 		PID::compute(pid_parameters);
+
+		// Serial.print("target: "); Serial.print(pid_parameters.target);
+		// Serial.print(" - err: "); Serial.print(pid_parameters.error);
+		// Serial.print(" - out: "); Serial.println(pid_parameters.output);
 
 		set_pwm(static_cast<float>(pid_parameters.output));
 	}
@@ -95,7 +111,11 @@ public:
 	}
 
 	void print_debug() {
-		Serial.print(millis()); Serial.print(": ");
+		Serial.print(id); Serial.print(" - ");
+
+		Serial.print(pid_parameters.error); Serial.print(", ");
+		Serial.print(pid_parameters.target); Serial.print(", ");
+
 		Serial.print(pid_parameters.output); Serial.print(", ");
 		Serial.print(enc.get_rps()); Serial.print(", ");
 		Serial.println(pid_parameters.integral_error);

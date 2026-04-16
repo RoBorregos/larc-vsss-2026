@@ -26,8 +26,8 @@ https://github.com/aizer-egl/SOCCER_OPEN_2025
 #include "pid.h"
 
 namespace {
-    float clamp(float value, float upper, float lower) {
-        return min(upper, max(value, lower));
+    template<class T> constexpr const T& clamp(const T& v, const T& lo, const T& hi) {
+        return (v < lo) ? lo : (hi < v) ? hi : v;
     }
 }
 
@@ -73,7 +73,7 @@ void PID::compute(PidParameters& pid) {
     const double pTerm = pid.kp * pid.error;
     bool integrate = true;
 
-    if (std::fabs(pid.error) <= pid.error_threshold) integrate = false;
+    if (fabs(pid.error) <= pid.error_threshold) integrate = false;
 
     if (pid.max_output > 0.0) {
         // Using last runs output to decide (Anti Wind up)
@@ -98,6 +98,8 @@ void PID::compute(PidParameters& pid) {
 
     if (pid.min_output > 0.0 && fabs(calculate_output) < pid.min_output) {
         calculate_output = 0.0;
+        // Maybe try this?????
+        // pid.integral_error = 0
     }
 
     if (pid.max_output > 0.0) {
@@ -111,7 +113,7 @@ void PID::compute(PidParameters& pid) {
         if (pid.accept_type == PID_ACCEPT_NEGATIVES_ONLY && pid.output > 0) pid.output = 0;
     }
 
-    if (pid.reset_within_threshold && (std::fabs(pid.error) < pid.error_threshold)) {
+    if (pid.reset_within_threshold && (fabs(pid.error) < pid.error_threshold)) {
         reset(pid);
     } else {
         pid.previous_error = pid.error;

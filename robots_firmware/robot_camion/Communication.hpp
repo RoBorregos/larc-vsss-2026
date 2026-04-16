@@ -9,18 +9,18 @@ struct __attribute__((packed)) robotInitPacket {
 };
 
 struct __attribute__((packed)) robotCmdPacket {
-  float rpm_left;
-  float rpm_right;
-  float rpm_back;
-  bool kicker;
-  bool stop;
+  float rpm_left{};
+  float rpm_right{};
+  float rpm_back{};
+  bool kicker{};
+  bool stop{};
 };
 
 struct __attribute__((packed)) robotStatePacket {
-  float yaw;
-  float rpm_left;
-  float rpm_right;
-  float rpm_back;
+  float yaw{};
+  float rpm_left{};
+  float rpm_right{};
+  float rpm_back{};
 };
 
 class Communication {
@@ -69,9 +69,15 @@ public:
       bool connected = false;
       int pingNumber = 50056;
       int pongNumber = 50057;
+
+      bool led_status = false;
       
       while (!connected) {
         int packetSize = udp_.parsePacket();
+        
+        digitalWrite(15, led_status);
+        led_status = !led_status;
+        
         if (packetSize == sizeof(robotInitPacket)) {
           robotInitPacket ping;
           udp_.read((uint8_t*)&ping, sizeof(ping));
@@ -93,7 +99,7 @@ public:
           connected = true;
         }
       }
-          vTaskDelay(pdMS_TO_TICKS(100)); 
+      vTaskDelay(pdMS_TO_TICKS(100)); 
     }
 
     Serial.println("Handshake received!");

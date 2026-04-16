@@ -11,20 +11,23 @@ Communication udpClientServer(
 );
 
 Motor motorLeft(
+    0,
     inA1,
     inA2,
     PWMA,
     ENCA
 );
 
-Motor motorRight(
+Motor motorBack(
+    1,
     inB1,
     inB2,
     PWMB,
     ENCB
 );
 
-Motor motorBack(
+Motor motorRight(
+    2,
     inC1,
     inC2,
     PWMC,
@@ -57,6 +60,8 @@ float left_rps = 0;
 float right_rps = 0;
 float back_rps = 0;
 bool stop = false;
+robotCmdPacket cmd;
+
 
 void loop() {
     motorLeft.tick();
@@ -71,7 +76,6 @@ void loop() {
     }
 
     if ((millis() - previous_udp_update) >= 25) {
-        robotCmdPacket cmd;
         udpClientServer.udpReceiveCmd(&cmd);
 
         left_rps = cmd.rpm_left / 60;
@@ -90,19 +94,19 @@ void loop() {
         previous_udp_update = millis();
     }
 
-
-    if ((millis() - previous_motor_update >= 5)) {
+    if ((millis() - previous_motor_update) >= 25) {
         if (stop) {
             motorLeft.brake();
             motorRight.brake();
             motorBack.brake();
         } else {
-            // Using RPS because of compatibility with aizer's PID library
             motorLeft.move(left_rps);
             motorRight.move(right_rps);
             motorBack.move(back_rps);
 
-            motorLeft.print_debug();
+            // motorLeft.print_debug();
         }
+
+        previous_motor_update = millis();
     }
 }
