@@ -20,7 +20,7 @@ ANGLE_THRESHOLD_MAX = 30
 DISTANCE_THRESHOLD_MIN = 0.05 # Distance where the angle threshold is set to max
 
 ANGLE_OFFSET = 40       # Applied offset for orbital movement
-BASE_SPEED = 0.10       # Movement speed for non-path-planning movement
+BASE_SPEED = 0.20       # Movement speed for non-path-planning movement
 
 HELPER_HOLD_OFFSET_X=0.1
 HELPER_STOP_THRESHOLD=0.015

@@ -3,7 +3,7 @@ robot_1:
     ros__parameters:
       robot_name: "vsss_robot"
       robot_frame: "robot_1"
-      robot_ip: "10.42.0.177"
+      robot_ip: "192.168.0.120"
       robot_port: 8081
       local_port: 8081
 

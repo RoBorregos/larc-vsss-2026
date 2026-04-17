@@ -3,7 +3,7 @@
 # ROS2 node for sending RPMs to robots via UDP, subscribing to cmd_vel for each robot
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Vector3
 from std_msgs.msg import Float32MultiArray, Bool, Float32
 from tf2_ros import TransformException, Buffer, TransformListener
 import socket
@@ -124,12 +124,16 @@ class SingleRobotUDPNode(Node):
         
         self.latest_setpoints = [0.0, 0.0, 0.0]
         self.robot_yaw = 0 # Default to facing "up" in the field
-        self.last_twist_received = Twist()
-        self.last_twist = Twist()
-        self.last_twist.linear.x = 0.0
-        self.last_twist.linear.y = 0.0
-        self.last_twist.angular.z = 0.0
-        self.dt = 0.02  # Control loop time step (50 Hz) 
+
+        self.target_speed = 0.0
+        self.target_angle = 0.0
+        self.target_wz = 0.0  # Por si decides usar el Z del vector después
+
+        self.last_vx = 0.0
+        self.last_vy = 0.0
+        self.last_wz = 0.0
+        self.dt = 0.02  # Control loop time step (50 Hz)
+
         self.local_frame = self.get_parameter('robot_frame').value
         self.global_frame = self.get_parameter('global_frame').value
 
@@ -142,7 +146,7 @@ class SingleRobotUDPNode(Node):
         print("Parameters {}, {}, {}, {}".format(name, ip, robot_port, local_port))
 
         node_name = self.get_fully_qualified_name()
-        cmd_vel_topic = self.resolve_topic_name('cmd_vel')
+        cmd_vel_topic = self.resolve_topic_name('motion_control')
         rpms_topic = self.resolve_topic_name('encoders')
         
         self.get_logger().info(f"{node_name} Started with values name: {name}, connection->({ip}:{robot_port})")
@@ -152,7 +156,7 @@ class SingleRobotUDPNode(Node):
         self.get_logger().info(f"Communication established")
 
         self.get_logger().info(f"Waiting to Start")
-        self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
+        self.create_subscription(Vector3, 'motion_control', self.cmd_vel_callback, 10)
         self.get_logger().info(f"Subscribed to {cmd_vel_topic} for {name} ({ip}:{robot_port})")
         
         self.rpms_pub = self.create_publisher(Float32MultiArray, 'encoders', 10)
@@ -184,7 +188,7 @@ class SingleRobotUDPNode(Node):
             q = transform.transform.rotation
             yaw = self.yaw_from_quaternion(q.x, q.y, q.z, q.w)
 
-            self.get_logger().info(f"yaw received: {yaw}")
+            # self.get_logger().info(f"yaw received: {yaw}")
             self.robot_yaw = yaw
         except TransformException as e:
             pass
@@ -205,18 +209,15 @@ class SingleRobotUDPNode(Node):
             if self.get_clock().now().nanoseconds - self.last_packet_time >= WATCHDOG_TIME:
                 self.get_logger().warn("No telemetry received for a while, reinitializing communication...")
                 self.client.communication_init()
-                self.last_packet_time = self.get_clock().now().nanoseconds 
+                self.last_packet_time = self.get_clock().now().nanoseconds
 
-    
     def stop_callback(self, msg):
         if msg.data:
-            self.get_logger().info("Stop command received, sending zero RPMs")
-            self.latest_setpoints = [0.0, 0.0, 0.0]
-            self.last_twist_received.linear.x = 0.0
-            self.last_twist_received.linear.y = 0.0
-            self.last_twist_received.angular.z = 0.0
-            self.client.send_udp_command(self.latest_setpoints[0], self.latest_setpoints[1], self.latest_setpoints[2], False, True)
-
+            self.target_speed = 0.0
+            self.last_vx = 0.0
+            self.last_vy = 0.0
+            self.last_wz = 0.0
+            self.client.send_udp_command(0.0, 0.0, 0.0, False, True)
         
     def kicker_callback(self, msg):
         if msg.data:
@@ -233,58 +234,66 @@ class SingleRobotUDPNode(Node):
             self.client.close()
         super().destroy_node()
 
-
     def cmd_vel_callback(self, msg):
-        self.get_logger().info(f"Received cmd_vel: linear=({msg.linear.x:.2f}, {msg.linear.y:.2f}), angular=({msg.angular.z:.2f})")
+        self.target_speed = msg.x
+        self.target_angle = msg.y
+        self.target_wz = msg.z  # Aunque dijiste que es 0, lo guardamos por si acaso
 
-        self.last_twist_received = msg
+        self.get_logger().info(f"Received Move: Speed={msg.x:.2f}, Angle={msg.y:.2f}")
 
-        
     def control_loop_timer_callback(self):
-        
+        # 1. Actualizamos orientación
         self._update_robot_yaw()
-          
-        twist = self.limit_accel(self.last_twist_received) 
-       
-        rpm_left, rpm_right, rpm_back = self.twist_to_rpm(twist)
-        self.get_logger().info(f"Rpm sent: L={rpm_left:0.2f}, R={rpm_right:0.2f}, B={rpm_back:0.2f}")
+
+        # 2. Calculamos el error hacia 0 rad
+        raw_error = -self.robot_yaw
+
+        # --- NORMALIZACIÓN DEL ÁNGULO (Camino más corto) ---
+        # Esto obliga al error a estar siempre entre -pi y pi
+        angle_error = (raw_error + math.pi) % (2 * math.pi) - math.pi
+        angle_error = -angle_error
+        # --------------------------------------------------
+
+        ANGLE_THRESHOLD = math.radians(25)
+
+        # 4. Ganancia de rotación
+        kp_rotation = 1.0
+        wz_correction = angle_error * kp_rotation
+
+        # 5. Lógica de decisión
+        if abs(angle_error) > ANGLE_THRESHOLD:
+            vx_target = 0.0
+            vy_target = 0.0
+        else:
+            # Movimiento combinado
+            speed_factor = math.cos(angle_error)
+            current_target_speed = self.target_speed * max(0.5, speed_factor)
+
+            vy_target = current_target_speed * math.cos(self.target_angle)
+            vx_target = -(current_target_speed * math.sin(self.target_angle))
+
+        # 6. Aplicamos límites y enviamos
+        vx, vy, wz = self.limit_accel(vx_target, vy_target, wz_correction)
+        rpm_left, rpm_right, rpm_back = self.calculate_omni_rpms(vx, vy, wz)
+
         self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
-        sent = self.client.send_udp_command(rpm_left, rpm_right, rpm_back)
+        self.client.send_udp_command(rpm_left, rpm_right, rpm_back)
 
+    def limit_accel(self, vx_target, vy_target, wz_target, max_linear=1.8, max_angular=4.5):
+        max_l_change = max_linear * self.dt
+        max_a_change = max_angular * self.dt
 
-    def limit_accel(self, twist, max_linear=0.8, max_angular=2.5, ):
-        # Limit the acceleration of the robot to prevent abrupt changes
-        max_linear_change = max_linear * self.dt
-        max_angular_change = max_angular * self.dt
+        self.last_vx += max(-max_l_change, min(max_l_change, vx_target - self.last_vx))
+        self.last_vy += max(-max_l_change, min(max_l_change, vy_target - self.last_vy))
+        self.last_wz += max(-max_a_change, min(max_a_change, wz_target - self.last_wz))
 
-        linear_x_diff = twist.linear.x - self.last_twist.linear.x
-        linear_y_diff = twist.linear.y - self.last_twist.linear.y
-        angular_z_diff = twist.angular.z - self.last_twist.angular.z
+        return self.last_vx, self.last_vy, self.last_wz
 
-        limited_linear_x = self.last_twist.linear.x + max(-max_linear_change, min(max_linear_change, linear_x_diff))
-        limited_linear_y = self.last_twist.linear.y + max(-max_linear_change, min(max_linear_change, linear_y_diff))
-        limited_angular_z = self.last_twist.angular.z + max(-max_angular_change, min(max_angular_change, angular_z_diff))
-        
-        self.last_twist.linear.x = limited_linear_x
-        self.last_twist.linear.y = limited_linear_y
-        self.last_twist.angular.z = limited_angular_z
-        
-        return self.last_twist
+    def calculate_omni_rpms(self, vx, vy, wz, wheel_radius=0.01431, wheel_distance=0.0311):
+        rpm_left = (-wheel_distance * wz + math.cos(BETA) * vx + math.sin(BETA) * vy) * OMEGA_TO_RPM / wheel_radius
+        rpm_right = (-wheel_distance * wz + math.cos(BETA) * vx - math.sin(BETA) * vy) * OMEGA_TO_RPM / wheel_radius
+        rpm_back = (-wheel_distance * wz - vx) * OMEGA_TO_RPM / wheel_radius
 
-
-    def twist_to_rpm(self, twist, wheel_radius=0.01431, wheel_distance=0.0311):
-        # Convert Twist message to RPM for three-wheeled robot
-
-        # BECAUSE OF TIME, VX AND VY ARE SWAPPED, THIS IS INTENTIONAL
-        vx = twist.linear.y  # Forward velocity
-        vy = twist.linear.x  # Sideways velocity
-
-        wz = twist.angular.z  # Angular velocity
-
-        rpm_left = (-wheel_distance * wz  + math.cos(BETA) * vx_t + math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
-        rpm_right = (-wheel_distance * wz + math.cos(BETA) * vx_t - math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
-        rpm_back = (-wheel_distance * wz - vx_t) * OMEGA_TO_RPM / wheel_radius
-        
         return rpm_left, rpm_right, rpm_back
 
 

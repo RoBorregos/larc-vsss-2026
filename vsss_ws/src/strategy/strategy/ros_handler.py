@@ -1,14 +1,14 @@
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Vector3
 from std_msgs.msg import Bool
 import math
 from tf2_ros import TransformException, Buffer, TransformListener
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from vsss_vision.srv import Prediction
-from std_msgs.msg import Bool
 from . import constants
+
 
 class RosHandler(Node):
     def __init__(self, infield_objects):
@@ -30,10 +30,12 @@ class RosHandler(Node):
 
     def _update_poses_callback(self):
         for obj in self.infield_objects:
-            frame_id = f"robot_{obj['id']}" if obj['id'] != 20 else "ball" 
+            frame_id = f"robot_{obj['id']}" if obj['id'] != 20 else "ball"
             pose = self._fetch_transform(frame_id)
             if pose:
                 self.current_poses[frame_id] = pose
+            else:
+                self.current_poses.pop(frame_id, None)
 
     def _fetch_transform(self, frame_name):
         try:
@@ -45,12 +47,12 @@ class RosHandler(Node):
             )
 
             return {
-                    'x': trans.transform.translation.x,
-                    'y': trans.transform.translation.y,
-                    'theta': self._quaternion_to_yaw(trans.transform.rotation)
-                }
+                'x': trans.transform.translation.x,
+                'y': trans.transform.translation.y,
+                'theta': self._quaternion_to_yaw(trans.transform.rotation)
+            }
         except TransformException as e:
-            print("err", e)
+            # print("err", e)
             return None
 
     def get_pose(self, frame_name):
@@ -66,15 +68,16 @@ class RosHandler(Node):
         self.image_pub.publish(msg)
 
     def publish_omni_move(self, robot_id, speed, angle, facing_error):
-        topic_name = f'/strategy/robot_{robot_id}/cmd_vel'
+        topic_name = f'/strategy/robot_{robot_id}/motion_control'
+
         if topic_name not in self.publishers_map:
-            self.publishers_map[topic_name] = self.create_publisher(Twist, topic_name, 10)
+            self.publishers_map[topic_name] = self.create_publisher(Vector3, topic_name, 10)
 
-        msg = Twist()
-        msg.linear.x = float(speed * math.cos(angle))
-        msg.linear.y = float(speed * math.sin(angle))
+        msg = Vector3()
+        msg.x = float(speed)
+        msg.y = float(angle)
+        msg.z = float(0)  # ¡Incluso puedes meter el error de orientación!
 
-        msg.angular.z = float(constants.ROBOT_KP_ANGULAR_MOVEMENT * facing_error)
         self.publishers_map[topic_name].publish(msg)
 
     def publish_kicker(self, robot_id, active):
@@ -94,7 +97,7 @@ class RosHandler(Node):
         msg = Bool()
         msg.data = value
         self.publishers_map[topic_name].publish(msg)
-        
+
     def get_prediction(self, target_id, seconds_future):
         request = Prediction.Request()
         request.id = int(target_id)

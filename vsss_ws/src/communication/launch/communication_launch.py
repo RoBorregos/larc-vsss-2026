@@ -19,7 +19,7 @@ def generate_launch_description():
             namespace=['robot_', LaunchConfiguration('robot_id')],
             name=['communication_node_robot_', LaunchConfiguration('robot_id')],
             remappings=[
-                ('cmd_vel', ['/strategy/robot_', LaunchConfiguration('robot_id'), '/cmd_vel']),
+                ('motion_control', ['/strategy/robot_', LaunchConfiguration('robot_id'), '/motion_control']),
                 ('stop', ['/strategy/robot_', LaunchConfiguration('robot_id'), '/stop']),
                 ('kicker', ['/strategy/robot_', LaunchConfiguration('robot_id'), '/kicker']),
                 ('bno', ['/communication/robot_', LaunchConfiguration('robot_id'), '/bno']),
