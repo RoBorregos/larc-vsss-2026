@@ -33,12 +33,7 @@ public:
 		this->in_b = in_b;
 		this->in_pwm = in_pwm;
 
-		pid_parameters.kp = 20;
-	  pid_parameters.ki = 250;
-	  pid_parameters.kd = 0;
-
 	  pid_parameters.one_direction_only = true;
-	  pid_parameters.max_output = MAX_PWM_VALUE;
 	  pid_parameters.error_threshold = 0.0;
 	}
 
@@ -52,6 +47,12 @@ public:
 		enc.begin();
 	}
 
+	void attach_kterms(float kp, float ki, float kd) {
+		pid_parameters.kp = kp;
+	  pid_parameters.ki = ki;
+	  pid_parameters.kd = kd;
+	}
+
 	void tick() {
 		if (millis() - previous_tick >= 10) {
 			enc.update();
@@ -62,7 +63,7 @@ public:
 
 	void set_pwm(int pwm_value) {
 		int pwm = clamp(pwm_value, -MAX_PWM_VALUE, MAX_PWM_VALUE);
-		// enc.set_direction(pwm_value);
+		enc.set_direction(pwm_value);
 
 		if (pwm_value > 0) {
 			digitalWrite(in_a, HIGH);
@@ -81,6 +82,7 @@ public:
 	void move(float new_rps) {
 		if (fabs(new_rps) <= 0.01) {
 			set_pwm(0);
+			PID::reset(pid_parameters);
 			return;
 		}
 
@@ -113,12 +115,11 @@ public:
 	void print_debug() {
 		Serial.print(id); Serial.print(" - ");
 
-		Serial.print(pid_parameters.error); Serial.print(", ");
-		Serial.print(pid_parameters.target); Serial.print(", ");
-
 		Serial.print(pid_parameters.output); Serial.print(", ");
 		Serial.print(enc.get_rps()); Serial.print(", ");
-		Serial.println(pid_parameters.integral_error);
+		Serial.print(pid_parameters.integral_error); Serial.print(", ");
+		Serial.print(pid_parameters.error); Serial.print(", ");
+		Serial.println(pid_parameters.target);
 	}
 };
 

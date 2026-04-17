@@ -46,6 +46,10 @@ void setup() {
     motorLeft.begin();
     motorRight.begin();
     motorBack.begin();
+
+    motorLeft.attach_kterms(10, 360, 0);
+    motorRight.attach_kterms(10, 250, 0);
+    motorBack.attach_kterms(10, 210, 0);
 }
 
 TickType_t lastWakeTime = xTaskGetTickCount();
@@ -54,6 +58,7 @@ TickType_t lastWakeTime = xTaskGetTickCount();
 unsigned long previous_led_toggle = millis();
 unsigned long previous_udp_update = millis();
 unsigned long previous_motor_update = millis();
+unsigned long previous_debug_update = millis();
 bool led_state = true;
 
 float left_rps = 0;
@@ -103,10 +108,16 @@ void loop() {
             motorLeft.move(left_rps);
             motorRight.move(right_rps);
             motorBack.move(back_rps);
-
-            // motorLeft.print_debug();
         }
 
         previous_motor_update = millis();
+    }
+
+    if ((millis() - previous_debug_update) >= 100) {
+        motorLeft.print_debug();
+        motorRight.print_debug();
+        motorBack.print_debug();
+
+        previous_debug_update = millis();
     }
 }

@@ -267,7 +267,7 @@ void Detector::detect_aruco_robots(const cv::Mat& frame) {
 
 	detectorParams.adaptiveThreshWinSizeMin = 3;
 	detectorParams.adaptiveThreshWinSizeMax = 23;
-	detectorParams.adaptiveThreshWinSizeStep = 10;
+	detectorParams.adaptiveThreshWinSizeStep = 5;
 
 	detectorParams.minMarkerPerimeterRate = 0.015;
 
@@ -285,15 +285,17 @@ void Detector::detect_aruco_robots(const cv::Mat& frame) {
 	detectorParams.maxErroneousBitsInBorderRate = 0.5;
 	detectorParams.minOtsuStdDev = 3.0;
 
+	constexpr float resize_factor = 1.5;
+
 	cv::Mat enlarged;
-	cv::resize(frame, enlarged, cv::Size(), 1.0, 1.0, cv::INTER_CUBIC);
+	cv::resize(frame, enlarged, cv::Size(), resize_factor, resize_factor, cv::INTER_CUBIC);
 
 	cv::Mat gray;
 	cv::cvtColor(enlarged, gray, cv::COLOR_BGR2GRAY);
 
 	cv::Mat sharp;
 	cv::GaussianBlur(gray, sharp, cv::Size(0, 0), 3);
-	cv::addWeighted(gray, 2.5, sharp, -1.5, 0, gray);
+	cv::addWeighted(gray, 3.5, sharp, -1.5, 0, gray);
 
 	cv::imshow("grey+enlarged+sharp", gray);
 
@@ -306,7 +308,7 @@ void Detector::detect_aruco_robots(const cv::Mat& frame) {
 		robot.id = RobotIdentities::get_robot_id_by_aruco(markerIds[i]);
 
 		cv::Point2f center(0, 0);
-		for (const auto& corner : markerCorners[i]) center += (corner / 1);
+		for (const auto& corner : markerCorners[i]) center += (corner / resize_factor);
 		robot.center = center * 0.25f;
 
 		cv::Point2f front_vec = markerCorners[i][1] - markerCorners[i][0];
