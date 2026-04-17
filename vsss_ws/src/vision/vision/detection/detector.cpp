@@ -196,6 +196,8 @@ cv::Mat Detector::get_label_map() {
 	cv::Mat label_map_host;
 	cudaDeviceSynchronize();
 	label_map.download(label_map_host);
+
+	cv::imshow("Label map", visualize_labels(label_map_host));
 	return label_map_host;
 }
 
