@@ -5,6 +5,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float32MultiArray, Bool, Float32
+from tf2_ros import TransformException, Buffer, TransformListener
 import socket
 import struct
 import math
@@ -20,6 +21,8 @@ class RobotUDPClient:
         self.local_port = local_port
         self.connect()
         self.communication_init()
+
+        self.client_socket.setblocking(False)
 
 
     def connect(self):
@@ -45,6 +48,7 @@ class RobotUDPClient:
 
         print("Handshake", end="")
         while True:
+            
             try:
                 self.client_socket.sendto(packed_ping, (self.robot_ip, self.robot_port))
                 print(".", end="", flush=True)
@@ -58,7 +62,6 @@ class RobotUDPClient:
                 
                 time.sleep(0.05) 
                 continue
-        self.client_socket.setblocking(False)
             
             
     def receive_telemetry(self, buffer_size=2048):
@@ -113,6 +116,12 @@ class SingleRobotUDPNode(Node):
         self.declare_parameter('robot_ip', '0.0.0.0')
         self.declare_parameter('robot_port', DEFAULT_PORT)
         self.declare_parameter('local_port', DEFAULT_PORT)
+        self.declare_parameter('robot_frame', 'robot_0')
+        self.declare_parameter('global_frame', 'field')
+        
+        self.tf_buffer = Buffer()
+        self.tf_listener = TransformListener(self.tf_buffer, self)
+        
         self.latest_setpoints = [0.0, 0.0, 0.0]
         self.robot_yaw = 0.0
         self.last_twist_received = Twist()
@@ -121,11 +130,14 @@ class SingleRobotUDPNode(Node):
         self.last_twist.linear.y = 0.0
         self.last_twist.angular.z = 0.0
         self.dt = 0.02  # Control loop time step (50 Hz) 
+        self.local_frame = self.get_parameter('robot_frame').value
+        self.global_frame = self.get_parameter('global_frame').value
 
         name = self.get_parameter('robot_name').value
         ip = self.get_parameter('robot_ip').value
         robot_port = self.get_parameter('robot_port').value
         local_port = self.get_parameter('local_port').value
+        
 
         print("Parameters {}, {}, {}, {}".format(name, ip, robot_port, local_port))
 
@@ -134,6 +146,8 @@ class SingleRobotUDPNode(Node):
         rpms_topic = self.resolve_topic_name('encoders')
         
         self.get_logger().info(f"{node_name} Started with values name: {name}, connection->({ip}:{robot_port})")
+
+        self.get_logger().info(f"Initializing UDP client for {name} at {ip}:{robot_port} with local port {local_port}")
         self.client = RobotUDPClient(ip, robot_port, local_port)
         self.get_logger().info(f"Communication established")
 
@@ -156,6 +170,22 @@ class SingleRobotUDPNode(Node):
         
         self.last_packet_time = self.get_clock().now().nanoseconds
 
+    
+    def yaw_from_quaternion(self, x, y, z, w):
+        t3 = +2.0 * (w * z + x * y)
+        t4 = +1.0 - 2.0 * (y * y + z * z)
+        yaw_z = math.atan2(t3, t4)
+        return yaw_z 
+
+    
+    def _update_robot_yaw(self):
+        try:
+            transform = self.tf_buffer.lookup_transform(self.local_frame, self.global_frame, rclpy.time.Time(), timeout=rclpy.duration.Duration(seconds=0.01))
+            q = transform.transform.rotation
+            yaw = self.yaw_from_quaternion(q.x, q.y, q.z, q.w)
+            self.robot_yaw = yaw
+        except TransformException as e:
+            pass
 
     def receive_telemetry_timer_callback(self):
         # Attempt to receive telemetry data
@@ -171,6 +201,7 @@ class SingleRobotUDPNode(Node):
             self.last_packet_time = self.get_clock().now().nanoseconds
         else:
             if self.get_clock().now().nanoseconds - self.last_packet_time >= WATCHDOG_TIME:
+                self.get_logger().warn("No telemetry received for a while, reinitializing communication...")
                 self.client.communication_init()
                 self.last_packet_time = self.get_clock().now().nanoseconds 
 
@@ -208,12 +239,15 @@ class SingleRobotUDPNode(Node):
 
         
     def control_loop_timer_callback(self):
-       twist = self.limit_accel(self.last_twist_received) 
+        
+        self._update_robot_yaw()
+          
+        twist = self.limit_accel(self.last_twist_received) 
        
-       rpm_left, rpm_right, rpm_back = self.twist_to_rpm(twist)
-       self.get_logger().info(f"Rpm sent: L={rpm_left}, R={rpm_right}, B={rpm_back}")
-       self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
-       sent = self.client.send_udp_command(rpm_left, rpm_right, rpm_back)
+        rpm_left, rpm_right, rpm_back = self.twist_to_rpm(twist)
+        self.get_logger().info(f"Rpm sent: L={rpm_left}, R={rpm_right}, B={rpm_back}")
+        self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
+        sent = self.client.send_udp_command(rpm_left, rpm_right, rpm_back)
 
 
     def limit_accel(self, twist, max_linear=0.8, max_angular=2.5, ):
