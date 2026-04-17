@@ -123,7 +123,7 @@ class SingleRobotUDPNode(Node):
         self.tf_listener = TransformListener(self.tf_buffer, self)
         
         self.latest_setpoints = [0.0, 0.0, 0.0]
-        self.robot_yaw = 0.0
+        self.robot_yaw = math.pi / 2  # Default to facing "up" in the field
         self.last_twist_received = Twist()
         self.last_twist = Twist()
         self.last_twist.linear.x = 0.0
@@ -175,7 +175,7 @@ class SingleRobotUDPNode(Node):
         t3 = +2.0 * (w * z + x * y)
         t4 = +1.0 - 2.0 * (y * y + z * z)
         yaw_z = math.atan2(t3, t4)
-        return yaw_z 
+        return yaw_z + math.pi / 2  # Adjust for robot's forward direction being along the y-axis
 
     
     def _update_robot_yaw(self):
