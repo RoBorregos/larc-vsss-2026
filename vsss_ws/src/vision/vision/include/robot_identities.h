@@ -48,13 +48,13 @@ namespace RobotIdentities {
     constexpr size_t TOTAL_ROBOTS = 21;
 
     constexpr std::array<RobotIdentity, TOTAL_ROBOTS> DATABASE = {{
-        {0, 256},
-        {1, 272},
-        {2, 273},
+        {0, 955},
+        {1, 771},
+        {2, 939},
 
-        {10, 955},
-        {11, 771},
-        {12, 939},
+        {10, 256},
+        {11, 272},
+        {12, 273},
 
         {20, -1}
     }};

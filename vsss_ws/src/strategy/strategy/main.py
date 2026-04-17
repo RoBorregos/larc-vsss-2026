@@ -15,7 +15,7 @@ from .logic.utils import *
 from .logic import path_planning
 from .ui_sidebar import TeamSidebar
 
-simulation = True
+simulation = False
 
 # Window chrome slightly off the pitch black so the field reads as one surface
 CHROME_BG = "#0a0a0a"

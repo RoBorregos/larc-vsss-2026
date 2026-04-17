@@ -116,14 +116,14 @@ class SingleRobotUDPNode(Node):
         self.declare_parameter('robot_ip', '0.0.0.0')
         self.declare_parameter('robot_port', DEFAULT_PORT)
         self.declare_parameter('local_port', DEFAULT_PORT)
-        self.declare_parameter('robot_frame', 'robot_0')
+        self.declare_parameter('robot_frame', '')
         self.declare_parameter('global_frame', 'field')
         
         self.tf_buffer = Buffer()
         self.tf_listener = TransformListener(self.tf_buffer, self)
         
         self.latest_setpoints = [0.0, 0.0, 0.0]
-        self.robot_yaw = math.pi / 2  # Default to facing "up" in the field
+        self.robot_yaw = 0 # Default to facing "up" in the field
         self.last_twist_received = Twist()
         self.last_twist = Twist()
         self.last_twist.linear.x = 0.0
@@ -175,7 +175,7 @@ class SingleRobotUDPNode(Node):
         t3 = +2.0 * (w * z + x * y)
         t4 = +1.0 - 2.0 * (y * y + z * z)
         yaw_z = math.atan2(t3, t4)
-        return yaw_z + math.pi / 2  # Adjust for robot's forward direction being along the y-axis
+        return yaw_z  # Adjust for robot's forward direction being along the y-axis
 
     
     def _update_robot_yaw(self):
@@ -183,6 +183,8 @@ class SingleRobotUDPNode(Node):
             transform = self.tf_buffer.lookup_transform(self.local_frame, self.global_frame, rclpy.time.Time(), timeout=rclpy.duration.Duration(seconds=0.01))
             q = transform.transform.rotation
             yaw = self.yaw_from_quaternion(q.x, q.y, q.z, q.w)
+
+            self.get_logger().info(f"yaw received: {yaw}")
             self.robot_yaw = yaw
         except TransformException as e:
             pass
@@ -245,7 +247,7 @@ class SingleRobotUDPNode(Node):
         twist = self.limit_accel(self.last_twist_received) 
        
         rpm_left, rpm_right, rpm_back = self.twist_to_rpm(twist)
-        self.get_logger().info(f"Rpm sent: L={rpm_left}, R={rpm_right}, B={rpm_back}")
+        self.get_logger().info(f"Rpm sent: L={rpm_left:0.2f}, R={rpm_right:0.2f}, B={rpm_back:0.2f}")
         self.latest_setpoints = [rpm_left, rpm_right, rpm_back]
         sent = self.client.send_udp_command(rpm_left, rpm_right, rpm_back)
 
@@ -272,14 +274,13 @@ class SingleRobotUDPNode(Node):
 
     def twist_to_rpm(self, twist, wheel_radius=0.01431, wheel_distance=0.0311):
         # Convert Twist message to RPM for three-wheeled robot
-        vx = twist.linear.x  # Forward velocity
-        vy = twist.linear.y  # Sideways velocity 
+
+        # BECAUSE OF TIME, VX AND VY ARE SWAPPED, THIS IS INTENTIONAL
+        vx = twist.linear.y  # Forward velocity
+        vy = twist.linear.x  # Sideways velocity
+
         wz = twist.angular.z  # Angular velocity
 
-        # Transform the twist to the frame of the robot
-        vx_t = vx * math.cos(self.robot_yaw) + vy * math.sin(self.robot_yaw)
-        vy_t = vx * -math.sin(self.robot_yaw) + vy * math.cos(self.robot_yaw)
-        
         rpm_left = (-wheel_distance * wz  + math.cos(BETA) * vx_t + math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
         rpm_right = (-wheel_distance * wz + math.cos(BETA) * vx_t - math.sin(BETA) * vy_t) * OMEGA_TO_RPM / wheel_radius
         rpm_back = (-wheel_distance * wz - vx_t) * OMEGA_TO_RPM / wheel_radius

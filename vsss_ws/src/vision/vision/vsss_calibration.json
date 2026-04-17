@@ -388,9 +388,9 @@
     "camera_calibration": {
         "autoexposure": false,
         "autofocus": false,
-        "brightness": 100.0,
+        "brightness": 85.94444274902344,
         "contrast": 100.0,
-        "exposure": 85.18518829345703,
+        "exposure": 185.1851806640625,
         "focus": 0.0
     },
     "color_calibration": {
@@ -660,20 +660,20 @@
     ],
     "roi_points": [
         [
-            592,
-            59
+            618,
+            472
         ],
         [
-            234,
-            8
+            568,
+            63
         ],
         [
-            210,
-            401
+            219,
+            147
         ],
         [
-            544,
-            456
+            269,
+            536
         ]
     ],
     "yellow": [

@@ -93,7 +93,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         dy_goal = aim_y - attacker.y
         goal_angle = math.atan2(dy_goal, dx_goal)
 
-        attacker.move(speed, move_angle, math.degrees(goal_angle))
+        attacker.move(speed, move_angle, 0)
 
     if defender:
         dx = 0
@@ -139,7 +139,7 @@ def strategy(ball: Ball, team_robots: List[Robot], enemy_robots: List[Robot]):
         dy_ball = ball.y - defender.y
         global_angle = math.atan2(dy_ball, dx_ball)
 
-        defender.move(speed, move_angle, math.degrees(global_angle))
+        defender.move(speed, move_angle, 0)
         
     if helper:
     

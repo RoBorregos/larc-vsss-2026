@@ -108,13 +108,13 @@ class Color_ID:
 # Maps entity ID to a list of identifying colors
 BALL_ID = 20
 ROBOT_DATABASE = {
-    0:  256,
-    1:  272,
-    2:  273,
+    0:  955,
+    1:  771,
+    2:  939,
 
-    10: 955,
-    11: 771,
-    12: 939,
+    10: 256,
+    11: 272,
+    12: 273,
 
     20: -1,
 }

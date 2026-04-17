@@ -312,7 +312,7 @@ void Detector::detect_aruco_robots(const cv::Mat& frame) {
 		robot.center = center * 0.25f;
 
 		cv::Point2f front_vec = markerCorners[i][1] - markerCorners[i][0];
-		robot.facing = std::atan2(front_vec.y, front_vec.x);
+		robot.facing = std::atan2(front_vec.y, front_vec.x) - (M_PI / 2);
 
 		robot_patches.push_back(robot);
 	}
