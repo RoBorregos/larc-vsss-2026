@@ -10,7 +10,7 @@ services:
       - ACCEPT_EULA=Y
       - PRIVACY_CONSENT=Y
       - OMNI_KIT_ALLOW_ROOT=1
-      - DISPLAY=${DISPLAY}            # Pasa la variable de pantalla
+      - DISPLAY=${DISPLAY}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=all
     deploy:
@@ -21,8 +21,8 @@ services:
               count: all
               capabilities: [gpu]
     volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix # El socket de video
-      - ${XAUTHORITY}:/root/.Xauthority # Los permisos de X11      
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ${XAUTHORITY}:/root/.Xauthority
       - ./cache/kit:/root/.cache/ov/kit:rw
       - ./cache/ov:/root/.cache/nvidia/ov:rw
       - ./data:/root/.local/share/ov/data:rw
