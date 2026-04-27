@@ -1,0 +1,23 @@
+services:
+  isaac-sim:
+    image: nvcr.io/nvidia/isaac-sim:4.0.0
+    container_name: isaac_vsss_container
+    entrypoint: bash
+    stdin_open: true
+    tty: true
+    network_mode: host
+    environment:
+      - ACCEPT_EULA=Y
+      - PRIVACY_CONSENT=Y
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ./cache/kit:/root/.cache/ov/kit:rw
+      - ./cache/ov:/root/.cache/nvidia/ov:rw
+      - ./data:/root/.local/share/ov/data:rw
+      - ./IsaacLab:/isaac-sim/IsaacLab
