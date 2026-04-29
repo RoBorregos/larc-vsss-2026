@@ -10,6 +10,7 @@ simulation_app = app_launcher.app
 
 import isaaclab.sim as sim_utils
 from isaaclab.sim import SimulationContext
+from robot import Robot
 
 print("Simulator starting, setting up everything...")
 
@@ -22,21 +23,12 @@ cfg_light.func("/World/Light", cfg_light, translation=(1, 0, 10))
 cfg_ground = sim_utils.GroundPlaneCfg()
 cfg_ground.func("/World/GroundPlane", cfg_ground)
 
-cfg_ball = sim_utils.SphereCfg(
-    radius=0.02135,
-    rigid_props=sim_utils.RigidBodyPropertiesCfg(),
-    mass_props=sim_utils.MassPropertiesCfg(mass=0.046),
-    collision_props=sim_utils.CollisionPropertiesCfg(),
-    visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.5, 0.0))
-)
-
-cfg_ball.func("/World/Ball", cfg_ball, translation=(0.0, 0.0, 0.5))
+robot_blue = Robot("/World/Robot_blue", "Blue1", color=(0.0, 0.0, 1.0))
 
 sim.reset()
 
-print("Entering loop")
-
 while simulation_app.is_running():
+    robot_blue.apply_forward_thrust(5.0)
     sim.step(render=True)
 
 simulation_app.close()
