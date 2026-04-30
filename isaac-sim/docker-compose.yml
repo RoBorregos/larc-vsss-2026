@@ -1,0 +1,35 @@
+services:
+  isaac-lab:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: isaac_vsss_marl_5.1
+    stdin_open: true
+    tty: true
+    network_mode: host
+    environment:
+      - ACCEPT_EULA=Y
+      - PRIVACY_CONSENT=Y
+      - OMNI_KIT_ALLOW_ROOT=1
+      - DISPLAY=${DISPLAY}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - QT_X11_NO_MITSHM=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ${XAUTHORITY}:/root/.Xauthority
+
+      - ./cache/kit:/root/.cache/ov/kit:rw
+      - ./cache/ov:/root/.cache/nvidia/ov:rw
+      - ./cache/glcache:/root/.cache/nvidia/GLCache:rw
+      - ./cache/pip:/root/.cache/pip:rw
+
+      - ./data:/root/.local/share/ov/data:rw
+      - .:/workspace/project:rw
