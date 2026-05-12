@@ -1,0 +1,14 @@
+{
+    "url": "https://cad.onshape.com/documents/4d7b9ed8347e4e8495032761/w/8f45c4fc7d88575e680a9198/e/ceed308ded02c7f3f6e890aa",
+    "output_format": "urdf",
+    "robot_name": "omnibot",
+    "output_filename": "omnirobot",
+    "assets_directory": "meshes",
+    "ignore_limits": true,
+    "no_dynamics": false,
+    "ignore": {
+        "*": "collision",
+        "!Roller*": "collision",
+        "!body*": "collision"
+    }
+}

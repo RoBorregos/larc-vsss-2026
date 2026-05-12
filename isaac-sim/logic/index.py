@@ -1,34 +1,50 @@
-import argparse
 from isaaclab.app import AppLauncher
 
-parser = argparse.ArgumentParser(description="VSSS Test")
-AppLauncher.add_app_launcher_args(parser)
-args_cli = parser.parse_args()
-
-app_launcher = AppLauncher(args_cli)
+app_launcher = AppLauncher(headless=False)
 simulation_app = app_launcher.app
 
-import isaaclab.sim as sim_utils
-from isaaclab.sim import SimulationContext
-from robot import Robot
+from isaacsim.core.api import World
+from isaacsim.core.utils.stage import add_reference_to_stage
+from isaacsim.core.prims import Articulation
+from logic.robot import Robot
+import time
+import torch
 
-print("Simulator starting, setting up everything...")
+world = World(stage_units_in_meters=1.0)
+world.scene.add_default_ground_plane()
 
-sim = SimulationContext()
-sim.set_camera_view([2.0, 2.0, 2.0], [0.0, 0.0, 0.0])
+USD_PATH = "/workspace/project/onshape-to-robot/omnirobot/omnirobot.usd"
+robot = Robot(
+    usd_path=USD_PATH,
+    prim_path="/World/Omnirobot",
+    spawn_orientation_euler_deg=(-90.0, 0.0, 0.0)
+)
 
-cfg_light = sim_utils.DistantLightCfg(intensity=3000.0, color=(1.0, 1.0, 1.0))
-cfg_light.func("/World/Light", cfg_light, translation=(1, 0, 10))
+robot.spawn()
 
-cfg_ground = sim_utils.GroundPlaneCfg()
-cfg_ground.func("/World/GroundPlane", cfg_ground)
+world.reset()
+robot.initialize()
+robot.configure_drive_modes()
+robot.configure_motors()
 
-robot_blue = Robot("/World/Robot_blue", "Blue1", color=(0.0, 0.0, 1.0))
+print("=== Wheel joint mapping ===")
+for slot, dof_idx in enumerate(robot.wheel_indexes.tolist()):
+    joint_name = robot.dof_names[dof_idx]
+    print(f"  throttle slot [{slot}] -> DOF index {dof_idx} -> joint name '{joint_name}'")
+print(f"Total wheel joints found: {len(robot.wheel_indexes)}")
 
-sim.reset()
+THROTTLE = 1
+wheel_idx = 1
+
+print(f"Driving {robot.dof_names[robot.wheel_indexes[wheel_idx]]} at throttle {THROTTLE}")
 
 while simulation_app.is_running():
-    robot_blue.apply_forward_thrust(5.0)
-    sim.step(render=True)
+    now = time.time()
+
+    throttle = torch.zeros(4, device=robot.device)
+    throttle[wheel_idx] = THROTTLE
+    robot.apply_motor_command(throttle)
+
+    world.step(render=True)
 
 simulation_app.close()
