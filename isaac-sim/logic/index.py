@@ -27,24 +27,46 @@ robot.initialize()
 robot.configure_drive_modes()
 robot.configure_motors()
 
-print("=== Wheel joint mapping ===")
-for slot, dof_idx in enumerate(robot.wheel_indexes.tolist()):
-    joint_name = robot.dof_names[dof_idx]
-    print(f"  throttle slot [{slot}] -> DOF index {dof_idx} -> joint name '{joint_name}'")
-print(f"Total wheel joints found: {len(robot.wheel_indexes)}")
+start_time = time.time()
 
-THROTTLE = 1
-wheel_idx = 1
-
-print(f"Driving {robot.dof_names[robot.wheel_indexes[wheel_idx]]} at throttle {THROTTLE}")
+print("¡Iniciando secuencia en bucle: Frontal -> Izquierda -> Trasera -> Derecha -> Detener!")
 
 while simulation_app.is_running():
     now = time.time()
+    elapsed = now - start_time
+    cycle_time = elapsed % 10.0
 
-    throttle = torch.zeros(4, device=robot.device)
-    throttle[wheel_idx] = THROTTLE
-    robot.apply_motor_command(throttle)
+    # 1. RESETEAR SEÑALES (por defecto todas entran en Coast mode / 0.0)
+    robot.set_throttle_front(0.0)
+    robot.set_throttle_left(0.0)
+    robot.set_throttle_back(0.0)
+    robot.set_throttle_right(0.0)
 
+    # 2. ACTIVAR LA LLANTA CORRESPONDIENTE SEGÚN LA FASE DEL CICLO
+    if cycle_time < 2.0:
+        # De 0 a 2 segundos: Llanta Frontal
+        robot.move_omnidirectional(1.0, 0)
+
+    elif cycle_time < 4.0:
+        # De 2 a 4 segundos: Llanta Izquierda
+        robot.move_omnidirectional(1.0, 90)
+
+    elif cycle_time < 6.0:
+        # De 4 a 6 segundos: Llanta Trasera
+        robot.move_omnidirectional(1.0, 180)
+
+    elif cycle_time < 8.0:
+        # De 6 a 8 segundos: Llanta Derecha
+        robot.move_omnidirectional(1.0, 270)
+
+    else:
+        # De 8 a 10 segundos: Detener (todas quedan en 0.0 por el reset de arriba)
+        pass
+
+    # 3. ENVIAR LOS COMANDOS ACUMULADOS
+    robot.commit_motor_commands(debug=True)
+
+    # 4. AVANZAR EL SIMULADOR
     world.step(render=True)
 
 simulation_app.close()

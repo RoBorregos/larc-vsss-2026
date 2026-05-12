@@ -1,18 +1,22 @@
 import torch
+import math
+import time
+from collections import deque
+from typing import Callable
+
 from isaacsim.core.api import World
 from isaacsim.core.utils.stage import add_reference_to_stage
 from isaacsim.core.prims import Articulation
 from isaacsim.core.utils.prims import get_prim_at_path
 from pxr import UsdGeom, Gf
-from collections import deque
-from typing import Callable
 
 
 class Robot:
-    """Wrapper for the Omni robot.
+    """Wrapper para el robot Omnidireccional.
 
-    Single-robot debug version. For parallel-env training (thousands of
-    robots), port this to Isaac Lab's torch-native Articulation class.
+    Arquitectura basada en Control de Velocidad (Velocity Drive) con Slew Rate Asimétrico.
+    Simula de manera estable y realista la inercia, la fricción de la caja reductora
+    y el coasting de los motores, ideal para transferencias Sim-to-Real.
     """
 
     def __init__(
@@ -24,6 +28,7 @@ class Robot:
             spawn_orientation_euler_deg: tuple[float, float, float] = (90.0, 0.0, 0.0),
             spawn_position: tuple[float, float, float] = (0.0, 0.0, 0.0),
     ):
+        # 1. Propiedades de Identidad y Escenario
         self.usd_path = usd_path
         self.prim_path = prim_path
         self.name = name
@@ -37,53 +42,58 @@ class Robot:
         self.wheel_indexes: torch.Tensor | None = None
         self.roller_indexes: torch.Tensor | None = None
 
-        # Motor model state (configured later by configure_motors).
-        self._stall_torque_sampler: Callable[[], torch.Tensor] | None = None
-        self._no_load_speed_sampler: Callable[[], torch.Tensor] | None = None
+        # 2. Mapeo Físico y Cinemático (Configuración Diamante / Cruz)
+        self.ID_FRONT = 0
+        self.ID_LEFT = 1
+        self.ID_BACK = 2
+        self.ID_RIGHT = 3
+
+        # Inversores de giro (Polaridad)
+        self.dir_FRONT = -1.0
+        self.dir_LEFT = -1.0
+        self.dir_BACK = 1.0
+        self.dir_RIGHT = -1.0
+
+        # 3. Parámetros Dinámicos y Cinemáticos (N20)
+        self.max_velocity: float = 57.6  # rad/s (~550 RPM)
+        self.max_acceleration_step: float = 1.5  # Aceleración con peso
+        self.friction_coast_step: float = 3.0  # Fricción natural (Coasting)
+        self.active_brake_step: float = 15.0  # Freno electromagnético por corto
+        self.latency_steps: int = 0
+        self.encoder_noise_std: float = 0.0
+
+        # 4. Samplers para Randomización de Dominio
+        self._max_velocity_sampler: Callable[[], float] | None = None
+        self._max_acceleration_sampler: Callable[[], float] | None = None
         self._latency_steps_sampler: Callable[[], int] | None = None
-        self._bearing_friction_sampler: Callable[[], torch.Tensor] | None = None
         self._encoder_noise_std_sampler: Callable[[], torch.Tensor] | None = None
 
-        self.stall_torque: float = float("inf")
-        self.no_load_speed: float = float("inf")
-        self.latency_steps: int = 0
-        self.bearing_friction: float = 0.0
-        self.encoder_noise_std: float = 0.0
+        # 5. Buffers de Estado y Control
         self.command_buffer: deque[torch.Tensor] | None = None
+        self.last_velocity_target = torch.zeros(4, device=self.device)
+        self.current_throttle = torch.zeros(4, device=self.device)
+        self._debug_last_print = 0.0
 
-    # ------------------------------------------------------------------ #
-    # Lifecycle: spawn -> world.reset() -> initialize -> configure_motors
-    # ------------------------------------------------------------------ #
+    # ================================================================== #
+    # 1. CICLO DE VIDA E INICIALIZACIÓN
+    # ================================================================== #
 
     def spawn(self) -> None:
-        """Add the robot USD at prim_path to the stage."""
-        add_reference_to_stage(
-            usd_path=self.usd_path,
-            prim_path=self.prim_path,
-        )
+        """Añade el USD del robot al escenario."""
+        add_reference_to_stage(usd_path=self.usd_path, prim_path=self.prim_path)
 
         prim = get_prim_at_path(self.prim_path)
         xform = UsdGeom.Xformable(prim)
         xform.ClearXformOpOrder()
 
-        translate_op = xform.AddTranslateOp()
-        translate_op.Set(Gf.Vec3d(*self.spawn_position))
+        xform.AddTranslateOp().Set(Gf.Vec3d(*self.spawn_position))
+        xform.AddRotateXYZOp().Set(Gf.Vec3f(*self.spawn_orientation_euler_deg))
 
-        rotate_op = xform.AddRotateXYZOp()
-        rotate_op.Set(Gf.Vec3f(*self.spawn_orientation_euler_deg))
-
-        self.articulation = Articulation(
-            prim_paths_expr=self.prim_path,
-            name=self.name,
-        )
+        self.articulation = Articulation(prim_paths_expr=self.prim_path, name=self.name)
 
     def initialize(self) -> None:
-        """Finalize articulation handle and cache joint indexes.
-
-        Must be called AFTER world.reset() so the physics scene exists.
-        """
-        assert self.articulation is not None, "Call spawn() before initialize()."
-
+        """Finaliza el handle de la articulación y mapea las juntas. (Llamar tras world.reset())"""
+        assert self.articulation is not None, "Llama a spawn() antes de initialize()."
         self.articulation.initialize()
 
         self.num_dof = self.articulation.num_dof
@@ -95,182 +105,194 @@ class Robot:
         self.wheel_indexes = torch.tensor(wheel_idx, dtype=torch.long, device=self.device)
         self.roller_indexes = torch.tensor(roller_idx, dtype=torch.long, device=self.device)
 
-        print(f"[{self.name}] Initialized: {self.num_dof} DOFs "
-              f"({len(wheel_idx)} wheels, {len(roller_idx)} rollers)")
+        print(f"[{self.name}] Inicializado: {self.num_dof} DOFs ({len(wheel_idx)} llantas)")
 
+    def configure_drive_modes(self, wheel_damping: float = 0.1) -> None:
+        """Configura las juntas para el control implícito de velocidad."""
+        assert self.articulation is not None, "Llama a initialize() primero."
+        kps = torch.zeros(self.num_dof, device=self.device)
+        kds = torch.zeros(self.num_dof, device=self.device)
+        kds[self.wheel_indexes] = wheel_damping
 
-    # ------------------------------------------------------------------ #
-    # Internal helpers for the numpy-backed articulation API
-    # ------------------------------------------------------------------ #
+        self.articulation.set_gains(
+            kps=self._to_articulation(kps.unsqueeze(0)),
+            kds=self._to_articulation(kds.unsqueeze(0)),
+        )
+
+    def configure_motors(
+            self,
+            max_velocity_sampler: Callable[[], float] | None = None,
+            max_acceleration_sampler: Callable[[], float] | None = None,
+            latency_steps_sampler: Callable[[], int] | None = None,
+            encoder_noise_std_sampler: Callable[[], torch.Tensor] | None = None,
+    ) -> None:
+        """Configura y prepara los samplers cinemáticos."""
+        self._max_velocity_sampler = max_velocity_sampler
+        self._max_acceleration_sampler = max_acceleration_sampler
+        self._latency_steps_sampler = latency_steps_sampler
+        self._encoder_noise_std_sampler = encoder_noise_std_sampler
+        self.resample_motor_params()
+
+    def resample_motor_params(self) -> None:
+        """Extrae nuevos valores (Útil para Domain Randomization al inicio del episodio)."""
+        self.max_velocity = self._max_velocity_sampler() if self._max_velocity_sampler else 57.6
+        self.max_acceleration_step = self._max_acceleration_sampler() if self._max_acceleration_sampler else 1.5
+        self.latency_steps = self._latency_steps_sampler() if self._latency_steps_sampler else 0
+        self.encoder_noise_std = self._encoder_noise_std_sampler() if self._encoder_noise_std_sampler else 0.0
+
+        zero_cmd = torch.zeros(4, device=self.device)
+        self.command_buffer = deque([zero_cmd.clone() for _ in range(self.latency_steps + 1)],
+                                    maxlen=self.latency_steps + 1)
+
+    # ================================================================== #
+    # 2. SENSORES Y ODOMETRÍA (NUEVO)
+    # ================================================================== #
+
+    def get_observed_wheel_velocities(self) -> torch.Tensor:
+        """Lectura de encoders simulados con ruido opcional."""
+        wheel_vel = self._get_wheel_velocities_raw()
+        if self.encoder_noise_std > 0:
+            noise = torch.randn_like(wheel_vel) * self.encoder_noise_std
+            wheel_vel = wheel_vel + noise
+        return wheel_vel
+
+    def get_world_pose(self) -> tuple[torch.Tensor, torch.Tensor]:
+        """Devuelve la posición (x,y,z) y el cuaternión (w,x,y,z) del chasis en el mundo."""
+        assert self.articulation is not None
+        positions, orientations = self.articulation.get_world_poses()
+        return self._as_torch(positions[0]), self._as_torch(orientations[0])
+
+    def get_heading_rad(self) -> torch.Tensor:
+        """Calcula el ángulo de guiñada (Yaw) del robot en radianes."""
+        _, quat = self.get_world_pose()
+        # Isaac Sim retorna los cuaterniones en formato [w, x, y, z]
+        w, x, y, z = quat[0], quat[1], quat[2], quat[3]
+
+        # Conversión de Cuaternión a Ángulo de Euler (Yaw en el eje Z)
+        siny_cosp = 2 * (w * z + x * y)
+        cosy_cosp = 1 - 2 * (y * y + z * z)
+        yaw = torch.atan2(siny_cosp, cosy_cosp)
+        return yaw
+
+    def get_heading_deg(self) -> torch.Tensor:
+        """Calcula el ángulo de guiñada (Yaw) del robot en grados."""
+        yaw_rad = self.get_heading_rad()
+        return yaw_rad * (180.0 / math.pi)
+
+    # ================================================================== #
+    # 3. CONTROL DE ALTO NIVEL (CINEMÁTICA)
+    # ================================================================== #
+
+    def set_throttle_front(self, speed: float) -> None:
+        self.current_throttle[self.ID_FRONT] = speed * self.dir_FRONT
+
+    def set_throttle_back(self, speed: float) -> None:
+        self.current_throttle[self.ID_BACK] = speed * self.dir_BACK
+
+    def set_throttle_left(self, speed: float) -> None:
+        self.current_throttle[self.ID_LEFT] = speed * self.dir_LEFT
+
+    def set_throttle_right(self, speed: float) -> None:
+        self.current_throttle[self.ID_RIGHT] = speed * self.dir_RIGHT
+
+    def move_omnidirectional(self, speed: float, direction_deg: float) -> None:
+        """Traduce un vector de velocidad (magnitud y ángulo) a comandos de motor."""
+        dir_rad = math.radians(direction_deg)
+
+        front_speed = speed * math.sin(dir_rad + math.radians(0))
+        left_speed = speed * math.sin(dir_rad + math.radians(90))
+        back_speed = speed * math.sin(dir_rad + math.radians(180))
+        right_speed = speed * math.sin(dir_rad + math.radians(270))
+
+        max_speed = max(abs(front_speed), abs(left_speed), abs(back_speed), abs(right_speed))
+
+        if max_speed != 0:
+            ratio = speed / max_speed
+            front_speed *= ratio
+            left_speed *= ratio
+            back_speed *= ratio
+            right_speed *= ratio
+
+        self.set_throttle_front(front_speed)
+        self.set_throttle_left(left_speed)
+        self.set_throttle_back(back_speed)
+        self.set_throttle_right(right_speed)
+
+    def commit_motor_commands(self, debug: bool = False) -> None:
+        """Envía todas las señales acumuladas al simulador de un solo golpe."""
+        self._apply_motor_command(self.current_throttle, debug=debug)
+
+    # ================================================================== #
+    # 4. CONTROL DE BAJO NIVEL Y FÍSICAS (PRIVADO)
+    # ================================================================== #
+
+    def _apply_motor_command(self, throttle: torch.Tensor, debug: bool = False) -> None:
+        """Lógica interna de rampa de velocidad y envío a PhysX."""
+        assert self.articulation is not None
+        assert self.command_buffer is not None, "Llama a configure_motors() antes."
+
+        target_throttle = throttle.to(self.device).clamp(-1.0, 1.0)
+        final_target_velocity = target_throttle * self.max_velocity
+        raw_delta_vel = final_target_velocity - self.last_velocity_target
+
+        is_decelerating = (torch.abs(final_target_velocity) < torch.abs(self.last_velocity_target)) | \
+                          ((final_target_velocity * self.last_velocity_target) < 0)
+
+        step_limits = torch.full_like(final_target_velocity, self.max_acceleration_step)
+        step_limits[is_decelerating] = self.friction_coast_step
+
+        delta_vel = torch.max(torch.min(raw_delta_vel, step_limits), -step_limits)
+
+        current_velocity_command = self.last_velocity_target + delta_vel
+        self.last_velocity_target = current_velocity_command
+
+        self.command_buffer.append(current_velocity_command.clone())
+        delayed_velocity = self.command_buffer[0]
+
+        full_vel_targets = torch.zeros(self.num_dof, device=self.device)
+        full_vel_targets[self.wheel_indexes] = delayed_velocity
+
+        self.articulation.set_joint_velocity_targets(
+            self._to_articulation(full_vel_targets.unsqueeze(0))
+        )
+
+        if debug:
+            self._print_debug(target_throttle, delayed_velocity, step_limits)
+
+    # ================================================================== #
+    # 5. HELPERS INTERNOS
+    # ================================================================== #
 
     def _as_torch(self, x) -> torch.Tensor:
-        """Coerce a value returned from the articulation API into a torch
-        tensor on self.device. Handles numpy arrays and CPU torch tensors."""
         if isinstance(x, torch.Tensor):
             return x.to(self.device)
         return torch.as_tensor(x, device=self.device)
 
     def _to_articulation(self, x: torch.Tensor):
-        """Convert a torch tensor into whatever the articulation API expects.
-
-        Current Isaac Sim version is numpy-backed for this articulation, so we
-        copy to CPU and convert to numpy. If a future version supports torch
-        natively, this becomes a no-op.
-        """
         return x.detach().cpu().numpy()
 
     def _get_wheel_velocities_raw(self) -> torch.Tensor:
-        """Read true wheel velocities as a (4,) torch tensor on self.device."""
         all_vel = self._as_torch(self.articulation.get_joint_velocities())
-        # API may return (num_dof,) or (1, num_dof) -- normalize to flat.
         if all_vel.dim() == 2:
             all_vel = all_vel[0]
         return all_vel[self.wheel_indexes]
 
-    # ------------------------------------------------------------------ #
-    # Low-level: raw effort on the 4 wheel joints
-    # ------------------------------------------------------------------ #
+    def _print_debug(self, target_throttle: torch.Tensor, delayed_velocity: torch.Tensor, limits: torch.Tensor) -> None:
+        now = time.time()
+        if now - self._debug_last_print >= 0.1:
+            np_throttle = target_throttle.cpu().numpy().round(3)
+            np_target_vel = delayed_velocity.cpu().numpy().round(2)
+            np_limits = limits.cpu().numpy().round(1)
+            np_actual_vel = self._get_wheel_velocities_raw().detach().cpu().numpy().round(2)
 
-    def apply_wheel_efforts(self, efforts: torch.Tensor) -> None:
-        """Apply torques (Nm) to the 4 wheel drive joints.
+            # También imprimimos el Yaw para validar la nueva función
+            yaw = float(self.get_heading_deg().cpu())
 
-        Args:
-            efforts: shape (4,), one torque per wheel.
-        """
-        assert self.articulation is not None, "Call spawn() before apply_wheel_efforts()."
-        assert efforts.shape == (4,), f"Expected shape (4,), got {efforts.shape}"
-
-        full_efforts = torch.zeros(self.num_dof, device=self.device)
-        full_efforts[self.wheel_indexes] = efforts.to(self.device)
-
-        self.articulation.set_joint_efforts(
-            self._to_articulation(full_efforts.unsqueeze(0))
-        )
-
-    # ------------------------------------------------------------------ #
-    # Motor model: throttle in [-1, +1] -> torque, with optional realism
-    # ------------------------------------------------------------------ #
-
-    def configure_motors(
-            self,
-            stall_torque_sampler: Callable[[], torch.Tensor] | None = None,
-            no_load_speed_sampler: Callable[[], torch.Tensor] | None = None,
-            latency_steps_sampler: Callable[[], int] | None = None,
-            bearing_friction_sampler: Callable[[], torch.Tensor] | None = None,
-            encoder_noise_std_sampler: Callable[[], torch.Tensor] | None = None,
-    ) -> None:
-        """Configure the motor model.
-
-        Each parameter is a callable that returns a sample. Pass None for any
-        parameter to use the "perfect physics" default for that effect.
-        Call resample_motor_params() to redraw all parameters.
-        """
-        self._stall_torque_sampler = stall_torque_sampler
-        self._no_load_speed_sampler = no_load_speed_sampler
-        self._latency_steps_sampler = latency_steps_sampler
-        self._bearing_friction_sampler = bearing_friction_sampler
-        self._encoder_noise_std_sampler = encoder_noise_std_sampler
-
-        self.resample_motor_params()
-
-    def configure_drive_modes(self, wheel_damping: float = 0.0) -> None:
-        """Zero out stiffness. Keep rollers strictly passive, add slight damping to wheels.
-
-        - Roller joints: passive (kps=0, kds=0) to spin freely.
-        - Wheel joints: kps=0 (effort control), small kds to absorb instantaneous
-          reaction torque and prevent chassis lurch without locking the wheels.
-        """
-        assert self.articulation is not None, "Call initialize() first."
-
-        # Build zero-gain arrays for all DOFs.
-        kps = torch.zeros(self.num_dof, device=self.device)
-        kds = torch.zeros(self.num_dof, device=self.device)
-
-        # Apply slight damping ONLY to the drive wheels
-        kds[self.wheel_indexes] = wheel_damping
-
-        # Apply to all joints.
-        self.articulation.set_gains(
-            kps=self._to_articulation(kps.unsqueeze(0)),
-            kds=self._to_articulation(kds.unsqueeze(0)),
-        )
-        print(f"[{self.name}] Drive modes configured. Wheel damping: {wheel_damping}")
-
-    def resample_motor_params(self) -> None:
-        """Draw fresh values from each sampler. Call to randomize the motor
-        model (e.g., at the start of each RL episode for domain randomization).
-        """
-        INF = float("inf")
-
-        self.stall_torque = (
-            self._stall_torque_sampler() if self._stall_torque_sampler else INF
-        )
-        self.no_load_speed = (
-            self._no_load_speed_sampler() if self._no_load_speed_sampler else INF
-        )
-        self.latency_steps = (
-            self._latency_steps_sampler() if self._latency_steps_sampler else 0
-        )
-        self.bearing_friction = (
-            self._bearing_friction_sampler() if self._bearing_friction_sampler else 0.0
-        )
-        self.encoder_noise_std = (
-            self._encoder_noise_std_sampler() if self._encoder_noise_std_sampler else 0.0
-        )
-
-        zero_cmd = torch.zeros(4, device=self.device)
-        self.command_buffer = deque(
-            [zero_cmd.clone() for _ in range(self.latency_steps + 1)],
-            maxlen=self.latency_steps + 1,
-        )
-
-    def get_observed_wheel_velocities(self) -> torch.Tensor:
-        """Wheel velocities as the robot's control logic would see them
-        (with simulated encoder noise applied)."""
-        assert self.articulation is not None
-        wheel_vel = self._get_wheel_velocities_raw()
-
-        if self.encoder_noise_std > 0:
-            noise = torch.randn_like(wheel_vel) * self.encoder_noise_std
-            wheel_vel = wheel_vel + noise
-
-        return wheel_vel
-
-    def apply_motor_command(self, throttle: torch.Tensor) -> None:
-        """Drive the 4 wheels using the motor model.
-
-        Args:
-            throttle: shape (4,), values in [-1, +1]. With perfect-physics
-                defaults, throttle acts as a direct torque scaling (1 Nm per
-                unit throttle).
-        """
-        assert self.articulation is not None
-        assert self.command_buffer is not None, (
-            "Call configure_motors() before apply_motor_command()."
-        )
-        throttle = throttle.to(self.device).clamp(-1.0, 1.0)
-
-        # Apply control latency: motor sees a command from N steps ago.
-        self.command_buffer.append(throttle.clone())
-        delayed_throttle = self.command_buffer[0]
-
-        # True wheel velocities for the motor's internal physics
-        # (encoder noise belongs to get_observed_wheel_velocities, not here).
-        wheel_vel = self._get_wheel_velocities_raw()
-
-        if self.stall_torque == float("inf") or self.no_load_speed == float("inf"):
-            max_torque_nm = 0.05
-            motor_torque = delayed_throttle * max_torque_nm
-        else:
-            # Linear torque-speed curve, scaled by throttle.
-            motor_torque = (
-                    delayed_throttle * self.stall_torque
-                    - (self.stall_torque / self.no_load_speed) * wheel_vel
-            )
-            motor_torque = motor_torque.clamp(-self.stall_torque, self.stall_torque)
-
-        if self.bearing_friction > 0:
-            friction = -torch.sign(wheel_vel) * self.bearing_friction
-            motor_torque = motor_torque + friction
-
-        self.apply_wheel_efforts(motor_torque)
+            print(f"\n[DEBUG] --- Análisis Dinámico y Odometría ---")
+            print(f"1. Target Throttle     : {np_throttle}")
+            print(f"2. Fricción Aplicada   : {np_limits} (rad/s por frame)")
+            print(f"3. Command Velocity    : {np_target_vel} rad/s")
+            print(f"4. Actual Simulated Vel: {np_actual_vel} rad/s")
+            print(f"5. Robot Heading (Yaw) : {yaw:.2f}°")
+            print("----------------------------------------------------------")
+            self._debug_last_print = now
