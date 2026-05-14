@@ -7,9 +7,15 @@ from isaaclab.app import AppLauncher
 # ============================================================== #
 # CLI
 # ============================================================== #
-parser = argparse.ArgumentParser(description="Flota VSSS: 3 vs 3 + pelota, moviéndose en cuadrado.")
-parser.add_argument("--num_fields", type=int, default=6, help="Cantidad de canchas.")
-parser.add_argument("--grid_spacing", type=float, default=3.0, help="Separación entre canchas.")
+parser = argparse.ArgumentParser(
+    description="Massive simulation for VSSS.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter
+)
+
+sim_group = parser.add_argument_group('Configuración de Simulación')
+sim_group.add_argument("--num_fields", type=int, default=2, help="Amount of fields to create.")
+sim_group.add_argument("--grid_spacing", type=float, default=3.0, help="Distance in meters in between each field center.")
+
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
 
@@ -18,7 +24,7 @@ simulation_app = app_launcher.app
 
 # ----- Imports post-launcher -----
 from isaacsim.core.api import World
-from pxr import UsdGeom, Gf
+from pxr import UsdGeom, Gf, UsdPhysics, PhysxSchema
 import omni.usd
 
 from logic.field import Field
@@ -28,34 +34,28 @@ from logic.robot_fleet import RobotFleet
 from logic.ball_fleet import BallFleet
 
 # ============================================================== #
-# MUNDO Y ESCENA
+# WORLD AND STAGE
 # ============================================================== #
 world = World(stage_units_in_meters=1.0, backend="torch", device="cuda:0")
 stage = omni.usd.get_context().get_stage()
 world.scene.add_default_ground_plane()
 
 # --- PhysX GPU buffers ---
-# La API antigua physx_interface.overwrite_gpu_setting(str, int) ya no existe.
-# Ahora se configura en el PhysicsScene del stage via PhysxSceneAPI.
-from pxr import UsdPhysics, PhysxSchema
+target_capacity = max(16384, args.num_fields * 1536)  # ~1500 pairs per field
 
-target_capacity = max(16384, args.num_fields * 1536)  # ~1500 pairs por cancha
-
-# Buscar (o crear) el PhysicsScene en el stage
+# Search (or create) the PhysicsScene in stage
 physics_scene_path = "/physicsScene"
 physics_scene = UsdPhysics.Scene.Get(stage, physics_scene_path)
 if not physics_scene:
-    # Por si Isaac aún no lo creó (raro tras add_default_ground_plane, pero por las dudas)
     physics_scene = UsdPhysics.Scene.Define(stage, physics_scene_path)
 
 physx_scene_api = PhysxSchema.PhysxSceneAPI.Apply(physics_scene.GetPrim())
 physx_scene_api.CreateGpuFoundLostAggregatePairsCapacityAttr(target_capacity)
 physx_scene_api.CreateGpuFoundLostPairsCapacityAttr(target_capacity)
 physx_scene_api.CreateGpuTotalAggregatePairsCapacityAttr(target_capacity)
-physx_scene_api.CreateGpuCollisionStackSizeAttr(1024 * 1024 * 64)  # Aumentado a 64 MB para mayor seguridad a gran escala
+physx_scene_api.CreateGpuCollisionStackSizeAttr(1024 * 1024 * 64)
 
-# --- Nuevos buffers para narrow-phase collisions ---
-# Escalamos dinámicamente según el número de canchas para evitar el Patch buffer overflow
+# --- Buffers for narrow-phase collisions  ---
 patch_capacity = max(163840, args.num_fields * 2000)
 contact_capacity = max(524288, args.num_fields * 8192)
 
@@ -74,7 +74,7 @@ USD_PATH = config["robot"]["usd_path"]
 cols = int(math.ceil(math.sqrt(NUM_FIELDS)))
 
 # ============================================================== #
-# ENVS + PATHS GLOBALES + TEAMS (vistas)
+# ENVS + GLOBAL PATHS + TEAMS (views)
 # ============================================================== #
 teams_per_env: list[tuple[Team, Team]] = []
 
@@ -110,22 +110,22 @@ for i in range(NUM_FIELDS):
     # --- Progress and ETA ---
     current = i + 1
     elapsed_time = time.time() - start_time_envs
-    porcentaje = (current / NUM_FIELDS) * 100.0
+    percentage = (current / NUM_FIELDS) * 100.0
     time_per_env = elapsed_time / current
     eta_seconds = time_per_env * (NUM_FIELDS - current)
     eta_mins, eta_secs = divmod(int(eta_seconds), 60)
 
     print(
-        f"\r[INFO] Configurando Canchas: {current}/{NUM_FIELDS} [{porcentaje:.1f}%] - ETA: {eta_mins:02d}:{eta_secs:02d} - {env_path}" + " " * 15,
+        f"\r[INFO] Setting up fields: {current}/{NUM_FIELDS} [{percentage:.1f}%] - ETA: {eta_mins:02d}:{eta_secs:02d} - {env_path}" + " " * 15,
         end='', flush=True)
 
 # Final resume
 total_time_envs = time.time() - start_time_envs
 tot_mins_envs, tot_secs_envs = divmod(int(total_time_envs), 60)
-print(f"\n[INFO] {NUM_FIELDS} canchas configuradas en {tot_mins_envs:02d}:{tot_secs_envs:02d}.")
+print(f"\n[INFO] {NUM_FIELDS} fields were set up in {tot_mins_envs:02d}:{tot_secs_envs:02d}.")
 
 # ============================================================== #
-# FLEETS GLOBALES
+# GLOBAL FLEETS
 # ============================================================== #
 fleet_yellow = RobotFleet(
     usd_path=USD_PATH,
@@ -171,23 +171,20 @@ for fleet in (fleet_yellow, fleet_blue):
     fleet.initialize()
     fleet.configure_drive_modes(wheel_damping=0.05)
     fleet.configure_motors()
-    fleet.paint()  # Re-bind del material por equipo; ahora sí los meshes existen
+    fleet.paint()
 
 ball_fleet.initialize()
 
 # ============================================================== #
-# LOOP — movimiento en cuadrado
+# LOOP — Square movement
 # ============================================================== #
 total_robots = NUM_FIELDS * Team.ROBOTS_PER_TEAM * 2
-print(f"\n[INFO] Simulación iniciada con {NUM_FIELDS} canchas ({total_robots} robots + {NUM_FIELDS} pelotas).")
-print(f"[INFO] Capacidad PhysX ajustada a: {target_capacity}\n")
+print(f"\n[INFO] Simulation started with {NUM_FIELDS} fields ({total_robots} robots + {NUM_FIELDS} balls).")
+print(f"[INFO] PhysX capacity adjusted to: {target_capacity}\n")
 
-# Cuadrado: 4 lados, STEPS_PER_SIDE physics-steps cada uno.
-# El omni se desplaza sin rotar, así que esto traza un cuadrado en el piso.
 STEPS_PER_SIDE = 90
-# Yellow gira en un sentido, Blue en el opuesto.
-BLUE_DIRS = [0.0,   90.0,  180.0, 270.0]
-YELLOW_DIRS   = [180.0, 270.0, 0.0,   90.0]
+BLUE_DIRS   = [0.0,   90.0,  180.0, 270.0]
+YELLOW_DIRS = [180.0, 270.0, 0.0,   90.0]
 SPEED = 0.6
 
 prev_time = time.time()
@@ -205,7 +202,6 @@ while simulation_app.is_running():
     if frame_count % 50 == 0:
         print(f"  [SPS]: {sps_avg:.2f} | Fields: {NUM_FIELDS} | Robots: {total_robots}                  ", end="\r")
 
-    # ¿Qué lado del cuadrado estamos haciendo?
     side = (frame_count // STEPS_PER_SIDE) % 4
     fleet_yellow.move_omnidirectional(speed=SPEED, direction_deg=YELLOW_DIRS[side])
     fleet_blue.move_omnidirectional(speed=SPEED,   direction_deg=BLUE_DIRS[side])

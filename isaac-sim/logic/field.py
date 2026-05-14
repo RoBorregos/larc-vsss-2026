@@ -8,23 +8,20 @@ class Field:
         self.name = name
         self.field_path = f"{self.parent_path}/{self.name}"
 
-        # Dimensiones físicas totales (incluyendo porterías)
-        self.length = 1.70  # 150cm campo + 20cm porterías
+        self.length = 1.70  # 150cm field + 20cm goals
         self.width = 1.30
-        self.wall_height = 0.10  # 10 cm de alto
+        self.wall_height = 0.10  # 10 cm height
         self.wall_thickness = 0.02
 
         self.build_field()
 
     def build_field(self):
-        """Construye el piso y las paredes."""
         self._spawn_ground_plane()
         self._spawn_invisible_colliders()
 
     def _spawn_ground_plane(self):
-        # Piso sólido negro
         floor_thickness = 0.01
-        z_center = 0.005  # Elevado para evitar parpadeo con el suelo base
+        z_center = 0.005  # Avoid Z-overlap
 
         self.floor = FixedCuboid(
             prim_path=f"{self.field_path}/Floor",
@@ -32,11 +29,10 @@ class Field:
             scale=np.array([self.length, self.width, floor_thickness]),
             translation=np.array([0, 0, z_center]),
             visible=True,
-            color=np.array([0.05, 0.05, 0.05])  # Negro mate
+            color=np.array([0.05, 0.05, 0.05])
         )
 
     def _spawn_invisible_colliders(self):
-        """Muros visibles de 10cm de altura."""
         z_center = self.wall_height / 2.0
         q_45 = np.array([0.9238795, 0.0, 0.0, 0.3826834])
         q_minus45 = np.array([0.9238795, 0.0, 0.0, -0.3826834])
@@ -101,6 +97,6 @@ class Field:
                 scale=params["scale"],
                 translation=params["translation"],
                 orientation=params.get("orientation", np.array([1.0, 0.0, 0.0, 0.0])),
-                visible=True,  # Paredes visibles
-                color=np.array([0.6, 0.1, 0.1])  # Rojo oscuro
+                visible=True,
+                color=np.array([0.6, 0.1, 0.1])
             )

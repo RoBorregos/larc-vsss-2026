@@ -1,5 +1,7 @@
 import torch
+import time
 
+import omni.usd
 from isaacsim.core.prims import RigidPrim
 from isaacsim.core.utils.prims import get_prim_at_path
 from pxr import UsdGeom, UsdPhysics, PhysxSchema, Sdf, Gf
@@ -8,15 +10,6 @@ from logic.constants import config
 
 
 class BallFleet:
-    """
-    Una pelota por env, controlada como UN solo RigidPrim view vectorizado.
-
-    Mismo patrón que RobotFleet:
-      - `spawn()` crea N esferas (una por env) en el stage.
-      - `initialize()` (tras world.reset()) arma la view.
-      - Las queries devuelven tensores (N, ...).
-    """
-
     def __init__(
         self,
         prim_paths: list[str],
@@ -42,8 +35,6 @@ class BallFleet:
         self.view: RigidPrim | None = None
 
     def spawn(self):
-        import omni.usd
-        import time
         stage = omni.usd.get_context().get_stage()
 
         total_balls = len(self.prim_paths)
@@ -68,28 +59,28 @@ class BallFleet:
             # --- Progress and ETA ---
             current = idx + 1
             elapsed_time = time.time() - start_time
-            porcentaje = (current / total_balls) * 100.0
+            percentage = (current / total_balls) * 100.0
             time_per_ball = elapsed_time / current
             eta_seconds = time_per_ball * (total_balls - current)
             eta_mins, eta_secs = divmod(int(eta_seconds), 60)
 
             print(
-                f"\r[INFO] {self.name} Spawning: {current}/{total_balls} [{porcentaje:.1f}%] - ETA: {eta_mins:02d}:{eta_secs:02d} - {prim_path}" + " " * 15,
+                f"\r[INFO] {self.name} Spawning: {current}/{total_balls} [{percentage:.1f}%] - ETA: {eta_mins:02d}:{eta_secs:02d} - {prim_path}" + " " * 15,
                 end='', flush=True)
 
         total_time = time.time() - start_time
         tot_mins, tot_secs = divmod(int(total_time), 60)
-        print(f"\n[INFO] {self.name} Fleet spawned completado en {tot_mins:02d}:{tot_secs:02d}.")
+        print(f"\n[INFO] {self.name} Fleet spawned completed in {tot_mins:02d}:{tot_secs:02d}.")
 
         self.view = RigidPrim(prim_paths_expr=self.prim_paths_expr, name=self.name)
 
     def initialize(self):
         self.view.initialize()
         assert self.view.count == self.N, (
-            f"BallFleet view tiene {self.view.count} prims, esperaba {self.N}."
+            f"BallFleet view has {self.view.count} prims, expected {self.N}."
         )
 
-    # --- queries vectorizadas (N, ...) ---
+    # --- vectorized queries (N, ...) ---
     def get_positions(self) -> torch.Tensor:
         pos, _ = self.view.get_world_poses()
         return torch.as_tensor(pos, device=self.device).view(self.N, 3)
