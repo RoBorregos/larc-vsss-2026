@@ -84,7 +84,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_2 -->
   <link name="roller_predeterminado_14_2">
@@ -116,7 +116,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_2"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_3 -->
   <link name="roller_predeterminado_14_3">
@@ -148,7 +148,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_3"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_4 -->
   <link name="roller_predeterminado_14_4">
@@ -180,7 +180,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_4"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_5 -->
   <link name="roller_predeterminado_14_5">
@@ -212,7 +212,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_5"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_6 -->
   <link name="roller_predeterminado_14_6">
@@ -244,7 +244,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_6"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_7 -->
   <link name="roller_predeterminado_14_7">
@@ -276,7 +276,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_7"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_8 -->
   <link name="roller_predeterminado_14_8">
@@ -308,7 +308,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_8"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_9 -->
   <link name="roller_predeterminado_14_9">
@@ -340,7 +340,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_9"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_10 -->
   <link name="roller_predeterminado_14_10">
@@ -372,7 +372,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_10"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_11 -->
   <link name="roller_predeterminado_14_11">
@@ -404,7 +404,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_11"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_12 -->
   <link name="roller_predeterminado_14_12">
@@ -436,7 +436,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_12"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_13 -->
   <link name="roller_predeterminado_14_13">
@@ -468,7 +468,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_13"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_14 -->
   <link name="roller_predeterminado_14_14">
@@ -500,7 +500,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_14"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_15 -->
   <link name="roller_predeterminado_14_15">
@@ -532,7 +532,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_15"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_16 -->
   <link name="roller_predeterminado_14_16">
@@ -564,7 +564,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_16"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_17 -->
   <link name="roller_predeterminado_14_17">
@@ -596,7 +596,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_17"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_18 -->
   <link name="roller_predeterminado_14_18">
@@ -628,7 +628,7 @@
     <parent link="omnibase_predeterminado"/>
     <child link="roller_predeterminado_14_18"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Joint from body to omnibase_predeterminado -->
   <joint name="wheel_1" type="continuous">
@@ -636,7 +636,7 @@
     <parent link="body"/>
     <child link="omnibase_predeterminado"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10"/>
+    <limit effort="200" velocity="200"/>
   </joint>
   <!-- Link omnibase_predeterminado_2 -->
   <link name="omnibase_predeterminado_2">
@@ -696,7 +696,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_19"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_20 -->
   <link name="roller_predeterminado_14_20">
@@ -728,7 +728,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_20"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_21 -->
   <link name="roller_predeterminado_14_21">
@@ -760,7 +760,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_21"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_22 -->
   <link name="roller_predeterminado_14_22">
@@ -792,7 +792,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_22"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_23 -->
   <link name="roller_predeterminado_14_23">
@@ -824,7 +824,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_23"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_24 -->
   <link name="roller_predeterminado_14_24">
@@ -856,7 +856,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_24"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_25 -->
   <link name="roller_predeterminado_14_25">
@@ -888,7 +888,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_25"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_26 -->
   <link name="roller_predeterminado_14_26">
@@ -920,7 +920,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_26"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_27 -->
   <link name="roller_predeterminado_14_27">
@@ -952,7 +952,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_27"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_28 -->
   <link name="roller_predeterminado_14_28">
@@ -984,7 +984,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_28"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_29 -->
   <link name="roller_predeterminado_14_29">
@@ -1016,7 +1016,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_29"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_30 -->
   <link name="roller_predeterminado_14_30">
@@ -1048,7 +1048,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_30"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_31 -->
   <link name="roller_predeterminado_14_31">
@@ -1080,7 +1080,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_31"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_32 -->
   <link name="roller_predeterminado_14_32">
@@ -1112,7 +1112,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_32"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_33 -->
   <link name="roller_predeterminado_14_33">
@@ -1144,7 +1144,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_33"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_34 -->
   <link name="roller_predeterminado_14_34">
@@ -1176,7 +1176,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_34"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_35 -->
   <link name="roller_predeterminado_14_35">
@@ -1208,7 +1208,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_35"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_36 -->
   <link name="roller_predeterminado_14_36">
@@ -1240,7 +1240,7 @@
     <parent link="omnibase_predeterminado_2"/>
     <child link="roller_predeterminado_14_36"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Joint from body to omnibase_predeterminado_2 -->
   <joint name="wheel_2" type="continuous">
@@ -1248,7 +1248,7 @@
     <parent link="body"/>
     <child link="omnibase_predeterminado_2"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10"/>
+    <limit effort="200" velocity="200"/>
   </joint>
   <!-- Link omnibase_predeterminado_3 -->
   <link name="omnibase_predeterminado_3">
@@ -1308,7 +1308,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_37"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_38 -->
   <link name="roller_predeterminado_14_38">
@@ -1340,7 +1340,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_38"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_39 -->
   <link name="roller_predeterminado_14_39">
@@ -1372,7 +1372,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_39"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_40 -->
   <link name="roller_predeterminado_14_40">
@@ -1404,7 +1404,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_40"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_41 -->
   <link name="roller_predeterminado_14_41">
@@ -1436,7 +1436,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_41"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_42 -->
   <link name="roller_predeterminado_14_42">
@@ -1468,7 +1468,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_42"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_43 -->
   <link name="roller_predeterminado_14_43">
@@ -1500,7 +1500,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_43"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_44 -->
   <link name="roller_predeterminado_14_44">
@@ -1532,7 +1532,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_44"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_45 -->
   <link name="roller_predeterminado_14_45">
@@ -1564,7 +1564,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_45"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_46 -->
   <link name="roller_predeterminado_14_46">
@@ -1596,7 +1596,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_46"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_47 -->
   <link name="roller_predeterminado_14_47">
@@ -1628,7 +1628,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_47"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_48 -->
   <link name="roller_predeterminado_14_48">
@@ -1660,7 +1660,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_48"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_49 -->
   <link name="roller_predeterminado_14_49">
@@ -1692,7 +1692,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_49"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_50 -->
   <link name="roller_predeterminado_14_50">
@@ -1724,7 +1724,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_50"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_51 -->
   <link name="roller_predeterminado_14_51">
@@ -1756,7 +1756,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_51"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_52 -->
   <link name="roller_predeterminado_14_52">
@@ -1788,7 +1788,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_52"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_53 -->
   <link name="roller_predeterminado_14_53">
@@ -1820,7 +1820,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_53"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_54 -->
   <link name="roller_predeterminado_14_54">
@@ -1852,7 +1852,7 @@
     <parent link="omnibase_predeterminado_3"/>
     <child link="roller_predeterminado_14_54"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Joint from body to omnibase_predeterminado_3 -->
   <joint name="wheel_3" type="continuous">
@@ -1860,7 +1860,7 @@
     <parent link="body"/>
     <child link="omnibase_predeterminado_3"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10"/>
+    <limit effort="200" velocity="200"/>
   </joint>
   <!-- Link omnibase_predeterminado_4 -->
   <link name="omnibase_predeterminado_4">
@@ -1920,7 +1920,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_55"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_56 -->
   <link name="roller_predeterminado_14_56">
@@ -1952,7 +1952,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_56"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_57 -->
   <link name="roller_predeterminado_14_57">
@@ -1984,7 +1984,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_57"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_58 -->
   <link name="roller_predeterminado_14_58">
@@ -2016,7 +2016,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_58"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_59 -->
   <link name="roller_predeterminado_14_59">
@@ -2048,7 +2048,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_59"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_60 -->
   <link name="roller_predeterminado_14_60">
@@ -2080,7 +2080,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_60"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_61 -->
   <link name="roller_predeterminado_14_61">
@@ -2112,7 +2112,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_61"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_62 -->
   <link name="roller_predeterminado_14_62">
@@ -2144,7 +2144,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_62"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_63 -->
   <link name="roller_predeterminado_14_63">
@@ -2176,7 +2176,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_63"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_64 -->
   <link name="roller_predeterminado_14_64">
@@ -2208,7 +2208,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_64"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_65 -->
   <link name="roller_predeterminado_14_65">
@@ -2240,7 +2240,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_65"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_66 -->
   <link name="roller_predeterminado_14_66">
@@ -2272,7 +2272,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_66"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_67 -->
   <link name="roller_predeterminado_14_67">
@@ -2304,7 +2304,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_67"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_68 -->
   <link name="roller_predeterminado_14_68">
@@ -2336,7 +2336,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_68"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_69 -->
   <link name="roller_predeterminado_14_69">
@@ -2368,7 +2368,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_69"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_70 -->
   <link name="roller_predeterminado_14_70">
@@ -2400,7 +2400,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_70"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_71 -->
   <link name="roller_predeterminado_14_71">
@@ -2432,7 +2432,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_71"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Link roller_predeterminado_14_72 -->
   <link name="roller_predeterminado_14_72">
@@ -2464,7 +2464,7 @@
     <parent link="omnibase_predeterminado_4"/>
     <child link="roller_predeterminado_14_72"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10" lower="-3.141592653589793" upper="3.141592653589793"/>
+    <limit effort="200" velocity="200" lower="-3.141592653589793" upper="3.141592653589793"/>
   </joint>
   <!-- Joint from body to omnibase_predeterminado_4 -->
   <joint name="wheel_4" type="continuous">
@@ -2472,6 +2472,6 @@
     <parent link="body"/>
     <child link="omnibase_predeterminado_4"/>
     <axis xyz="0 0 1"/>
-    <limit effort="10" velocity="10"/>
+    <limit effort="200" velocity="200"/>
   </joint>
 </robot>

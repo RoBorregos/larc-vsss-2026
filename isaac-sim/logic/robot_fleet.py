@@ -199,11 +199,19 @@ class RobotFleet:
     # ============================================================== #
     # DRIVES AND MOTORS CONFIGURAITON
     # ============================================================== #
-    def configure_drive_modes(self, wheel_damping: float = 0.1):
+    def configure_drive_modes(self, wheel_damping: float = 1.0):
         kps = torch.zeros(self.N, self.num_dof, device=self.device)
         kds = torch.zeros(self.N, self.num_dof, device=self.device)
+
         kds[:, self.wheel_indexes] = wheel_damping
+        max_efforts = torch.full(
+            (self.N, self.num_dof),
+            float(config["motors"]["max_effort"]),
+            device=self.device
+        )
+
         self.articulation.set_gains(kps=kps.contiguous(), kds=kds.contiguous())
+        self.articulation.set_max_efforts(max_efforts.contiguous())
 
     def configure_motors(self, **samplers: Callable):
         self._samplers = samplers
@@ -226,6 +234,7 @@ class RobotFleet:
     def get_observed_wheel_velocities(self) -> torch.Tensor:
         vel = torch.as_tensor(self.articulation.get_joint_velocities(), device=self.device).view(self.N, -1)
         vel = vel[:, self.wheel_indexes]
+
         if self.encoder_noise_std > 0:
             vel = vel + torch.randn_like(vel) * self.encoder_noise_std
         return vel
@@ -290,24 +299,38 @@ class RobotFleet:
         self.last_velocity_target = self.last_velocity_target + delta_vel.clamp(-limits, limits)
         self.command_buffer.append(self.last_velocity_target.clone())
 
-        full_targets = torch.zeros(self.N, self.num_dof, device=self.device)
-        full_targets[:, self.wheel_indexes] = self.command_buffer[0]
-        self.articulation.set_joint_velocity_targets(full_targets.contiguous())
+        self.articulation.set_joint_velocity_targets(
+            self.command_buffer[0].contiguous(),
+            joint_indices=self.wheel_indexes
+        )
 
         if debug:
-            self._print_debug(target_vel, limits)
+            self._print_debug(target_vel, self.command_buffer[0])
 
     # ============================================================== #
     # DEBUG
     # ============================================================== #
-    def _print_debug(self, target_vel: torch.Tensor, limits: torch.Tensor):
+    def _print_debug(self, target_vel: torch.Tensor, command_vel: torch.Tensor | None = None):
         now = time.time()
         if now - self._debug_last_print < config["debug"]["print_interval_sec"]:
             return
-        print(f"\n[DEBUG {self.name}] (Showing robot 0 of {self.N})")
-        print(f"Target Vel  : {target_vel[0].cpu().numpy().round(2)} rad/s")
-        print(f"Limits      : {limits[0].cpu().numpy().round(1)}")
-        print(f"Command Vel : {self.command_buffer[0][0].cpu().numpy().round(2)} rad/s")
-        print(f"Actual Vel  : {self.get_observed_wheel_velocities()[0].cpu().numpy().round(2)} rad/s")
-        print(f"Yaw         : {float(self.get_heading_deg()[0]):.2f}°")
         self._debug_last_print = now
+
+        if self.wheel_indexes is None or self.wheel_indexes.numel() == 0:
+            print(f"\n[DEBUG {self.name}] ⚠️  wheel_indexes VACÍO — "
+                  f"el filtro 'wheel_' no coincide con ningún DOF. "
+                  f"dof_names={list(self.articulation.dof_names)}")
+            return
+
+        measured = self.get_observed_wheel_velocities()  # (N, 4)
+        tracking_error = (target_vel - measured).abs()  # (N, 4)
+
+        print(f"\n[DEBUG {self.name}] robot 0 de {self.N} | wheel_idx={self.wheel_indexes.tolist()}")
+        print(f"  Target   : {target_vel[0].cpu().numpy().round(2)} rad/s")
+        if command_vel is not None:
+            print(f"  Command  : {command_vel[0].cpu().numpy().round(2)} rad/s")
+        print(f"  Measured : {measured[0].cpu().numpy().round(2)} rad/s")
+        print(f"  |error|  : {tracking_error[0].cpu().numpy().round(2)} rad/s")
+        print(f"  Yaw      : {float(self.get_heading_deg()[0]):.2f}°")
+        print(f"  Flota    : error medio={tracking_error.mean():.2f}  "
+              f"max={tracking_error.max():.2f} rad/s")

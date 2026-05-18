@@ -169,7 +169,7 @@ world.reset()
 
 for fleet in (fleet_yellow, fleet_blue):
     fleet.initialize()
-    fleet.configure_drive_modes(wheel_damping=0.05)
+    fleet.configure_drive_modes(wheel_damping=config["motors"]["wheel_damping"])
     fleet.configure_motors()
     fleet.paint()
 
@@ -183,33 +183,86 @@ print(f"\n[INFO] Simulation started with {NUM_FIELDS} fields ({total_robots} rob
 print(f"[INFO] PhysX capacity adjusted to: {target_capacity}\n")
 
 STEPS_PER_SIDE = 90
-BLUE_DIRS   = [0.0,   90.0,  180.0, 270.0]
-YELLOW_DIRS = [180.0, 270.0, 0.0,   90.0]
+BLUE_DIRS = [0.0, 90.0, 180.0, 270.0]
+YELLOW_DIRS = [180.0, 270.0, 0.0, 90.0]
 SPEED = 0.6
+DURATION_PER_SIDE_SIM = 3.0
+
+SIM_DT = world.get_physics_dt() if hasattr(world, 'get_physics_dt') else (1.0 / 60.0)
 
 prev_time = time.time()
 sps_avg = 0.0
 alpha = 0.1
 frame_count = 0
 
+sim_time_accumulator = 0.0
+current_side = 0
+
+# --- NUEVA VARIABLE DE CONTROL ---
+robots_detenidos = False  # Nos ayuda a saber si ya debemos parar
+
 while simulation_app.is_running():
-    # SPS
     curr_time = time.time()
-    dt = curr_time - prev_time
+    dt_real = curr_time - prev_time
     prev_time = curr_time
-    if dt > 0:
-        sps_avg = (alpha * (1.0 / dt)) + (1.0 - alpha) * sps_avg
-    if frame_count % 50 == 0:
-        print(f"  [SPS]: {sps_avg:.2f} | Fields: {NUM_FIELDS} | Robots: {total_robots}                  ", end="\r")
+    if dt_real > 0:
+        sps_avg = (alpha * (1.0 / dt_real)) + (1.0 - alpha) * sps_avg
 
-    side = (frame_count // STEPS_PER_SIDE) % 4
-    fleet_yellow.move_omnidirectional(speed=SPEED, direction_deg=YELLOW_DIRS[side])
-    fleet_blue.move_omnidirectional(speed=SPEED,   direction_deg=BLUE_DIRS[side])
+    if frame_count % 10 == 0:
+        pass
 
-    fleet_yellow.commit_motor_commands()
+    # Si ya se activó la detención, forzamos velocidad 0 y saltamos la lógica de movimiento
+    if robots_detenidos:
+        fleet_yellow.move_omnidirectional(speed=0.0, direction_deg=0.0)
+        fleet_blue.move_omnidirectional(speed=0.0, direction_deg=0.0)
+        fleet_yellow.commit_motor_commands()
+        fleet_blue.commit_motor_commands()
+        world.step(render=not HEADLESS)
+        frame_count += 1
+        continue  # Saltamos el resto del bucle para que no sigan avanzando
+
+    # --- LÓGICA DE TIEMPO DE SIMULACIÓN ---
+    sim_time_accumulator += SIM_DT
+
+    if sim_time_accumulator >= DURATION_PER_SIDE_SIM:
+        # ¡ATENCIÓN AQUÍ!
+        # Si estábamos en el lado 0 (adelante) y el tiempo ya se cumplió:
+        if current_side == 0:
+            # >>> AQUÍ SE ACTIVA EL IF QUE PEDISTE <<<
+            print("¡Se han completado los 3 segundos hacia adelante! Deteniendo robots...")
+
+            # Puedes poner aquí la lógica que quieras. Por ejemplo:
+            robots_detenidos = True
+
+            # Si prefieres romper el bucle por completo y cerrar la app, usarías:
+            # break
+
+        lados_a_avanzar = int(sim_time_accumulator // DURATION_PER_SIDE_SIM)
+        current_side = (current_side + lados_a_avanzar) % 4
+        sim_time_accumulator %= DURATION_PER_SIDE_SIM
+
+    # Movimiento normal (solo se ejecuta si 'robots_detenidos' es False)
+    fleet_yellow.move_omnidirectional(speed=SPEED, direction_deg=YELLOW_DIRS[current_side])
+    fleet_blue.move_omnidirectional(speed=SPEED, direction_deg=BLUE_DIRS[current_side])
+
+    fleet_yellow.commit_motor_commands(debug=True)
     fleet_blue.commit_motor_commands()
 
     world.step(render=not HEADLESS)
     frame_count += 1
 
+print("\n[INFO] Cleaning and stopping...")
+
+del fleet_yellow
+del fleet_blue
+del ball_fleet
+del teams_per_env
+
+world.clear_instance()
+del world
+
+import gc
+gc.collect()
+
 simulation_app.close()
+print("[INFO] Exit.")

@@ -17,9 +17,15 @@ config = {
     },
     "motors": {
         "max_velocity": 57.6,
-        "max_acceleration_step": 1.5,
-        "friction_coast_step": 3.0,
-        "default_wheel_damping": 0.1
+        "max_acceleration_step": 3.0,
+        "friction_coast_step": 1.0,
+        "wheel_damping": 25.0,
+        "max_effort": 0.0343
+    },
+    "control": {
+        "kp": 0.5,
+        "ki": 0.01,
+        "kd": 0.05
     },
     "sensors": {
         "default_latency_steps": 0,
@@ -38,6 +44,6 @@ config = {
         }
     },
     "debug": {
-        "print_interval_sec": 0.1
+        "print_interval_sec": .1
     }
 }
