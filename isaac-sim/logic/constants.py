@@ -18,8 +18,8 @@ config = {
     "motors": {
         "max_velocity": 57.6,
         "max_acceleration_step": 3.0,
-        "friction_coast_step": 1.0,
-        "wheel_damping": 25.0,
+        "friction_coast_step": 0.5,
+        "wheel_damping": 15.0,
         "max_effort": 0.0343
     },
     "control": {

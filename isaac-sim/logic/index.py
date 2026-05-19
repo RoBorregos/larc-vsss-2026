@@ -182,7 +182,6 @@ total_robots = NUM_FIELDS * Team.ROBOTS_PER_TEAM * 2
 print(f"\n[INFO] Simulation started with {NUM_FIELDS} fields ({total_robots} robots + {NUM_FIELDS} balls).")
 print(f"[INFO] PhysX capacity adjusted to: {target_capacity}\n")
 
-STEPS_PER_SIDE = 90
 BLUE_DIRS = [0.0, 90.0, 180.0, 270.0]
 YELLOW_DIRS = [180.0, 270.0, 0.0, 90.0]
 SPEED = 0.6
@@ -198,9 +197,6 @@ frame_count = 0
 sim_time_accumulator = 0.0
 current_side = 0
 
-# --- NUEVA VARIABLE DE CONTROL ---
-robots_detenidos = False  # Nos ayuda a saber si ya debemos parar
-
 while simulation_app.is_running():
     curr_time = time.time()
     dt_real = curr_time - prev_time
@@ -211,37 +207,12 @@ while simulation_app.is_running():
     if frame_count % 10 == 0:
         pass
 
-    # Si ya se activó la detención, forzamos velocidad 0 y saltamos la lógica de movimiento
-    if robots_detenidos:
-        fleet_yellow.move_omnidirectional(speed=0.0, direction_deg=0.0)
-        fleet_blue.move_omnidirectional(speed=0.0, direction_deg=0.0)
-        fleet_yellow.commit_motor_commands()
-        fleet_blue.commit_motor_commands()
-        world.step(render=not HEADLESS)
-        frame_count += 1
-        continue  # Saltamos el resto del bucle para que no sigan avanzando
-
-    # --- LÓGICA DE TIEMPO DE SIMULACIÓN ---
     sim_time_accumulator += SIM_DT
-
     if sim_time_accumulator >= DURATION_PER_SIDE_SIM:
-        # ¡ATENCIÓN AQUÍ!
-        # Si estábamos en el lado 0 (adelante) y el tiempo ya se cumplió:
-        if current_side == 0:
-            # >>> AQUÍ SE ACTIVA EL IF QUE PEDISTE <<<
-            print("¡Se han completado los 3 segundos hacia adelante! Deteniendo robots...")
-
-            # Puedes poner aquí la lógica que quieras. Por ejemplo:
-            robots_detenidos = True
-
-            # Si prefieres romper el bucle por completo y cerrar la app, usarías:
-            # break
-
-        lados_a_avanzar = int(sim_time_accumulator // DURATION_PER_SIDE_SIM)
-        current_side = (current_side + lados_a_avanzar) % 4
+        sides_to_move = int(sim_time_accumulator // DURATION_PER_SIDE_SIM)
+        current_side = (current_side + sides_to_move) % 4
         sim_time_accumulator %= DURATION_PER_SIDE_SIM
 
-    # Movimiento normal (solo se ejecuta si 'robots_detenidos' es False)
     fleet_yellow.move_omnidirectional(speed=SPEED, direction_deg=YELLOW_DIRS[current_side])
     fleet_blue.move_omnidirectional(speed=SPEED, direction_deg=BLUE_DIRS[current_side])
 
