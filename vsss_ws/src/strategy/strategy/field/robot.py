@@ -2,7 +2,7 @@ import math
 import rclpy
 import random
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Vector3
 from std_msgs.msg import Bool, Float32
 from .entity import Entity
 from .. import constants
@@ -48,8 +48,8 @@ class Robot(Entity):
     def subscribe_to_topics(self, simulation):
         if simulation:
             self.sub_cmd_vel = self.ros_handler.create_subscription(
-                Twist,
-                f'/strategy/robot_{self.id}/cmd_vel',
+                Vector3,
+                f'/strategy/robot_{self.id}/motion_control',
                 self._simulation_move,
                 10
             )
@@ -83,24 +83,24 @@ class Robot(Entity):
             self.ros_handler.destroy_subscription(self.sub_kicker)
 
     def _simulation_move(self, msg):
-        self.target_vx = msg.linear.x
-        self.target_vy = msg.linear.y
+        self.target_speed = msg.x
+        self.target_angle_rad = msg.y
 
-        self.target_speed = math.sqrt(self.target_vx ** 2 + self.target_vy ** 2)
-        self.target_angle_rad = math.atan2(self.target_vy, self.target_vx)
         self.is_moving = self.target_speed > (constants.MIN_SPEED * 2)
 
-        new_vx = msg.linear.x + random.gauss(0, abs(msg.linear.x) * constants.MOVEMENT_NOISE)
-        new_vy = msg.linear.y + random.gauss(0, abs(msg.linear.y) * constants.MOVEMENT_NOISE)
-        new_angular_vel = msg.angular.z + random.gauss(0, constants.MOVEMENT_NOISE)
+        new_speed = self.target_speed + random.gauss(0, self.target_speed * constants.MOVEMENT_NOISE)
+        new_angle = self.target_angle_rad + random.gauss(0, constants.MOVEMENT_NOISE)
 
-        if math.fabs(new_vx) <= constants.MIN_SPEED: new_vx = 0
-        if math.fabs(new_vy) <= constants.MIN_SPEED: new_vy = 0
-        if math.fabs(new_angular_vel) <= constants.MIN_SPEED: new_angular_vel = 0
+        if math.fabs(new_speed) <= constants.MIN_SPEED:
+            new_speed = 0
 
-        self.real_vx = new_vx
-        self.real_vy = new_vy
-        self.real_angular_vel = msg.angular.z
+        self.real_vx = new_speed * math.cos(new_angle)
+        self.real_vy = new_speed * math.sin(new_angle)
+
+        self.real_angular_vel = msg.z + random.gauss(0, constants.MOVEMENT_NOISE)
+
+        if math.fabs(self.real_angular_vel) <= constants.MIN_SPEED:
+            self.real_angular_vel = 0
 
     def _communication_bno(self, msg):
         if msg.data:

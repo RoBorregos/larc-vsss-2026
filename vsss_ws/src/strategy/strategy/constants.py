@@ -20,7 +20,7 @@ ANGLE_THRESHOLD_MAX = 30
 DISTANCE_THRESHOLD_MIN = 0.05 # Distance where the angle threshold is set to max
 
 ANGLE_OFFSET = 40       # Applied offset for orbital movement
-BASE_SPEED = 0.10       # Movement speed for non-path-planning movement
+BASE_SPEED = 0.20       # Movement speed for non-path-planning movement
 
 HELPER_HOLD_OFFSET_X=0.1
 HELPER_STOP_THRESHOLD=0.015
@@ -108,13 +108,13 @@ class Color_ID:
 # Maps entity ID to a list of identifying colors
 BALL_ID = 20
 ROBOT_DATABASE = {
-    0:  256,
-    1:  272,
-    2:  273,
+    0:  955,
+    1:  771,
+    2:  939,
 
-    10: 955,
-    11: 771,
-    12: 939,
+    10: 256,
+    11: 272,
+    12: 273,
 
     20: -1,
 }
