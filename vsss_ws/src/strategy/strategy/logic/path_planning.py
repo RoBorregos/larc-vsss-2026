@@ -1,53 +1,46 @@
 import math
-from .. import constants
+from ..constants import PhysicalProperties, VisualProperties
+from .. import settings
 from . import utils
-import numpy as np
 
-def approach_side(robot, target_x, target_y, obstacle_x, obstacle_y):
-    pos_robot = np.array([robot.x, robot.y])
-    pos_target = np.array([target_x, target_y])
-    pos_obstacle = np.array([obstacle_x, obstacle_y])
-
-    vector_target = pos_robot - pos_target
-    vector_obstacle = pos_obstacle - pos_robot
-
-    cross = (vector_target[0] * vector_obstacle[1]) - (vector_target[1] * vector_obstacle[0]);
-
-    if cross > 0:
-        return -1
-    else:
-        return 1
+_FIELD = PhysicalProperties.Field
+_ROBOT = PhysicalProperties.Robot
+_DISPLAY = VisualProperties.Display
 
 
-def attractive_vector(robot, target_x, target_y):
-    # Displacement vector
+def approach_side(robot, target_x: float, target_y: float, obstacle_x: float, obstacle_y: float) -> int:
+    vt_x = robot.x - target_x
+    vt_y = robot.y - target_y
+    vo_x = obstacle_x - robot.x
+    vo_y = obstacle_y - robot.y
+
+    cross = (vt_x * vo_y) - (vt_y * vo_x)
+    return -1 if cross > 0 else 1
+
+
+def attractive_vector(robot, target_x: float, target_y: float) -> tuple[float, float]:
     dx = target_x - robot.x
     dy = target_y - robot.y
     dist = math.hypot(dx, dy)
+    if dist == 0:
+        return 0.0, 0.0
 
-    if dist == 0: return 0.0, 0.0
+    gain = settings.path_planning.attractive_gain
+    return gain * (dx / dist), gain * (dy / dist)
 
-    # Vector gain and normalization
-    dx /= dist
-    dy /= dist
-    return constants.ATTRACTIVE_GAIN * dx, constants.ATTRACTIVE_GAIN * dy
 
-def is_obstacle_blocking(entity, obstacle, target_x, target_y):
-    # Target vector
+def is_obstacle_blocking(entity, obstacle, target_x: float, target_y: float) -> bool:
     tx = target_x - entity.x
     ty = target_y - entity.y
     t_norm = math.hypot(tx, ty)
-
-    if t_norm == 0: return False
+    if t_norm == 0:
+        return False
 
     tx /= t_norm
     ty /= t_norm
 
-    # Position of the obstacle relative to the robot
     ox = obstacle.x - entity.x
     oy = obstacle.y - entity.y
-
-    # Check if it is in front or behind
     projection = ox * tx + oy * ty
 
     if projection <= 0 or projection > t_norm:
@@ -55,24 +48,23 @@ def is_obstacle_blocking(entity, obstacle, target_x, target_y):
 
     closest_x = entity.x + projection * tx
     closest_y = entity.y + projection * ty
-
     perp_dist = math.hypot(obstacle.x - closest_x, obstacle.y - closest_y)
 
-    safety = 2 * constants.ROBOT_RADIUS + constants.OBSTACLE_SAFETY_MARGIN  # margin
-    return perp_dist < (constants.BLOCKING_WIDTH + safety)
+    cfg = settings.path_planning
+    safety_mm = 2.0 * _ROBOT.APOTHEM_MM + cfg.obstacle_safety_margin_mm
+    return perp_dist < (cfg.blocking_width_mm + safety_mm)
 
 
-def rolling_vector(robot, obstacle, target_x, target_y):
+def rolling_vector(robot, obstacle, target_x: float, target_y: float) -> tuple[float, float]:
+    cfg = settings.path_planning
     dx = robot.x - obstacle.x
     dy = robot.y - obstacle.y
     dist = math.hypot(dx, dy)
 
-    # This is to make the vortex radius activate before the influence radius of an obstacle
-    vortex_radius = constants.INFLUENCE_RADIUS * constants.EXPAND_INFLUENCE_RADIUS
-    if dist > vortex_radius or dist == 0:
+    vortex_radius_mm = cfg.influence_radius_mm * cfg.expand_influence_radius
+    if dist > vortex_radius_mm or dist == 0:
         return 0.0, 0.0
 
-    # Make the robot
     rx = dx / dist
     ry = dy / dist
     side = approach_side(robot, target_x, target_y, obstacle.x, obstacle.y)
@@ -80,111 +72,110 @@ def rolling_vector(robot, obstacle, target_x, target_y):
     tang_x = -ry * side
     tang_y = rx * side
 
-    influence = 1 - dist / vortex_radius
-    ratio = utils.clamp(influence, 0, 1)
-
-    tang_strength = constants.VORTEX_GAIN * ratio
-    radial_strength = constants.ENEMY_REPULSIVE_GAIN * constants.EXPAND_REPULSIVE_GAIN * ratio
+    ratio = utils.clamp(1.0 - dist / vortex_radius_mm, 0.0, 1.0)
+    tang_strength = cfg.vortex_gain * ratio
+    radial_strength = cfg.enemy_repulsive_gain * cfg.expand_repulsive_gain * ratio
 
     fx = tang_x * tang_strength + rx * radial_strength
     fy = tang_y * tang_strength + ry * radial_strength
-
     return fx, fy
 
-def repulsion(robot, obstacle, influence_radius, canvas=None):
+
+def _draw_repulsion_debug(canvas, obstacle, influence_radius_mm: float) -> None:
+    tag_name = f"repulsion_field_{obstacle.id}"
+    canvas.delete(tag_name)
+
+    obs_px, obs_py = obstacle.world_to_pixel(obstacle.x, obstacle.y)
+    inf_rad_px = influence_radius_mm * _DISPLAY.SCALE_PX_PER_MM
+    if inf_rad_px <= 0:
+        return
+
+    steps = 6
+    for i in range(steps):
+        r_level = inf_rad_px * (1.0 - (i / steps))
+        norm_strength = max(0.0, 1.0 - (r_level / inf_rad_px))
+        red = int(255 * norm_strength)
+        color = f"#{red:02x}0000"
+
+        canvas.create_oval(
+            obs_px - r_level, obs_py - r_level,
+            obs_px + r_level, obs_py + r_level,
+            outline=color,
+            dash=(2, 2) if i == 0 else None,
+            tags=tag_name,
+        )
+        canvas.tag_raise(tag_name)
+
+
+def repulsion(robot, obstacle, influence_radius_mm: float, canvas=None) -> tuple[float, float]:
+    if influence_radius_mm <= 0:
+        return 0.0, 0.0
+
+    if canvas is not None:
+        _draw_repulsion_debug(canvas, obstacle, influence_radius_mm)
+
     dx = robot.x - obstacle.x
     dy = robot.y - obstacle.y
     dist = math.hypot(dx, dy)
 
-    if canvas is not None:
-        tag_name = f"repulsion_field_{obstacle.id}"
-        canvas.delete(tag_name)
-
-        obs_px, obs_py = obstacle.pixel_to_world(obstacle.x, obstacle.y)
-        inf_rad_pix = influence_radius * constants.METER_TO_CM * constants.DISPLAY_SCALE
-
-        # Number of level curves
-        steps = 6
-        for i in range(steps):
-            r_level = inf_rad_pix * (1 - (i / steps))
-
-            ratio_level = r_level / inf_rad_pix
-            norm_strength = max(0, 1 - ratio_level)
-
-            red = int(255 * norm_strength)
-            color = f'#{red:02x}0000'
-            canvas.create_oval(
-                obs_px - r_level, obs_py - r_level,
-                obs_px + r_level, obs_py + r_level,
-                outline=color,
-                dash=(2, 2) if i == 0 else None,
-                tags=tag_name
-            )
-            canvas.tag_raise(tag_name)
-
-    if dist > influence_radius or dist == 0:
+    if dist > influence_radius_mm or dist == 0:
         return 0.0, 0.0
 
-    if influence_radius == 0:
-        return 0.0, 0.0
-        
     rx = dx / dist
     ry = dy / dist
-
-    sigma = influence_radius / 2.0
-    strength = constants.ENEMY_REPULSIVE_GAIN * math.exp(-dist / sigma)
+    sigma = influence_radius_mm / 2.0
+    strength = settings.path_planning.enemy_repulsive_gain * math.exp(-dist / sigma)
     return rx * strength, ry * strength
 
-def wall_repulsion(robot):
+
+def wall_repulsion(robot) -> tuple[float, float]:
+    cfg = settings.path_planning
     fx, fy = 0.0, 0.0
 
+    half_w = _FIELD.WIDTH_MM / 2.0
+    half_h = _FIELD.HEIGHT_MM / 2.0
+    margin = cfg.wall_margin_mm
+    gain = cfg.wall_gain
 
-    half_width = constants.FIELD_WIDTH / 2
-    half_height = constants.FIELD_HEIGHT / 2
+    dx_left = robot.x + half_w
+    dx_right = half_w - robot.x
+    dy_bottom = robot.y + half_h
+    dy_top = half_h - robot.y
 
-    # Distances to wall
-    dx_left = robot.x + half_width
-    dx_right = half_width - robot.x
-    dy_bottom = robot.y + half_height
-    dy_top = half_height - robot.y
+    if dx_left < margin:
+        fx += gain * (margin - dx_left) / margin
+    if dx_right < margin:
+        fx -= gain * (margin - dx_right) / margin
+    if dy_bottom < margin:
+        fy += gain * (margin - dy_bottom) / margin
+    if dy_top < margin:
+        fy -= gain * (margin - dy_top) / margin
 
-    # If distance < wall margin, add repulsion
-    if dx_left < constants.WALL_MARGIN:
-        fx += constants.WALL_GAIN * (constants.WALL_MARGIN - dx_left) / constants.WALL_MARGIN
-    if dx_right < constants.WALL_MARGIN:
-        fx -= constants.WALL_GAIN * (constants.WALL_MARGIN - dx_right) / constants.WALL_MARGIN
-    if dy_bottom < constants.WALL_MARGIN:
-        fy += constants.WALL_GAIN * (constants.WALL_MARGIN - dy_bottom) / constants.WALL_MARGIN
-    if dy_top < constants.WALL_MARGIN:
-        fy -= constants.WALL_GAIN * (constants.WALL_MARGIN - dy_top) / constants.WALL_MARGIN
     return fx, fy
 
 
-def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=True):
+def field(robot, target_x: float, target_y: float, enemies, teammates, ball, attacking_right: bool = True) -> tuple[float, float]:
+    cfg = settings.path_planning
     blocking_detected = False
     total_x = 0.0
     total_y = 0.0
 
-    # Repulsion for each enemy (fx, fy) are accumulated in total_x and total_y
     for enemy in enemies:
         if is_obstacle_blocking(robot, enemy, target_x, target_y):
             blocking_detected = True
             fx, fy = rolling_vector(robot, enemy, target_x, target_y)
         else:
-            fx, fy = repulsion(robot, enemy, constants.INFLUENCE_RADIUS)
-
+            fx, fy = repulsion(robot, enemy, cfg.influence_radius_mm)
         total_x += fx
         total_y += fy
 
-    # For each teammate, find the repulsion and add to the total_x and total_y vector
     for mate in teammates:
         if mate.id != robot.id:
             if is_obstacle_blocking(robot, mate, target_x, target_y):
                 blocking_detected = True
                 fx, fy = rolling_vector(robot, mate, target_x, target_y)
             else:
-                fx, fy = repulsion(robot, mate, constants.TEAM_INFLUENCE_RADIUS)
-
+                fx, fy = repulsion(robot, mate, cfg.team_influence_radius_mm)
             total_x += fx
             total_y += fy
 
@@ -192,46 +183,33 @@ def field(robot, target_x, target_y, enemies, teammates, ball, attacking_right=T
         if is_obstacle_blocking(robot, ball, target_x, target_y):
             fx, fy = rolling_vector(robot, ball, target_x, target_y)
         else:
-            fx, fy = repulsion(robot, ball, constants.BALL_INFLUENCE_RADIUS)
-
+            fx, fy = repulsion(robot, ball, cfg.ball_influence_radius_mm)
         total_x += fx
         total_y += fy
 
-    if not blocking_detected:
-        if robot.id in constants.ROBOT_VORTEX_SIDE:
-            del constants.ROBOT_VORTEX_SIDE[robot.id]
-
-
-    # Get the attractive vector of the target
     ax, ay = attractive_vector(robot, target_x, target_y)
-
     if blocking_detected:
-        ax *= constants.REDUCE_ATTRACTION_IF_BLOCKED
-        ay *= constants.REDUCE_ATTRACTION_IF_BLOCKED
+        ax *= cfg.reduce_attraction_if_blocked
+        ay *= cfg.reduce_attraction_if_blocked
 
-    total_x += ax
-    total_y += ay
-
-    # Wall repulsion to avoid hitting walls
     wx, wy = wall_repulsion(robot)
+    total_x += ax + wx
+    total_y += ay + wy
 
-    total_x += wx
-    total_y += wy
     magnitude = math.hypot(total_x, total_y)
-
-    if magnitude > constants.MAX_FIELD:
-        total_x = (total_x / magnitude) * constants.MAX_FIELD
-        total_y = (total_y / magnitude) * constants.MAX_FIELD
+    if magnitude > cfg.max_field:
+        scale = cfg.max_field / magnitude
+        total_x *= scale
+        total_y *= scale
 
     return total_x, total_y
 
 
-def resultant_vector(fx, fy, base_speed):
+def resultant_vector(fx: float, fy: float, base_speed_mm_s: float) -> tuple[float, float]:
     magnitude = math.hypot(fx, fy)
-
     if magnitude == 0:
-        return 0, 0
+        return 0.0, 0.0
 
     angle = math.atan2(fy, fx)
-    speed = utils.clamp(magnitude, 0, base_speed)
+    speed = utils.clamp(magnitude * base_speed_mm_s, 0.0, base_speed_mm_s)
     return speed, angle

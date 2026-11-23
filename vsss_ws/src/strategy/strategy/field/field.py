@@ -1,147 +1,112 @@
-from .. import constants
+from ..constants import PhysicalProperties, VisualProperties
+
+_FIELD_PHYS = PhysicalProperties.Field
+_FIELD_VIS = VisualProperties.Field
+_DISPLAY = VisualProperties.Display
 
 
-def draw_visual_circle(canvas, draw_context, x_cm, y_cm, color):
-    x = constants.LEFT_PADDING + x_cm * constants.DISPLAY_SCALE
-    y = constants.UPPER_PADDING + y_cm * constants.DISPLAY_SCALE
-    r = constants.VISUAL_CIRCLE_RADIUS * constants.DISPLAY_SCALE
-    bbox = [x - r, y - r, x + r, y + r]
-
-    # Tkinter
-    canvas.create_oval(*bbox, fill=color, outline="")
-    # PIL
-    draw_context.ellipse(bbox, fill=color, outline=None)
+# --- HELPERS DE CONVERSIÓN Y DIBUJO DUAL (Tkinter + PIL) ---
+def _mm_to_px(value_mm: float) -> float:
+    return value_mm * _DISPLAY.SCALE_PX_PER_MM
 
 
-def draw_visual_cross(canvas, draw_context, x_cm, y_cm, color):
-    x = constants.LEFT_PADDING + x_cm * constants.DISPLAY_SCALE
-    y = constants.UPPER_PADDING + y_cm * constants.DISPLAY_SCALE
-    size = (constants.VISUAL_CROSS_SIZE * constants.DISPLAY_SCALE) / 2
-    coords = [x - size, y - size, x + size, y + size]
-    coords2 = [x + size, y - size, x - size, y + size]
-
-    # Tkinter
-    canvas.create_line(*coords, fill=color, width=2)
-    canvas.create_line(*coords2, fill=color, width=2)
-    # PIL
-    draw_context.line(coords, fill=color, width=2)
-    draw_context.line(coords2, fill=color, width=2)
+def _pos_to_px(x_mm: float, y_mm: float) -> tuple[float, float]:
+    """Convierte coordenadas locales de la cancha (mm desde esquina sup. izq.) a píxeles."""
+    return (
+        _DISPLAY.LEFT_PADDING_PX + _mm_to_px(x_mm),
+        _DISPLAY.UPPER_PADDING_PX + _mm_to_px(y_mm),
+    )
 
 
-def draw_field(canvas, draw_context, width, height):
-    # Field border
-    rect_field = [
-        constants.LEFT_PADDING,
-        constants.UPPER_PADDING,
-        constants.LEFT_PADDING + width,
-        constants.UPPER_PADDING + height
+def _draw_line(canvas, draw_context, p1: tuple[float, float], p2: tuple[float, float],
+               color: str = _FIELD_VIS.LINE_COLOR, width: int = _FIELD_VIS.LINE_WIDTH_PX) -> None:
+    coords = [p1[0], p1[1], p2[0], p2[1]]
+    canvas.create_line(*coords, fill=color, width=width)
+    if draw_context:
+        draw_context.line(coords, fill=color, width=width)
+
+
+def _draw_rect(canvas, draw_context, p1: tuple[float, float], p2: tuple[float, float],
+               fill: str | None = None, outline: str = _FIELD_VIS.LINE_COLOR,
+               width: int = _FIELD_VIS.LINE_WIDTH_PX) -> None:
+    # PIL exige x0 <= x1 y y0 <= y1
+    bbox = [min(p1[0], p2[0]), min(p1[1], p2[1]), max(p1[0], p2[0]), max(p1[1], p2[1])]
+    canvas.create_rectangle(*bbox, fill=fill or "", outline=outline, width=width)
+    if draw_context:
+        draw_context.rectangle(bbox, fill=fill, outline=outline, width=width)
+
+
+def _draw_oval(canvas, draw_context, center: tuple[float, float], radius_px: float,
+               fill: str | None = None, outline: str | None = _FIELD_VIS.LINE_COLOR,
+               width: int = _FIELD_VIS.LINE_WIDTH_PX) -> None:
+    cx, cy = center
+    bbox = [cx - radius_px, cy - radius_px, cx + radius_px, cy + radius_px]
+    canvas.create_oval(*bbox, fill=fill or "", outline=outline or "", width=width)
+    if draw_context:
+        draw_context.ellipse(bbox, fill=fill, outline=outline, width=width)
+
+
+# --- FUNCIONES PÚBLICAS ---
+
+def draw_visual_circle(canvas, draw_context, x_mm: float, y_mm: float,
+                       color: str = _FIELD_VIS.LINE_COLOR) -> None:
+    center = _pos_to_px(x_mm, y_mm)
+    radius_px = _mm_to_px(_FIELD_VIS.MARK_CIRCLE_RADIUS_MM)
+    _draw_oval(canvas, draw_context, center, radius_px, fill=color, outline=None, width=0)
+
+
+def draw_visual_cross(canvas, draw_context, x_mm: float, y_mm: float,
+                      color: str = _FIELD_VIS.LINE_COLOR) -> None:
+    cx, cy = _pos_to_px(x_mm, y_mm)
+    half = _mm_to_px(_FIELD_VIS.MARK_CROSS_SIZE_MM) / 2
+    _draw_line(canvas, draw_context, (cx - half, cy - half), (cx + half, cy + half), color=color)
+    _draw_line(canvas, draw_context, (cx + half, cy - half), (cx - half, cy + half), color=color)
+
+
+def draw_field(canvas, draw_context) -> None:
+    w = _FIELD_PHYS.WIDTH_MM
+    h = _FIELD_PHYS.HEIGHT_MM
+    c = _FIELD_PHYS.CORNER_LENGTH_MM
+
+    # 1. Borde del campo
+    _draw_rect(canvas, draw_context, _pos_to_px(0, 0), _pos_to_px(w, h), fill=_FIELD_VIS.BG_COLOR)
+
+    # 2. Esquinas a 45°
+    corners = [
+        ((c, 0), (0, c)),             # Superior izquierda
+        ((w - c, 0), (w, c)),         # Superior derecha
+        ((c, h), (0, h - c)),         # Inferior izquierda
+        ((w - c, h), (w, h - c)),     # Inferior derecha
     ]
-    canvas.create_rectangle(*rect_field, fill="#000000", outline="white", width=2)
-    draw_context.rectangle(rect_field, fill="#000000", outline="white", width=2)
+    for p1_mm, p2_mm in corners:
+        _draw_line(canvas, draw_context, _pos_to_px(*p1_mm), _pos_to_px(*p2_mm))
 
-    # Top Left Corner
-    corner_tl_x1 = constants.LEFT_PADDING + constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE
-    corner_tl_y1 = constants.UPPER_PADDING
-    corner_tl_x2 = constants.LEFT_PADDING
-    corner_tl_y2 = constants.UPPER_PADDING + constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE
-    draw_context.line([(corner_tl_x1, corner_tl_y1), (corner_tl_x2, corner_tl_y2)], fill="white", width=2)
-    canvas.create_line(corner_tl_x1, corner_tl_y1, corner_tl_x2, corner_tl_y2, fill="white", width=2)
+    # 3. Línea central y círculo central
+    _draw_line(canvas, draw_context, _pos_to_px(w / 2, 0), _pos_to_px(w / 2, h))
+    _draw_oval(
+        canvas,
+        draw_context,
+        _pos_to_px(w / 2, h / 2),
+        _mm_to_px(_FIELD_VIS.CENTER_CIRCLE_RADIUS_MM),
+    )
 
-    # Top Right Corner
-    corner_tr_x1 = (constants.LEFT_PADDING
-                    + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE
-                    - constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE)
-    corner_tr_y1 = constants.UPPER_PADDING
-    corner_tr_x2 = constants.LEFT_PADDING + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE
-    corner_tr_y2 = constants.UPPER_PADDING + constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE
-    draw_context.line([(corner_tr_x1, corner_tr_y1), (corner_tr_x2, corner_tr_y2)], fill="white", width=2)
-    canvas.create_line(corner_tr_x1, corner_tr_y1, corner_tr_x2, corner_tr_y2, fill="white", width=2)
+    # 4. Áreas chicas (izquierda y derecha)
+    area_d = _FIELD_VIS.AREA_DEPTH_MM
+    area_y1 = (h - _FIELD_VIS.AREA_HEIGHT_MM) / 2
+    area_y2 = (h + _FIELD_VIS.AREA_HEIGHT_MM) / 2
+    _draw_rect(canvas, draw_context, _pos_to_px(0, area_y1), _pos_to_px(area_d, area_y2))
+    _draw_rect(canvas, draw_context, _pos_to_px(w - area_d, area_y1), _pos_to_px(w, area_y2))
 
-    # Bottom Left Corner
-    corner_bl_x1 = constants.LEFT_PADDING + constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE
-    corner_bl_y1 = constants.UPPER_PADDING + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
-    corner_bl_x2 = constants.LEFT_PADDING
-    corner_bl_y2 = (constants.UPPER_PADDING
-                    + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
-                    - constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE)
+    # 5. Porterías (izquierda y derecha)
+    goal_d = _FIELD_PHYS.GOAL_DEPTH_MM
+    goal_y1 = (h - _FIELD_PHYS.GOAL_WIDTH_MM) / 2
+    goal_y2 = (h + _FIELD_PHYS.GOAL_WIDTH_MM) / 2
+    _draw_rect(canvas, draw_context, _pos_to_px(-goal_d, goal_y1), _pos_to_px(0, goal_y2))
+    _draw_rect(canvas, draw_context, _pos_to_px(w, goal_y1), _pos_to_px(w + goal_d, goal_y2))
 
-    draw_context.line([(corner_bl_x1, corner_bl_y1), (corner_bl_x2, corner_bl_y2)], fill="white", width=2)
-    canvas.create_line(corner_bl_x1, corner_bl_y1, corner_bl_x2, corner_bl_y2, fill="white", width=2)
+    # 6. Marcas reglamentarias (círculos y cruces)
+    for x_mm, y_mm in _FIELD_VIS.FREE_BALL_CIRCLES_MM:
+        draw_visual_circle(canvas, draw_context, x_mm, y_mm)
 
-    # Bottom Right Corner
-    corner_br_x1 = (constants.LEFT_PADDING
-                    + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE
-                    - constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE)
-    corner_br_y1 = constants.UPPER_PADDING + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
-    corner_br_x2 = constants.LEFT_PADDING + constants.DISPLAY_FIELD_WIDTH * constants.DISPLAY_SCALE
-    corner_br_y2 = (constants.UPPER_PADDING
-                    + constants.DISPLAY_FIELD_HEIGHT * constants.DISPLAY_SCALE
-                    - constants.DISPLAY_CORNER_LENGTH * constants.DISPLAY_SCALE)
-
-    draw_context.line([(corner_br_x1, corner_br_y1), (corner_br_x2, corner_br_y2)], fill="white", width=2)
-    canvas.create_line(corner_br_x1, corner_br_y1, corner_br_x2, corner_br_y2, fill="white", width=2)
-
-    # Center line
-    line_center = [
-        constants.LEFT_PADDING + width / 2,
-        constants.UPPER_PADDING,
-        constants.LEFT_PADDING + width / 2,
-        constants.UPPER_PADDING + height
-    ]
-    canvas.create_line(*line_center, fill="white", width=2)
-    draw_context.line(line_center, fill="white", width=2)
-
-    # Central circle
-    r_center = 20 * constants.DISPLAY_SCALE
-    cx, cy = constants.LEFT_PADDING + width / 2, constants.UPPER_PADDING + height / 2
-    bbox_center = [cx - r_center, cy - r_center, cx + r_center, cy + r_center]
-
-    canvas.create_oval(*bbox_center, outline="white", width=2)
-    draw_context.ellipse(bbox_center, outline="white", width=2)
-
-    # Areas
-    area_depth = 15 * constants.DISPLAY_SCALE
-    area_height = 70 * constants.DISPLAY_SCALE
-    y_start = constants.UPPER_PADDING + height / 2 - area_height / 2
-    y_end = constants.UPPER_PADDING + height / 2 + area_height / 2
-
-    # Left area
-    rect_area_l = [constants.LEFT_PADDING, y_start, constants.LEFT_PADDING + area_depth, y_end]
-    canvas.create_rectangle(*rect_area_l, outline="white", width=2)
-    draw_context.rectangle(rect_area_l, outline="white", width=2)
-
-    # Right area
-    rect_area_r = [
-        constants.LEFT_PADDING + width - area_depth, y_start, constants.LEFT_PADDING + width, y_end]
-    canvas.create_rectangle(*rect_area_r, outline="white", width=2)
-    draw_context.rectangle(rect_area_r, outline="white", width=2)
-
-    # Left goal
-    rect_goal_l = [
-        constants.LEFT_PADDING - constants.DISPLAY_GOAL_DEPTH,
-        constants.DISPLAY_GOAL_WIDTH / 2 + height / 2,
-        constants.LEFT_PADDING,
-        -constants.DISPLAY_GOAL_WIDTH / 2 + height / 2
-    ]
-    canvas.create_rectangle(*rect_goal_l, outline="white", width=2)
-    draw_context.rectangle(rect_goal_l, outline="white", width=2)
-
-    # Right goal
-    rect_goal_r = [
-        constants.LEFT_PADDING + width + constants.DISPLAY_GOAL_DEPTH,
-        constants.DISPLAY_GOAL_WIDTH / 2 + height / 2,
-        constants.LEFT_PADDING + width,
-        -constants.DISPLAY_GOAL_WIDTH / 2 + height / 2
-    ]
-    canvas.create_rectangle(*rect_goal_r, outline="white", width=2)
-    draw_context.rectangle(rect_goal_r, outline="white", width=2)
-
-    # Visual marks
-    circles = [(16, 105), (16, 25), (56, 105), (56, 25), (134, 25), (134, 105), (94, 105), (94, 25)]
-    crosses = [(38, 105), (38, 65), (38, 25), (112, 105), (112, 65), (112, 25)]
-
-    for x_c, y_c in circles:
-        draw_visual_circle(canvas, draw_context, x_c, y_c, "white")
-
-    for x_c, y_c in crosses:
-        draw_visual_cross(canvas, draw_context, x_c, y_c, "white")
+    for x_mm, y_mm in _FIELD_VIS.FREE_BALL_CROSSES_MM:
+        draw_visual_cross(canvas, draw_context, x_mm, y_mm)

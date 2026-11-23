@@ -1,50 +1,54 @@
-import math
-
-from PIL.JpegImagePlugin import zigzag_index
-
 from .entity import Entity
-from .. import constants
+from ..constants import PhysicalProperties, VisualProperties
 
-ball_id = 20
+_BALL_PHYS = PhysicalProperties.Ball
+_BALL_VIS = VisualProperties.Ball
+_DISPLAY = VisualProperties.Display
+
 
 class Ball(Entity):
-    def __init__(self, ros_handler, start_x, start_y, start_theta):
-        super().__init__(ros_handler, ball_id)
-        self.id = 20
-        self.weight = 48
-        self.screen_radius = constants.BALL_RADIUS * constants.DISPLAY_SCALE
-        self.real_radius = constants.BALL_RADIUS / 100
-        self.real_x = start_x
-        self.real_y = start_y
-        self.real_theta = start_theta
+    def __init__(self, ros_handler, start_x: float, start_y: float, start_theta: float = 0.0):
+        super().__init__(ros_handler, _BALL_PHYS.ID)
 
-        print(f"started real values with: r({start_x}, {start_y}) - v({self.real_x}, {self.real_y})")
+        # Propiedades físicas
+        self.mass_g: float = _BALL_PHYS.MASS_G
+        self.radius_mm: float = _BALL_PHYS.RADIUS_MM
+        self.restitution: float = _BALL_PHYS.RESTITUTION
+        self.friction: float = _BALL_PHYS.FRICTION
 
-    def destroy(self, canvas):
-        pass
+        # Estado dinámico
+        self.real_x: float = start_x
+        self.real_y: float = start_y
+        self.real_theta: float = start_theta
 
+        # Propiedades visuales
+        self.screen_radius: float = self.radius_mm * _DISPLAY.SCALE_PX_PER_MM
 
-    def draw(self, canvas, draw_context, simulation):
-        screen_x, screen_y = self.pixel_to_world(self.real_x, self.real_y)
+    def destroy(self, canvas) -> None:
+        canvas.delete(_BALL_VIS.TAG)
+
+    def draw(self, canvas, draw_context, simulation: bool) -> None:
+        screen_x, screen_y = self.world_to_pixel(self.real_x, self.real_y)
 
         bbox = [
             screen_x - self.screen_radius,
             screen_y - self.screen_radius,
             screen_x + self.screen_radius,
-            screen_y + self.screen_radius
+            screen_y + self.screen_radius,
         ]
 
         canvas.create_oval(
             *bbox,
-            fill="orange",
-            outline="black",
-            width=10,
-            tags="ball",
+            fill=_BALL_VIS.COLOR,
+            outline=_BALL_VIS.OUTLINE_COLOR,
+            width=_BALL_VIS.OUTLINE_WIDTH_PX,
+            tags=_BALL_VIS.TAG,
         )
+
         if simulation:
             draw_context.ellipse(
                 bbox,
-                fill="orange",
-                outline="black",
-                width=1
+                fill=_BALL_VIS.COLOR,
+                outline=_BALL_VIS.OUTLINE_COLOR,
+                width=_BALL_VIS.OUTLINE_WIDTH_PX,
             )

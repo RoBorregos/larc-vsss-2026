@@ -57,6 +57,8 @@ void RosHandler::publish_objects() {
 		publish_field_markers(now);
 
 		publish_legacy_messages();
+
+		previous_millis = millis();
 	}
 }
 

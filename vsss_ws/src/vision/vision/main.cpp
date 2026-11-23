@@ -111,6 +111,7 @@ int main(int argc, char * argv[]) {
     rclcpp::executors::SingleThreadedExecutor executor;
     executor.add_node(ros_handler);
 
+    std::cout << "[INFO]: Ros executor started" << std::endl;
     std::vector<ColorCalibration> calibrations = blob_calibrator.load_calibration(app_data.calibration_filename);
     color_calibrator.load_calibration(app_data.calibration_filename);
     camera_calibrator.load_calibration(app_data.calibration_filename);
@@ -175,6 +176,7 @@ int main(int argc, char * argv[]) {
 
     app_data.fps = fps;
 
+    std::cout << "[INFO]: STARTING LOOP" << std::endl;
     while (rclcpp::ok()) {
         gui.fps_timer.start();
 
@@ -183,6 +185,7 @@ int main(int argc, char * argv[]) {
         } else if (app_data.simulator) {
             cv::Mat sim_frame = ros_handler->get_latest_frame();
             if (!sim_frame.empty()) {
+                std::cout << "[INFO]: IMAGE RECEIVED FROM TOPIC" << std::endl;
                 image = sim_frame;
                 frame_width = image.cols;
                 frame_height = image.rows;
