@@ -1,77 +1,68 @@
 import math
-from .. import constants
-from .utils import distance_to_goal, distance_between, angle_between
+from ..constants import PhysicalProperties
+from .. import settings
+from .utils import distance_to_goal, distance_between, angle_between_relative, clamp
+
+_FIELD_WIDTH_MM = PhysicalProperties.Field.WIDTH_MM
 
 
 def get_attacker(robots):
-    return next((r for r in robots if getattr(r, 'role', None) == 'attacker'), None)
+    return next((r for r in robots if getattr(r, "role", None) == "attacker"), None)
 
 
 def get_defender(robots):
-    return next((r for r in robots if getattr(r, 'role', None) == 'defender'), None)
+    return next((r for r in robots if getattr(r, "role", None) == "defender"), None)
+
 
 def get_helper(robots):
-    return next((r for r in robots if getattr(r, 'role', None) == 'helper'), None)
+    return next((r for r in robots if getattr(r, "role", None) == "helper"), None)
 
-def select(robots, ball, side):
+
+def _normalize_distance_score(distance_mm: float) -> float:
+    min_d = settings.roles.min_score_distance_mm
+    max_d = _FIELD_WIDTH_MM
+    normalized = (distance_mm - min_d) / (max_d - min_d)
+    return 1.0 - clamp(normalized, 0.0, 1.0)
+
+
+def select(robots, ball, side: str) -> None:
     if len(robots) != 3:
-        raise ValueError('robots must be a list of length 3')
+        raise ValueError("robots must be a list of length 3")
 
     for robot in robots:
         robot.defender_score = robot_defender_score(robot, side)
         robot.attacker_score = robot_attacker_score(robot, ball)
 
     sorted_by_attacker = sorted(robots, key=lambda r: r.attacker_score, reverse=True)
+    sorted_by_attacker[0].role = "attacker"
 
-    attacker = sorted_by_attacker[0]
-    attacker.role = 'attacker'
-
-    remaining = sorted_by_attacker[1:]
-
-    remaining.sort(key=lambda r: r.defender_score, reverse=True)
-    defender = remaining[0]
-    defender.role= "defender"
-
-    helper=remaining[1]
-    helper.role="helper"
+    remaining = sorted(sorted_by_attacker[1:], key=lambda r: r.defender_score, reverse=True)
+    remaining[0].role = "defender"
+    remaining[1].role = "helper"
 
 
-def robot_defender_score(robot, side):
-    distance_to_goal_weight = 0.6
-    hysteresis_weight = 0.4
+def robot_defender_score(robot, side: str) -> float:
+    cfg = settings.roles
+    distance_score = _normalize_distance_score(distance_to_goal(robot, side))
+    hysteresis_score = 1.0 if getattr(robot, "role", None) == "defender" else 0.0
 
-    distance = distance_to_goal(robot, side)
-
-    min_distance = 0.05
-    max_distance = constants.DISPLAY_FIELD_WIDTH / 100
-
-    distance_score = (distance - min_distance) / (max_distance - min_distance)
-    distance_score = 1 - max(0, min(1, distance_score))
-
-    hysteresis_score = 1 if getattr(robot, 'role', None) == 'defender' else 0
-
-    return (distance_score * distance_to_goal_weight) + \
-        (hysteresis_score * hysteresis_weight)
+    return (
+        distance_score * cfg.defender_distance_weight
+        + hysteresis_score * cfg.defender_hysteresis_weight
+    )
 
 
-def robot_attacker_score(robot, ball):
-    distance_to_ball_weight = 0.6
-    angle_to_ball_weight = 0.3
-    hysteresis_weight = 0.1
+def robot_attacker_score(robot, ball) -> float:
+    cfg = settings.roles
+    distance_score = _normalize_distance_score(distance_between(robot, ball))
 
-    distance = distance_between(robot, ball)
+    angle = angle_between_relative(robot, ball)
+    angle_score = 1.0 - abs(angle) / math.pi
 
-    min_distance = 0.05
-    max_distance = constants.DISPLAY_FIELD_WIDTH / 100
+    hysteresis_score = 1.0 if getattr(robot, "role", None) == "attacker" else 0.0
 
-    distance_score = (distance - min_distance) / (max_distance - min_distance)
-    distance_score = 1 - max(0, min(1, distance_score))
-
-    angle = angle_between(robot, ball)
-    angle_score = 1 - abs(angle) / math.pi
-
-    hysteresis_score = 1 if getattr(robot, 'role', None) == 'attacker' else 0
-
-    return (distance_score * distance_to_ball_weight) + \
-        (angle_score * angle_to_ball_weight) + \
-        (hysteresis_score * hysteresis_weight)
+    return (
+        distance_score * cfg.attacker_distance_weight
+        + angle_score * cfg.attacker_angle_weight
+        + hysteresis_score * cfg.attacker_hysteresis_weight
+    )

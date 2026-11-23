@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import tkinter as tk
 import tkinter.font as tkfont
+from .constants import VisualProperties
 
 # Same fill as the playable rectangle in strategy.field.field.draw_field
-FIELD_SURFACE = "#000000"
+FIELD_SURFACE = VisualProperties.Field.BG_COLOR
 FIELD_LINE = "#3d3d3d"
 
 
@@ -18,12 +19,14 @@ class TeamSidebar(tk.Frame):
     """
 
     def __init__(
-        self,
-        parent: tk.Misc,
-        *,
-        initial_team: str = "YELLOW",
-        width: int = 200,
-        run_var: tk.BooleanVar | None = None,
+            self,
+            parent: tk.Misc,
+            *,
+            initial_team: str = "YELLOW",
+            initial_attacking_right: bool = True,
+            initial_move_enemies: bool = True,
+            width: int = 200,
+            run_var: tk.BooleanVar | None = None,
     ):
         super().__init__(
             parent,
@@ -34,6 +37,8 @@ class TeamSidebar(tk.Frame):
         )
         self.pack_propagate(False)
         self._team = initial_team
+        self._attacking_right = initial_attacking_right
+        self._move_enemies = initial_move_enemies
         self._run_var = run_var
 
         title_f = tkfont.Font(font=tkfont.nametofont("TkDefaultFont"))
@@ -139,6 +144,79 @@ class TeamSidebar(tk.Frame):
             self._btn_resume.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
             self._paint_run_buttons()
 
+        ctrl_f = tkfont.Font(font=tkfont.nametofont("TkDefaultFont"))
+        ctrl_f.configure(size=10, weight="bold")
+
+        # --- ATTACKING SIDE ---
+        tk.Label(
+            pad,
+            text="ATTACKING SIDE",
+            font=hint_f,
+            fg="#6b7280",
+            bg=FIELD_SURFACE,
+            anchor="w",
+        ).pack(fill=tk.X, pady=(20, 10))
+
+        side_row = tk.Frame(pad, bg=FIELD_SURFACE)
+        side_row.pack(fill=tk.X)
+        self._btn_side_left = tk.Button(
+            side_row,
+            text="◀  Left",
+            font=ctrl_f,
+            relief=tk.FLAT,
+            borderwidth=0,
+            padx=8,
+            pady=10,
+            command=lambda: self._set_attacking_right(False),
+        )
+        self._btn_side_right = tk.Button(
+            side_row,
+            text="Right  ▶",
+            font=ctrl_f,
+            relief=tk.FLAT,
+            borderwidth=0,
+            padx=8,
+            pady=10,
+            command=lambda: self._set_attacking_right(True),
+        )
+        self._btn_side_left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        self._btn_side_right.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
+
+        # --- MOVE ENEMIES ---
+        tk.Label(
+            pad,
+            text="MOVE ENEMIES",
+            font=hint_f,
+            fg="#6b7280",
+            bg=FIELD_SURFACE,
+            anchor="w",
+        ).pack(fill=tk.X, pady=(20, 10))
+
+        enemy_row = tk.Frame(pad, bg=FIELD_SURFACE)
+        enemy_row.pack(fill=tk.X)
+        self._btn_enemies_on = tk.Button(
+            enemy_row,
+            text="On",
+            font=ctrl_f,
+            relief=tk.FLAT,
+            borderwidth=0,
+            padx=8,
+            pady=10,
+            command=lambda: self._set_move_enemies(True),
+        )
+        self._btn_enemies_off = tk.Button(
+            enemy_row,
+            text="Off",
+            font=ctrl_f,
+            relief=tk.FLAT,
+            borderwidth=0,
+            padx=8,
+            pady=10,
+            command=lambda: self._set_move_enemies(False),
+        )
+        self._btn_enemies_on.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        self._btn_enemies_off.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
+
         tk.Label(
             pad,
             text="Click the pitch to place the ball\nand stop your robots.",
@@ -150,6 +228,8 @@ class TeamSidebar(tk.Frame):
         ).pack(fill=tk.X, side=tk.BOTTOM, pady=(18, 0))
 
         self._paint_buttons()
+        self._paint_side_buttons()
+        self._paint_enemy_buttons()
 
     @property
     def team(self) -> str:
@@ -279,3 +359,79 @@ class TeamSidebar(tk.Frame):
                     highlightcolor="#1f1f1f",
                     activebackground="#141414",
                 )
+
+    @property
+    def attacking_right(self) -> bool:
+        return self._attacking_right
+
+    @property
+    def move_enemies(self) -> bool:
+        return self._move_enemies
+
+    def _set_attacking_right(self, value: bool) -> None:
+        if self._attacking_right == value:
+            return
+        self._attacking_right = value
+        self._paint_side_buttons()
+
+    def _set_move_enemies(self, value: bool) -> None:
+        if self._move_enemies == value:
+            return
+        self._move_enemies = value
+        self._paint_enemy_buttons()
+
+    def _style_toggle(
+        self,
+        btn: tk.Button,
+        active: bool,
+        *,
+        fg: str,
+        bg: str,
+        active_bg: str,
+        accent: str,
+    ) -> None:
+        if active:
+            btn.config(
+                cursor="arrow",
+                fg=fg,
+                bg=bg,
+                activeforeground=fg,
+                activebackground=active_bg,
+                highlightthickness=2,
+                highlightbackground=accent,
+                highlightcolor=accent,
+            )
+        else:
+            btn.config(
+                cursor="hand2",
+                fg="#5c6370",
+                bg="#0d0d0d",
+                activeforeground="#9ca3af",
+                activebackground="#141414",
+                highlightthickness=1,
+                highlightbackground="#252525",
+                highlightcolor="#252525",
+            )
+
+    def _paint_side_buttons(self) -> None:
+        style = dict(fg="#e5e7eb", bg="#1f2937", active_bg="#273449", accent="#60a5fa")
+        self._style_toggle(self._btn_side_left, not self._attacking_right, **style)
+        self._style_toggle(self._btn_side_right, self._attacking_right, **style)
+
+    def _paint_enemy_buttons(self) -> None:
+        self._style_toggle(
+            self._btn_enemies_on,
+            self._move_enemies,
+            fg="#bbf7d0",
+            bg="#0f1f14",
+            active_bg="#14291c",
+            accent="#22c55e",
+        )
+        self._style_toggle(
+            self._btn_enemies_off,
+            not self._move_enemies,
+            fg="#fecaca",
+            bg="#1f1212",
+            active_bg="#2a1818",
+            accent="#ef4444",
+        )

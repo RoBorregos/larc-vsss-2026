@@ -1,35 +1,30 @@
-import math
-from typing import List
 from ..field.ball import Ball
 from ..field.robot import Robot
+from .. import settings
 from . import roles
-from .utils import distance_to_goal, distance_between, angle_between, angle_between_relative, get_dynamic_threshold, clamp
-from .. import constants
-from .path_planning import *
-import time
+from .utils import angle_between
 
-rotation_angle = 0
+rotation_angle = 0.0
 
-def enemy_strategy(ball: Ball, enemy_robots: List[Robot], side = 'RIGHT'):
+
+def enemy_strategy(ball: Ball, enemy_robots: list[Robot], side: str = "RIGHT") -> None:
     global rotation_angle
+    cfg = settings.strategy
 
-    roles.select(enemy_robots, ball, 'LEFT')
+    roles.select(enemy_robots, ball, side)
 
     attacker = roles.get_attacker(enemy_robots)
     defender = roles.get_defender(enemy_robots)
-    helper = roles.get_helper(enemy_robots)
 
     if attacker:
         move_angle = angle_between(attacker, ball)
-        angle_deg = math.degrees(move_angle)
 
-        if abs(angle_deg) >= constants.ANGLE_THRESHOLD_MIN:
-            negative = angle_deg > 0
-            offset = math.radians(constants.ANGLE_OFFSET)
-            move_angle += offset * (-1 if negative else 1)
+        if abs(move_angle) >= cfg.angle_threshold_min_rad:
+            sign = -1.0 if move_angle > 0 else 1.0
+            move_angle += cfg.angle_offset_rad * sign
 
-        attacker.move(constants.BASE_SPEED, move_angle, 180)
+        attacker.move(cfg.base_speed_mm_s, move_angle, 180.0)
 
     if defender:
-        rotation_angle += 10
-        defender.move(0, 0, rotation_angle)
+        rotation_angle = (rotation_angle + 10.0) % 360.0
+        defender.move(0.0, 0.0, rotation_angle)

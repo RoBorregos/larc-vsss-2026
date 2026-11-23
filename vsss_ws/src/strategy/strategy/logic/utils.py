@@ -1,84 +1,66 @@
-from PIL import ImageGrab, Image
-from .. import constants
-import numpy as np
-import time
 import math
+import time
+import numpy as np
+from PIL import Image
+
+from ..constants import PhysicalProperties
+from .. import settings
+
+_FIELD = PhysicalProperties.Field
 
 
-
-def get_frame_from_buffer(image_buffer, scale_factor=0.5):
+def get_frame_from_buffer(image_buffer, scale_factor: float = 0.5):
     w, h = image_buffer.size
     new_size = (int(w * scale_factor), int(h * scale_factor))
-
     img_resized = image_buffer.resize(new_size, Image.LANCZOS)
-
     frame = np.array(img_resized)
-    frame = frame[:, :, ::-1].copy()
-    return frame
+    return frame[:, :, ::-1].copy()
 
-def distance_to_goal(robot, side):
-    rx = robot.x
-    ry = robot.y
 
-    target_y = constants.DISPLAY_CANVAS_HEIGHT / 2
-    target_x = None
+def distance_to_goal(robot, side: str) -> float:
+    target_y = 0.0
     if side == "LEFT":
-        target_x = constants.LEFT_PADDING
+        target_x = -_FIELD.WIDTH_MM / 2
     elif side == "RIGHT":
-        target_y = constants.DISPLAY_CANVAS_WIDTH - constants.LEFT_PADDING
+        target_x = _FIELD.WIDTH_MM / 2
     else:
-        print("Unknown team color")
-        exit(1)
+        raise ValueError(f"Unknown goal side: {side}")
 
-    dx = target_x - rx
-    dy = target_y - ry
+    return math.hypot(target_x - robot.x, target_y - robot.y)
 
-    return math.hypot(dx, dy)
 
-def distance_between(robot, ball):
-    rx = robot.x
-    ry = robot.y
+def distance_between(robot, ball) -> float:
+    return math.hypot(ball.x - robot.x, ball.y - robot.y)
 
-    bx = ball.x
-    by = ball.y
 
-    dx = bx - rx
-    dy = by - ry
-    return math.hypot(dx, dy)
+def angle_between(robot, ball) -> float:
+    return math.atan2(ball.y - robot.y, ball.x - robot.x)
 
-def angle_between(robot, ball):
-    dx = ball.x - robot.x
-    dy = ball.y - robot.y
 
-    return math.atan2(dy, dx)
-
-def angle_between_relative(robot, ball):
-    dx = ball.x - robot.x
-    dy = ball.y - robot.y
-
-    absolute_angle = math.atan2(dy, dx)
+def angle_between_relative(robot, ball) -> float:
+    absolute_angle = math.atan2(ball.y - robot.y, ball.x - robot.x)
     relative_angle = absolute_angle - robot.theta
-    relative_angle = (relative_angle + math.pi) % (2 * math.pi) - math.pi
-
-    return relative_angle
+    return (relative_angle + math.pi) % (2 * math.pi) - math.pi
 
 
-def get_dynamic_threshold(distance):
-    d_min, angle_max = constants.DISTANCE_THRESHOLD_MIN, constants.ANGLE_THRESHOLD_MAX
-    d_max, angle_min = constants.DISTANCE_THRESHOLD_MAX, constants.ANGLE_THRESHOLD_MIN
+def get_dynamic_threshold(distance_mm: float) -> float:
+    s = settings.strategy
 
-    if distance <= d_min:
-        return angle_max
-    if distance >= d_max:
-        return angle_min
+    if distance_mm <= s.distance_threshold_min_mm:
+        return s.angle_threshold_max_rad
+    if distance_mm >= s.distance_threshold_max_mm:
+        return s.angle_threshold_min_rad
 
-    threshold = angle_max + (distance - d_min) * (angle_min - angle_max) / (d_max - d_min)
+    return s.angle_threshold_max_rad + (
+        (distance_mm - s.distance_threshold_min_mm)
+        * (s.angle_threshold_min_rad - s.angle_threshold_max_rad)
+        / (s.distance_threshold_max_mm - s.distance_threshold_min_mm)
+    )
 
-    return threshold
 
-def millis():
+def millis() -> int:
     return int(time.perf_counter() * 1000)
 
 
-def clamp(value, min_val, max_val):
+def clamp(value: float, min_val: float, max_val: float) -> float:
     return max(min_val, min(max_val, value))

@@ -1,152 +1,96 @@
-# --- Physics & Simulation Timing ---
-DT = 0.016              # Delta Time (approx. 60 FPS)
-FRICTION = 0.880        # Global velocity decay factor
-PUSH_FORCE = 60.0       # Force applied during robot movement
-RESTITUTION = 0.5         # Bounciness (0 = inelastic collision)
-KICK_FORCE = 0.3          # Force applied to the ball when the ball is kicked
+from typing import Final
 
-# --- Entity Dimensions ---
-FIELD_WIDTH = 1.5
-FIELD_HEIGHT = 1.3
+class PhysicalProperties:
+    class Ball:
+        ID: Final[int] = 20
+        MASS_G: Final[float] = 48.0
+        RADIUS_MM: Final[float] = 21.35
+        RESTITUTION: Final[float] = 0.7
+        FRICTION: Final[float] = 0.2
 
-ROBOT_RADIUS = 3.75
-BALL_RADIUS = 2.135
+    class Robot:
+        MASS_G: Final[float] = 250.0
+        APOTHEM_MM: Final[float] = 37.5
+        RESTITUTION: Final[float] = 0.2
+        FRICTION: Final[float] = 0.4
+        KICK_IMPULSE: Final[float] = 0.3
+        KICK_ANGLE_TOLERANCE_RAD: Final[float] = 0.2
 
-# --- Navigation & Control Thresholds ---
-ANGLE_THRESHOLD_MIN = 15    # Tolerance in degrees for alignment when the distance is to the maximum
-DISTANCE_THRESHOLD_MAX = 0.4 # Distance where the angle threshold is set to min
+        BLUE_TEAM_MIN_ID: Final[int] = 10
+        ARUCO_DATABASE: Final[dict[int, int]] = {
+            0: 955,
+            1: 771,
+            2: 939,
 
-ANGLE_THRESHOLD_MAX = 30
-DISTANCE_THRESHOLD_MIN = 0.05 # Distance where the angle threshold is set to max
+            10: 256,
+            11: 272,
+            12: 273,
 
-ANGLE_OFFSET = 40       # Applied offset for orbital movement
-BASE_SPEED = 0.08       # Movement speed for non-path-planning movement
+            20: -1,
+        }
 
-HELPER_HOLD_OFFSET_X=0.1
-HELPER_STOP_THRESHOLD=0.015
-GOALKEEPER_Y_THRESHOLD = 0.02
-HELPER_Y_THRESHOLD = 0.02
-HELPER_FOLLOW_DISTANCE=0.20
-HELPER_FOLLOW_SPEED = BASE_SPEED * 0.8
-HELPER_MINIMUM_DISTANCE_TO_ATTACKER = 0.05
+    class Field:
+        WIDTH_MM: Final[float] = 1500.0
+        HEIGHT_MM: Final[float] = 1300.0
+        CORNER_LENGTH_MM: Final[float] = 70.0
+        GOAL_WIDTH_MM: Final[float] = 400.0
+        GOAL_DEPTH_MM: Final[float] = 100.0
 
-# --- Display & Field Geometry ---
-DISPLAY_SCALE = 7       # Conversion factor from world units to pixels
-DISPLAY_CANVAS_WIDTH = 240
-DISPLAY_CANVAS_HEIGHT = 135
-DISPLAY_FIELD_WIDTH = 150
-DISPLAY_FIELD_HEIGHT = 130
-DISPLAY_CORNER_LENGTH = 7
-DISPLAY_MID_X = DISPLAY_FIELD_WIDTH / 2
-DISPLAY_MID_Y = DISPLAY_FIELD_HEIGHT / 2
-DISPLAY_GOAL_DEPTH = 10 * DISPLAY_SCALE
-DISPLAY_GOAL_WIDTH = 40 * DISPLAY_SCALE
-TEXT_OFFSET = 15
-DISPLAY_BALL_PREDICTION_INTERVAL = 0.5
 
-# --- Goal Dimensions ---
-ATTACKING_RIGHT = True # Set to False if attacking left
-GOAL_Y = 0
-GOAL_X = DISPLAY_FIELD_WIDTH / 2 if ATTACKING_RIGHT else -DISPLAY_FIELD_WIDTH / 2
 
-# --- UI Padding & Offset Calculations ---
-LEFT_PADDING = DISPLAY_SCALE * (DISPLAY_CANVAS_WIDTH - DISPLAY_FIELD_WIDTH) / 2
-UPPER_PADDING = DISPLAY_SCALE * (DISPLAY_CANVAS_HEIGHT - DISPLAY_FIELD_HEIGHT) / 2
 
-# --- Visual Markers & UI Elements ---
-VISUAL_CIRCLE_DIAMETER = 2.5
-VISUAL_CIRCLE_RADIUS = VISUAL_CIRCLE_DIAMETER / 2
-VISUAL_CROSS_SIZE = 3.5
+class VisualProperties:
+    class Display:
+        SCALE_PX_PER_MM: Final[float] = 0.5
+        LEFT_PADDING_PX: Final[int] = 50
+        UPPER_PADDING_PX: Final[int] = 50
 
-# --- Gameplay & Positioning Logic ---
-DEFENDER_OFFSET_X = 25
-DEFENDER_OFFSET_Y = 0
-DEFENDER_MAX_FORWARD = DISPLAY_MID_X + 5
+    class Ball:
+        COLOR: Final[str] = "orange"
+        OUTLINE_COLOR: Final[str] = "black"
+        OUTLINE_WIDTH_PX: Final[int] = 1
+        TAG: Final[str] = "ball"
 
-# --- Cardinal Direction Mappings (Degrees) ---
-LEFT = 180
-RIGHT = 0
-DOWN = 90
-UP = 270
+    class Robot:
+        TEAM_BLUE_COLOR: Final[str] = "#0000FF"
+        TEAM_YELLOW_COLOR: Final[str] = "#FFFF00"
+        BODY_COLOR: Final[str] = "white"
+        OUTLINE_COLOR: Final[str] = "black"
 
-# --- Goal Post Geometry & Detection Areas ---
-DISTANCE_TO_BALL_THRESHOLD = 0.3
-ZONE_GOAL = {
-    "x": DISPLAY_FIELD_WIDTH / 100 / 2,
-    "y": 0,
-    "LEFT_PADDING": 0.18,
-    "RIGHT_PADDING": 0.18,
-    "MIDPOINT_OFFSET": 0.10
-}
+        ARUCO_SIZE_RATIO: Final[float] = 0.875
+        ARUCO_MARKER_PX: Final[int] = 200
 
-GOAL = {
-    "LEFT_X": -1.5 / 2,
-    "LEFT_Y": 0,
-    "RIGHT_X": 1.5 / 2,
-    "RIGHT_Y": 0
-}
+        ARROW_LENGTH_PX: Final[int] = 50
+        ARROW_COLOR: Final[str] = "#00FF00"
+        ARROW_WIDTH_PX: Final[int] = 3
 
-MIDFIELD = {
-    "x1": 0,
-    "y1": 0,  
-    "LEFT_PADDING1": 0.65,                 
-    "RIGHT_PADDING1": 0.20,                
-    "MIDPOINT_OFFSET1": 0.65         
-}
-# --- Color Definitions & Identification ---
-class Color_ID:
-    YELLOW = "#dedb38"
-    BLUE = "#3b2ad1"
-    RED = "#c91223"
-    GREEN = "#4bb557"
-    CYAN = "#1abeff"
-    MAGENTA = "#ca0fd1"
-    ORANGE = "#d1860f"
-    NONE = None
+        ROLE_TEXT_OFFSET_PX: Final[int] = 10
+        ROLE_TEXT_COLOR: Final[str] = "white"
+        ROLE_FONT: Final[tuple[str, int, str]] = ("Arial", 10, "bold")
 
-# --- Robot Identity & Team Color Database ---
-# Maps entity ID to a list of identifying colors
-BALL_ID = 20
-ROBOT_DATABASE = {
-    0:  955,
-    1:  771,
-    2:  939,
 
-    10: 256,
-    11: 272,
-    12: 273,
+    class Field:
+        BG_COLOR: Final[str] = "#000000"
+        LINE_COLOR: Final[str] = "white"
+        LINE_WIDTH_PX: Final[int] = 2
 
-    20: -1,
-}
+        CENTER_CIRCLE_RADIUS_MM: Final[float] = 200.0
+        AREA_DEPTH_MM: Final[float] = 150.0
+        AREA_HEIGHT_MM: Final[float] = 700.0
+        MARK_CIRCLE_RADIUS_MM: Final[float] = 10.0
+        MARK_CROSS_SIZE_MM: Final[float] = 50.0
 
-# --- PATH PLANNING ---
-ATTRACTIVE_GAIN = 3.0 # Strength of attraction toward the target point
-WALL_GAIN = 0.1 # Strength of repulsion from field walls
-EXPAND_INFLUENCE_RADIUS = 1.5
-EXPAND_REPULSIVE_GAIN = 0.15
-WALL_MARGIN = 0.06 # Distance from wall where wall repulsion starts acting
-BEHIND_BALL_OFFSET = 0.1 # Distance behind the ball where the attacker aims to position
-MAX_FIELD = 4.0 # Maximum magnitude allowed for the total vector field
-BLOCKING_WIDTH = 0.18 # Width of the corridor considered for blocking detection
-VORTEX_GAIN = 3.0 # Strength of the tangential component in the rolling vector when blocking is detected
-ENEMY_REPULSIVE_GAIN = 1.2 # Strength of repulsion from enemy robots
-TEAM_REPULSION_GAIN = 0.45 # Strength of repulsion from team robots
-TEAM_INFLUENCE_RADIUS = 0.14 # Distance where team robots start influencing the field
-INFLUENCE_RADIUS = 0.17 # Distance where enemy robots start influencing the field
-BALL_INFLUENCE_RADIUS = 0.12 # Distance where the ball start influencing the field
-ROBOT_VORTEX_SIDE = {} # Variable to store the assigned vortex side for each robot when blocking is detected
-OPTIMAL_ROUTE = False # Set to True to enable optimal route calculation (currently not implemented)
-OBSTACLE_SAFETY_MARGIN = 0.03
-# --- Robot Movement & Precision ---
-MOVEMENT_NOISE = 0.2      # Deviation based on a Gaussian distribution
-MIN_SPEED = 0.01        # Minimum velocity threshold; below this, speed resets to 0
-ROBOT_KP_ANGULAR_MOVEMENT = 1 # Angular movement speed factor
+        FREE_BALL_CIRCLES_MM: Final[tuple[tuple[float, float], ...]] = (
+            (160, 1050), (160, 250), (560, 1050), (560, 250),
+            (1340, 250), (1340, 1050), (940, 1050), (940, 250),
+        )
+        FREE_BALL_CROSSES_MM: Final[tuple[tuple[float, float], ...]] = (
+            (380, 1050), (380, 650), (380, 250),
+            (1120, 1050), (1120, 650), (1120, 250),
+        )
 
-# --- Environmental & Sensor Simulation ---
-ILLUMINATION_INTENSITY = 30
-NOISE_RATE = 0.20
-REDUCE_ATTRACTION_IF_BLOCKED = 0.4
-
-# --- Measurements ---
-WEIGHT_CONVERSION = 0.01
-METER_TO_CM = 100
+class RosProperties:
+    NODE_NAME: Final[str] = "vsss_strategy_node"
+    FIELD_FRAME: Final[str] = "field"
+    BALL_FRAME: Final[str] = "ball"
+    M_TO_MM: Final[float] = 1000.0
